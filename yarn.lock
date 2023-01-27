@@ -269,6 +269,11 @@
     "@typescript-eslint/types" "4.33.0"
     eslint-visitor-keys "^2.0.0"
 
+"@vscode/debugprotocol@^1.57.0":
+  version "1.58.0"
+  resolved "https://registry.yarnpkg.com/@vscode/debugprotocol/-/debugprotocol-1.58.0.tgz#3416047d72103784daebab27b3834481e2960598"
+  integrity sha512-64gY3PdU7jmYDwLRJFZ5XL2BC8TK5mdhZ60XLTZn17yfbJPKCcmFDuQAkVfOPsjn7o4f6YWFy3AXSR0V9gY6jA==
+
 "@vscode/test-web@^0.0.24":
   version "0.0.24"
   resolved "https://registry.yarnpkg.com/@vscode/test-web/-/test-web-0.0.24.tgz#ee9a9249895b5c29f8352e1b13ee01193a795cf8"
@@ -992,6 +997,14 @@ css-what@^5.0.1, css-what@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/css-what/-/css-what-5.1.0.tgz#3f7b707aadf633baf62c2ceb8579b545bb40f7fe"
   integrity sha512-arSMRWIIFY0hV8pIxZMEfmMI47Wj3R/aWpZDDxWYCPEiOMv6tfOrnpDtgxBYPEQD4V0Y/958+1TdC3iWTFcUPw==
+
+debug-tracker-vscode@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/debug-tracker-vscode/-/debug-tracker-vscode-0.0.12.tgz#5fef569cd1cdc1a4d4d36512d271081449529b3d"
+  integrity sha512-PhkWkBgO2z+0M3uuVG/UallZGxKiJ6IDAc0F/DvA6lmsUdn8/RhvudmKN9sVh17nKXPgM9q2kcDzZ5VX2aEwQA==
+  dependencies:
+    "@vscode/debugprotocol" "^1.57.0"
+    pure-uuid "^1.6.2"
 
 debug@2.6.9:
   version "2.6.9"
@@ -2558,6 +2571,11 @@ punycode@^2.1.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
+
+pure-uuid@^1.6.2:
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/pure-uuid/-/pure-uuid-1.6.2.tgz#64f3032d54953b93b0585be3263a2629f1d60a04"
+  integrity sha512-WQ4xz74ApW6s0BToRuuyuMo9g0VHx1HljY0H2gPng+mqqz/K1yLj7sHZonZZQ2++WfHl/ZzruilWvuz+WtmxjQ==
 
 qs@^6.9.1:
   version "6.10.3"

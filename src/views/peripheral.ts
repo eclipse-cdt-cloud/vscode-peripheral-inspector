@@ -19,6 +19,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as manifest from '../manifest';
+import { DebugTracker, DebugSessionStatus } from 'debug-tracker-vscode';
 import { parseStringPromise } from 'xml2js';
 import { BaseNode, PeripheralBaseNode } from './nodes/basenode';
 import { PeripheralNode } from './nodes/peripheralnode';
@@ -26,7 +27,6 @@ import { MessageNode } from './nodes/messagenode';
 import { NodeSetting } from '../common';
 import { SVDParser } from '../svd-parser';
 import { AddrRange } from '../addrranges';
-import { DebugTracker } from '../debug-tracker';
 import { SvdRegistry } from '../svd-registry';
 
 const STATE_FILENAME = '.svd-viewer.state.json';
@@ -275,8 +275,20 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
     protected oldState = new Map <string, vscode.TreeItemCollapsibleState>();
 
     constructor(tracker: DebugTracker, protected registry: SvdRegistry) {
-        tracker.onWillStartSession(session => this.debugSessionStarted(session));
-        tracker.onDidStopSession(session => this.debugSessionTerminated(session));
+        tracker.subscribe({
+            version: 1,
+            body: {
+                debuggers: '*',
+                handler: async event => {
+                    if (event.event === DebugSessionStatus.Initializing) {
+                        this.debugSessionStarted(event.session!);
+                    }
+                    if (event.event === DebugSessionStatus.Terminated) {
+                        this.debugSessionTerminated(event.session!)
+                    }
+                }
+            }
+        });
     }
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
