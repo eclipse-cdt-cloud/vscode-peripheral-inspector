@@ -2,7 +2,7 @@
   "name": "svd-viewer",
   "displayName": "SVD Viewer",
   "description": "Standalone SVD Viewer extension extracted from cortex-debug",
-  "version": "1.0.5",
+  "version": "1.1.1",
   "preview": true,
   "publisher": "cortex-debug",
   "author": "Rob Moran <github@thegecko.org>",
@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "debug-tracker-vscode": "^0.0.12",
+    "jszip": "^3.10.1",
     "node-fetch": "^2.6.7",
     "xml2js": "^0.4.23"
   },
@@ -231,8 +232,18 @@
         },
         "svd-viewer.deviceConfig": {
           "type": "string",
-          "default": "device",
-          "description": "Debug configuration key to use to get the device"
+          "default": "deviceName",
+          "description": "Debug configuration key to use to get the device name"
+        },
+        "svd-viewer.processorConfig": {
+          "type": "string",
+          "default": "processorName",
+          "description": "Debug configuration key to use to get the processor name"
+        },
+        "svd-viewer.packAssetUrl": {
+          "type": "string",
+          "default": "https://pack-asset-service.keil.arm.com",
+          "description": "Base URL for CMSIS pack assets"
         },
         "svd-viewer.svdAddrGapThreshold": {
           "type": "number",
