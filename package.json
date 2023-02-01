@@ -94,6 +94,16 @@
         "command": "svd-viewer.svd.setFormat",
         "title": "Set Value Format",
         "icon": "$(symbol-unit)"
+      },
+      {
+        "command": "svd-viewer.svd.refreshAll",
+        "title": "Refresh All",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "svd-viewer.svd.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
       }
     ],
     "menus": {
@@ -121,6 +131,14 @@
         {
           "command": "svd-viewer.svd.setFormat",
           "when": "false"
+        },
+        {
+          "command": "svd-viewer.svd.refreshAll",
+          "when": "false"
+        },
+        {
+          "command": "svd-viewer.svd.collapseAll",
+          "when": "false"
         }
       ],
       "touchBar": [
@@ -147,6 +165,18 @@
         {
           "command": "svd-viewer.svd.unpin",
           "when": "view == svd-viewer.svd && viewItem == peripheral.pinned"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "svd-viewer.svd.refreshAll",
+          "when": "view == svd-viewer.svd && debugState == stopped",
+          "group": "navigation"
+        },
+        {
+          "command": "svd-viewer.svd.collapseAll",
+          "when": "view == svd-viewer.svd",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
