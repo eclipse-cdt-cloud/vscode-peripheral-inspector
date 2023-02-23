@@ -89,9 +89,13 @@ export class DebugTracker {
     }
 
     private async getTracker(): Promise<IDebugTracker | undefined> {
-        const trackerExtension = vscode.extensions.getExtension<IDebugTracker>(DEBUG_TRACKER_EXTENSION);
-        if (trackerExtension) {
-            return trackerExtension.activate();
+        try {
+            const trackerExtension = vscode.extensions.getExtension<IDebugTracker>(DEBUG_TRACKER_EXTENSION);
+            if (trackerExtension) {
+                return trackerExtension.activate();
+            }
+        } catch(_e) {
+            // Ignore error
         }
 
         return undefined;
