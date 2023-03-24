@@ -28,7 +28,6 @@ import { AddrRange } from '../addrranges';
 import { DebugTracker } from '../debug-tracker';
 import { SvdResolver } from '../svd-resolver';
 import { readFromUrl } from '../utils';
-import { uriExists } from '../vscode-utils';
 
 const STATE_FILENAME = '.svd-viewer.json';
 
@@ -37,6 +36,15 @@ const pathToUri = (path: string): vscode.Uri => {
         return vscode.Uri.file(path);
     } catch (e) {
         return vscode.Uri.parse(path);
+    }
+};
+
+const uriExists = async (uri: vscode.Uri): Promise<boolean> => {
+    try {
+        await vscode.workspace.fs.stat(uri);
+        return true;
+    } catch {
+        return false;
     }
 };
 
