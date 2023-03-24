@@ -281,6 +281,11 @@
           "minimum": -1,
           "maximum": 32,
           "description": "If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow"
+        },
+        "svd-viewer.saveLayout": {
+          "type": "boolean",
+          "default": false,
+          "description": "Save layout of peripheral view between sessions"
         }
       }
     }
