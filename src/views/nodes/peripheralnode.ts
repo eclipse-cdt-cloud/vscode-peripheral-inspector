@@ -22,9 +22,10 @@ import { PeripheralRegisterNode } from './peripheralregisternode';
 import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheralclusternode';
 import { AddrRange, AddressRangesUtils } from '../../addrranges';
 import { NumberFormat, NodeSetting } from '../../common';
-import { MemReadUtils } from '../../memreadutils';
+import { MemUtils } from '../../memreadutils';
 import { AccessType } from '../../svd-parser';
 import { hexFormat } from '../../utils';
+import { EnumerationMap } from './peripheralfieldnode';
 
 export interface PeripheralOptions {
     name: string;
@@ -52,7 +53,7 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     private currentValue: number[] = [];
 
-    constructor(public session: vscode.DebugSession, public gapThreshold: number, options: PeripheralOptions) {
+    constructor(public gapThreshold: number, options: PeripheralOptions) {
         super();
 
         this.name = options.name;
@@ -125,8 +126,15 @@ export class PeripheralNode extends PeripheralBaseNode {
         }
 
         try {
-            await this.readMemory();
+            const errors = await this.readMemory();
+            for (const error of errors) {
+                const str = `Failed to update peripheral ${this.name}: ${error}`;
+                if (vscode.debug.activeDebugConsole) {
+                    vscode.debug.activeDebugConsole.appendLine(str);
+                }
+            }
         } catch (e) {
+            /* This should never happen */
             const msg = (e as Error).message || 'unknown error';
             const str = `Failed to update peripheral ${this.name}: ${msg}`;
             if (vscode.debug.activeDebugConsole) {
@@ -139,21 +147,26 @@ export class PeripheralNode extends PeripheralBaseNode {
             await Promise.all(promises);
             return true;
         } catch (e) {
-            const msg = (e as Error).message || 'unknown error';
-            const str = `Failed to update peripheral ${this.name}: ${msg}`;
+            /* This should never happen */
+            const str = `Internal error: Failed to update peripheral ${this.name} after memory reads`;
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(str);
             }
-            throw new Error(str);
+            // Could return false, but some things could have been updated. Returning true triggers a GUI refresh
+            return true;
         }
     }
 
-    protected readMemory(): Promise<boolean> {
+    protected readMemory(): Promise<Error[]> | [] {
         if (!this.currentValue) {
             this.currentValue = new Array<number>(this.totalLength);
         }
 
-        return MemReadUtils.readMemoryChunks(this.session, this.baseAddress, this.addrRanges, this.currentValue);
+        if (this.session) {
+            return MemUtils.readMemoryChunks(this.session, this.baseAddress, this.addrRanges, this.currentValue);
+        } else {
+            return [];
+        }
     }
 
     public collectRanges(): void {
@@ -243,6 +256,12 @@ export class PeripheralNode extends PeripheralBaseNode {
             }
         } else {
             return p1.pinned ? -1 : 1;
+        }
+    }
+
+    public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
+        for (const child of this.children) {
+            child.resolveDeferedEnums(enumTypeValuesMap);
         }
     }
 }

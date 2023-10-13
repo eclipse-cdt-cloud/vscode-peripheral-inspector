@@ -20,12 +20,12 @@ import * as vscode from 'vscode';
 import { PeripheralNode } from './peripheralnode';
 import { PeripheralClusterNode } from './peripheralclusternode';
 import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './basenode';
-import { PeripheralFieldNode } from './peripheralfieldnode';
+import { EnumerationMap, PeripheralFieldNode } from './peripheralfieldnode';
 import { extractBits, createMask, hexFormat, binaryFormat } from '../../utils';
 import { NumberFormat, NodeSetting } from '../../common';
 import { AccessType } from '../../svd-parser';
 import { AddrRange } from '../../addrranges';
-import { MemReadUtils } from '../../memreadutils';
+import { MemUtils } from '../../memreadutils';
 
 export interface PeripheralRegisterOptions {
     name: string;
@@ -259,9 +259,11 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
             return false;
         }
 
-        await MemReadUtils.writeMemory(vscode.debug.activeDebugSession, this.parent.getAddress(this.offset), value, this.size);
-        await this.parent.updateData();
-        return true;
+        const success = await MemUtils.writeMemory(vscode.debug.activeDebugSession, this.parent.getAddress(this.offset), value, this.size);
+        if (success) {
+            await this.parent.updateData();
+        }
+        return success;
     }
 
     public updateData(): Thenable<boolean> {
@@ -319,5 +321,11 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     public collectRanges(addrs: AddrRange[]): void {
         const finalOffset = this.parent.getOffset(this.offset);
         addrs.push(new AddrRange(finalOffset, this.size / 8));
+    }
+
+    public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
+        for (const child of this.children) {
+            child.resolveDeferedEnums(enumTypeValuesMap);
+        }
     }
 }

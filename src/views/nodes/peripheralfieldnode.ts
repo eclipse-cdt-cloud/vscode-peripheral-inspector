@@ -38,10 +38,12 @@ export interface FieldOptions {
     offset: number;
     width: number;
     enumeration?: EnumerationMap;
+    derivedFrom?: string;           // Set this if unresolved
     accessType?: AccessType;
 }
 
 export class PeripheralFieldNode extends PeripheralBaseNode {
+    public session: vscode.DebugSession | undefined;
     public readonly name: string;
     public readonly description: string;
     public readonly offset: number;
@@ -54,7 +56,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     private enumerationMap: any;
     private prevValue = '';
 
-    constructor(public parent: PeripheralRegisterNode, options: FieldOptions) {
+    constructor(public parent: PeripheralRegisterNode, private options: FieldOptions) {
         super(parent);
 
         this.name = options.name;
@@ -75,26 +77,36 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
 
         if (options.enumeration) {
-            this.enumeration = options.enumeration;
-            this.enumerationMap = {};
-            this.enumerationValues = [];
-
-            // tslint:disable-next-line:forin
-            for (const key in options.enumeration) {
-                const name = options.enumeration[key].name;
-
-                this.enumerationValues.push(name);
-                this.enumerationMap[name] = key;
-            }
+            this.setEnumeration(options.enumeration);
         }
 
         this.parent.addChild(this);
     }
 
+    private setEnumeration(enumeration: EnumerationMap) {
+        this.enumeration = enumeration;
+        this.enumerationMap = {};
+        this.enumerationValues = [];
+
+        for (const key in enumeration) {
+            const name = enumeration[key].name;
+
+            this.enumerationValues.push(name);
+            this.enumerationMap[name] = key;
+        }
+    }
+
     public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
         const isReserved = this.name.toLowerCase() === 'reserved';
 
-        const context = isReserved ? 'field-res' : (this.parent.accessType === AccessType.ReadOnly ? 'field-ro' : 'field');
+        let context = 'field';
+        if (isReserved) {
+            context = 'field-res';
+        } else if (this.accessType === AccessType.ReadOnly) {
+            context = 'fieldRO';
+        } else if (this.accessType === AccessType.WriteOnly) {
+            context = 'fieldWO';
+        }
 
         const rangestart = this.offset;
         const rangeend = this.offset + this.width - 1;
@@ -218,7 +230,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
             if (this.enumeration[value]) {
                 formatted = `${this.enumeration[value].name} (${formatted})`;
             } else {
-                formatted = `Unkown Enumeration Value (${formatted})`;
+                formatted = `Unknown Enumeration (${formatted})`;
             }
         }
 
@@ -242,10 +254,22 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     public performUpdate(): Thenable<boolean> {
         return new Promise((resolve, reject) => {
             if (this.enumeration) {
-                vscode.window.showQuickPick(this.enumerationValues).then((val) => {
-                    if (val === undefined) { return reject('Input not selected'); }
+                const items: vscode.QuickPickItem[] = [];
+                for (const eStr of this.enumerationValues) {
+                    const numval = this.enumerationMap[eStr];
+                    const e = this.enumeration[numval];
+                    const item: vscode.QuickPickItem = {
+                        label: eStr,
+                        detail: e.description
+                    };
+                    items.push(item);
+                }
+                vscode.window.showQuickPick(items).then((val) => {
+                    if (val === undefined) {
+                        return false;
+                    }
 
-                    const numval = this.enumerationMap[val];
+                    const numval = this.enumerationMap[val.label];
                     this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
                 });
             } else {
@@ -253,7 +277,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
                     if (typeof val === 'string') {
                         const numval = parseInteger(val);
                         if (numval === undefined) {
-                            return reject('Unable to parse input value.');
+                            return false;
                         }
                         this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
                     }
@@ -310,5 +334,17 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
 
     public collectRanges(_a: AddrRange[]): void {
         throw new Error('Method not implemented.');
+    }
+
+    public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
+        if (this.options.derivedFrom) {
+            const map = enumTypeValuesMap[this.options.derivedFrom];
+            if (map) {
+                this.setEnumeration(map);
+                this.options.derivedFrom = undefined;
+            } else {
+                throw new Error(`Invalid derivedFrom=${this.options.derivedFrom} for enumeratedValues of field ${this.name}`);
+            }
+        }
     }
 }

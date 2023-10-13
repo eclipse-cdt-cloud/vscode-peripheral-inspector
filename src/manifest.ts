@@ -12,5 +12,5 @@ export const DEFAULT_PROCESSOR = 'processorName';
 export const CONFIG_ADDRGAP = 'svdAddrGapThreshold';
 export const DEFAULT_ADDRGAP = 16;
 export const CONFIG_ASSET_PATH = 'packAssetUrl';
-export const DEFAULT_ASSET_PATH = 'https://pack-asset-service.keil.arm.com';
+export const DEFAULT_ASSET_PATH = 'https://pack-content.cmsis.io';
 export const CONFIG_SAVE_LAYOUT = 'saveLayout';
