@@ -6,7 +6,7 @@ Standalone SVD Viewer extension extracted from [cortex-debug](https://github.com
 
 The SVD Viewer extension uses [System View Description](http://www.keil.com/pack/doc/CMSIS/SVD/html/index.html) (SVD) files to display information about the selected part, including the Cortex Peripherals view.
 
-Choose one of the following methods to specify your SVD file in your launch configuration:
+Choose one of the following methods to specify your SVD file in your `launch.json` configuration(s):
 
 ### Use the CMSIS pack asset service
 
