@@ -25,7 +25,7 @@ import { MessageNode } from './nodes/messagenode';
 import { NodeSetting } from '../common';
 import { SvdData, SVDParser } from '../svd-parser';
 import { AddrRange } from '../addrranges';
-import { DebugTrackerWrapper } from '../debug-tracker-wrapper';
+import { DebugTracker } from '../debug-tracker';
 import { SvdResolver } from '../svd-resolver';
 import { readFromUrl } from '../utils';
 import { PeripheralRegisterNode } from './nodes/peripheralregisternode';
@@ -301,11 +301,10 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
     protected sessionPeripheralsMap = new Map <string, PeripheralTreeForSession>();
     protected oldState = new Map <string, vscode.TreeItemCollapsibleState>();
 
-    constructor(tracker: DebugTrackerWrapper, protected resolver: SvdResolver, protected context: vscode.ExtensionContext) {
+    constructor(tracker: DebugTracker, protected resolver: SvdResolver, protected context: vscode.ExtensionContext) {
         tracker.onWillStartSession(session => this.debugSessionStarted(session));
         tracker.onWillStopSession(session => this.debugSessionTerminated(session));
         tracker.onDidStopDebug(session => this.debugStopped(session));
-        tracker.onDidContinueDebug(session => this.debugContinued(session));
     }
 
     public async activate(): Promise<void> {
@@ -417,10 +416,6 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
         if (traceExec && vscode.debug.activeDebugConsole) {
             vscode.debug.activeDebugConsole.appendLine('peripheral-viewer: ' + session.id + ': Session Terminated');
         }
-        if (this.stopedTimer) {
-            clearTimeout(this.stopedTimer);
-            this.stopedTimer = undefined;
-        }
         const regs = this.sessionPeripheralsMap.get(session.id);
 
         if (regs && regs.myTreeItem.collapsibleState) {
@@ -431,7 +426,6 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
         }
     }
 
-    private stopedTimer: NodeJS.Timeout | undefined;
     public debugStopped(session: vscode.DebugSession): void {
         if (!this.sessionPeripheralsMap.get(session.id)) {
             return;
@@ -443,26 +437,12 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
         // We are stopped for many reasons very briefly where we cannot even execute any queries
         // reliably and get errors. Programs stop briefly to set breakpoints, during startup/reset/etc.
         // Also give VSCode some time to finish it's updates (Variables, Stacktraces, etc.)
-        this.stopedTimer = setTimeout(() => {
-            this.stopedTimer = undefined;
+        setTimeout(() => {
             const regs = this.sessionPeripheralsMap.get(session.id);
             if (regs) {     // We are called even before the session has started, as part of reset
                 regs.updateData();
             }
         }, 100);
-    }
-
-    public debugContinued(session: vscode.DebugSession): void {
-        if (!this.sessionPeripheralsMap.get(session.id)) {
-            return;
-        }
-        if (traceExec && vscode.debug.activeDebugConsole) {
-            vscode.debug.activeDebugConsole.appendLine('peripheral-viewer: ' + session.id + ': Session Continued');
-        }
-        if (this.stopedTimer) {
-            clearTimeout(this.stopedTimer);
-            this.stopedTimer = undefined;
-        }
     }
 
     public togglePinPeripheral(node: PeripheralBaseNode): void {
