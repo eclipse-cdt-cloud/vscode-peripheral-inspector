@@ -5,7 +5,17 @@
   "version": "1.2.3",
   "preview": true,
   "publisher": "cortex-debug",
-  "author": "haneefdm & Rob Moran <github@thegecko.org>",
+  "author": "marus25",
+  "contributors": [
+    {
+      "name": "Rob Moran",
+      "email": "github@thegecko.org",
+      "url": "https://github.com/thegecko"
+    },
+    {
+      "name": "haneefdm"
+    }
+  ],
   "license": "MIT",
   "main": "dist/desktop/extension.js",
   "browser": "dist/browser/extension.js",
