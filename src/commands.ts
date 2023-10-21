@@ -1,20 +1,9 @@
-/*
- * Copyright 2017-2019 Marcel Ball
- * https://github.com/Marus/cortex-debug
+/********************************************************************************
+ * Copyright (C) 2023 Marcel Ball, Arm Limited and others.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without
- * limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
- * Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
- * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
- * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
 
 import * as vscode from 'vscode';
 import * as manifest from './manifest';
@@ -35,7 +24,6 @@ export class Commands {
             vscode.commands.registerCommand(`${manifest.PACKAGE_NAME}.svd.pin`, node => this.peripheralsTogglePin(node)),
             vscode.commands.registerCommand(`${manifest.PACKAGE_NAME}.svd.unpin`, node => this.peripheralsTogglePin(node)),
             vscode.commands.registerCommand(`${manifest.PACKAGE_NAME}.svd.refreshAll`, () => this.peripheralsForceRefresh()),
-            vscode.commands.registerCommand(`${manifest.PACKAGE_NAME}.svd.collapseAll`, () => this.peripheralsCollapseAll())
         );
     }
 
@@ -46,7 +34,7 @@ export class Commands {
                 this.peripheralsForceRefresh();
             }
         } catch (error) {
-            vscode.window.showErrorMessage(`Unable to update value: ${(error as Error).message}`);
+            vscode.debug.activeDebugConsole.appendLine(`Unable to update value: ${(error as Error).message}`);
         }
     }
 
@@ -81,10 +69,6 @@ export class Commands {
         } else {
             this.peripheralProvider.updateData();
         }
-    }
-
-    private peripheralsCollapseAll(): void {
-        this.peripheralProvider.collapseAll();
     }
 
     private peripheralsTogglePin(node: PeripheralBaseNode): void {

@@ -1,6 +1,9 @@
-/**
- * Copyright (C) 2023 Arm Limited
- */
+/********************************************************************************
+ * Copyright (C) 2023 Marcel Ball, Arm Limited and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
 
 import * as vscode from 'vscode';
 

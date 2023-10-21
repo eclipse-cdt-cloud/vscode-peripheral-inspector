@@ -2,16 +2,26 @@
   "name": "svd-viewer",
   "displayName": "SVD Viewer",
   "description": "Standalone SVD Viewer extension extracted from cortex-debug",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "preview": true,
-  "publisher": "cortex-debug",
-  "author": "Rob Moran <github@thegecko.org>",
+  "publisher": "eclipse-cdt",
+  "author": "marus25",
+  "contributors": [
+    {
+      "name": "Rob Moran",
+      "email": "github@thegecko.org",
+      "url": "https://github.com/thegecko"
+    },
+    {
+      "name": "haneefdm"
+    }
+  ],
   "license": "MIT",
   "main": "dist/desktop/extension.js",
   "browser": "dist/browser/extension.js",
-  "repository": "https://github.com/cortex-debug/svd-viewer",
-  "qna": "https://github.com/cortex-debug/svd-viewer/issues",
-  "icon": "images/icon.png",
+  "repository": "https://github.com/eclipse-cdt-cloud/vscode-svd-viewer",
+  "qna": "https://github.com/eclipse-cdt-cloud/vscode-svd-viewer/issues",
+  "icon": "media/cdtcloud.png",
   "engines": {
     "vscode": "^1.63.2"
   },
@@ -25,7 +35,6 @@
     "watch": "webpack -w",
     "lint": "eslint . --ext .ts,.tsx",
     "package": "vsce package --yarn",
-    "browser": "vscode-test-web --extensionDevelopmentPath=.",
     "serve": "serve --cors -p 9000"
   },
   "dependencies": {
@@ -37,19 +46,18 @@
     "@types/node": "^12.20.0",
     "@types/vscode": "^1.63.2",
     "@types/xml2js": "^0.4.9",
-    "@typescript-eslint/eslint-plugin": "^4.28.0",
-    "@typescript-eslint/parser": "^4.28.0",
-    "@vscode/test-web": "^0.0.24",
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
+    "@typescript-eslint/parser": "^5.49.0",
+    "@vscode/debugprotocol": "^1.59.0",
+    "@vscode/vsce": "^2.17.0",
     "buffer": "^6.0.3",
-    "eslint": "^7.29.0",
+    "eslint": "^8.33.0",
     "path-browserify": "1.0.1",
     "serve": "^14.0.1",
     "stream-browserify": "^3.0.0",
     "timers-browserify": "^2.0.12",
     "ts-loader": "^9.2.6",
-    "typescript": "^3.9.6",
-    "vsce": "^2.6.4",
-    "vscode-debugprotocol": "^1.51.0",
+    "typescript": "^4.9.4",
     "webpack": "^5.70.0",
     "webpack-cli": "4.9.1"
   },
@@ -98,11 +106,6 @@
         "command": "svd-viewer.svd.refreshAll",
         "title": "Refresh All",
         "icon": "$(refresh)"
-      },
-      {
-        "command": "svd-viewer.svd.collapseAll",
-        "title": "Collapse All",
-        "icon": "$(collapse-all)"
       }
     ],
     "menus": {
@@ -133,10 +136,6 @@
         },
         {
           "command": "svd-viewer.svd.refreshAll",
-          "when": "false"
-        },
-        {
-          "command": "svd-viewer.svd.collapseAll",
           "when": "false"
         }
       ],
@@ -171,11 +170,6 @@
           "command": "svd-viewer.svd.refreshAll",
           "when": "view == svd-viewer.svd && debugState == stopped",
           "group": "navigation"
-        },
-        {
-          "command": "svd-viewer.svd.collapseAll",
-          "when": "view == svd-viewer.svd",
-          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -195,13 +189,13 @@
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.updateNode",
-          "when": "view == svd-viewer.svd && viewItem == registerWO",
+          "command": "svd-viewer.svd.copyValue",
+          "when": "view == svd-viewer.svd && viewItem == field",
           "group": "inline"
         },
         {
           "command": "svd-viewer.svd.copyValue",
-          "when": "view == svd-viewer.svd && viewItem == field",
+          "when": "view == svd-viewer.svd && viewItem == fieldRO",
           "group": "inline"
         },
         {
@@ -271,7 +265,7 @@
         },
         "svd-viewer.packAssetUrl": {
           "type": "string",
-          "default": "https://pack-asset-service.keil.arm.com",
+          "default": "https://pack-content.cmsis.io",
           "description": "Base URL for CMSIS pack assets"
         },
         "svd-viewer.svdAddrGapThreshold": {
@@ -284,7 +278,7 @@
         },
         "svd-viewer.saveLayout": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Save layout of peripheral view between sessions"
         }
       }

@@ -1,20 +1,9 @@
-/*
- * Copyright 2017-2019 Marcel Ball
- * https://github.com/Marus/cortex-debug
+/********************************************************************************
+ * Copyright (C) 2023 Marcel Ball, Arm Limited and others.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without
- * limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
- * Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
- * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
- * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
 
 export function hexFormat(value: number, padding = 8, includePrefix = true): string {
     let base = (value >>> 0).toString(16);
@@ -55,14 +44,17 @@ export function extractBits(value: number, offset: number, width: number): numbe
 }
 
 export function parseInteger(value: string): number | undefined {
-    if ((/^0b([01]+)$/i).test(value)) {
-        return parseInt(value.substring(2), 2);
-    } else if ((/^0x([0-9a-f]+)$/i).test(value)) {
-        return parseInt(value.substring(2), 16);
-    } else if ((/^[0-9]+/i).test(value)) {
-        return parseInt(value, 10);
-    } else if ((/^#[0-1]+/i).test(value)) {
-        return parseInt(value.substring(1), 2);
+    if (value) {
+        value = value.toLowerCase();
+        if ((/^0b([01]+)$/i).test(value)) {
+            return parseInt(value.substring(2), 2);
+        } else if ((/^0x([0-9a-f]+)$/i).test(value)) {
+            return parseInt(value.substring(2), 16);
+        } else if ((/^[0-9]+/i).test(value)) {
+            return parseInt(value, 10);
+        } else if ((/^#[0-1]+/i).test(value)) {
+            return parseInt(value.substring(1), 2);
+        }
     }
 
     return undefined;

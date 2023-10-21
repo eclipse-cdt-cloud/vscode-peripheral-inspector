@@ -1,20 +1,9 @@
-/*
- * Copyright 2017-2019 Marcel Ball
- * https://github.com/Marus/cortex-debug
+/********************************************************************************
+ * Copyright (C) 2023 Marcel Ball, Arm Limited and others.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without
- * limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
- * Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
- * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
- * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
 
 import * as vscode from 'vscode';
 import { PeripheralBaseNode } from './basenode';
@@ -22,9 +11,10 @@ import { PeripheralRegisterNode } from './peripheralregisternode';
 import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheralclusternode';
 import { AddrRange, AddressRangesUtils } from '../../addrranges';
 import { NumberFormat, NodeSetting } from '../../common';
-import { MemReadUtils } from '../../memreadutils';
+import { MemUtils } from '../../memreadutils';
 import { AccessType } from '../../svd-parser';
 import { hexFormat } from '../../utils';
+import { EnumerationMap } from './peripheralfieldnode';
 
 export interface PeripheralOptions {
     name: string;
@@ -52,7 +42,7 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     private currentValue: number[] = [];
 
-    constructor(public session: vscode.DebugSession, public gapThreshold: number, options: PeripheralOptions) {
+    constructor(public gapThreshold: number, options: PeripheralOptions) {
         super();
 
         this.name = options.name;
@@ -125,8 +115,15 @@ export class PeripheralNode extends PeripheralBaseNode {
         }
 
         try {
-            await this.readMemory();
+            const errors = await this.readMemory();
+            for (const error of errors) {
+                const str = `Failed to update peripheral ${this.name}: ${error}`;
+                if (vscode.debug.activeDebugConsole) {
+                    vscode.debug.activeDebugConsole.appendLine(str);
+                }
+            }
         } catch (e) {
+            /* This should never happen */
             const msg = (e as Error).message || 'unknown error';
             const str = `Failed to update peripheral ${this.name}: ${msg}`;
             if (vscode.debug.activeDebugConsole) {
@@ -139,21 +136,26 @@ export class PeripheralNode extends PeripheralBaseNode {
             await Promise.all(promises);
             return true;
         } catch (e) {
-            const msg = (e as Error).message || 'unknown error';
-            const str = `Failed to update peripheral ${this.name}: ${msg}`;
+            /* This should never happen */
+            const str = `Internal error: Failed to update peripheral ${this.name} after memory reads`;
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(str);
             }
-            throw new Error(str);
+            // Could return false, but some things could have been updated. Returning true triggers a GUI refresh
+            return true;
         }
     }
 
-    protected readMemory(): Promise<boolean> {
+    protected readMemory(): Promise<Error[]> | [] {
         if (!this.currentValue) {
             this.currentValue = new Array<number>(this.totalLength);
         }
 
-        return MemReadUtils.readMemoryChunks(this.session, this.baseAddress, this.addrRanges, this.currentValue);
+        if (this.session) {
+            return MemUtils.readMemoryChunks(this.session, this.baseAddress, this.addrRanges, this.currentValue);
+        } else {
+            return [];
+        }
     }
 
     public collectRanges(): void {
@@ -243,6 +245,12 @@ export class PeripheralNode extends PeripheralBaseNode {
             }
         } else {
             return p1.pinned ? -1 : 1;
+        }
+    }
+
+    public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
+        for (const child of this.children) {
+            child.resolveDeferedEnums(enumTypeValuesMap);
         }
     }
 }

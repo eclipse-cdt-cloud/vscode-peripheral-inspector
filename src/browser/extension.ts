@@ -1,6 +1,9 @@
-/**
- * Copyright (C) 2023 Arm Limited
- */
+/********************************************************************************
+ * Copyright (C) 2023 Marcel Ball, Arm Limited and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
 
 import * as vscode from 'vscode';
 import { PeripheralTreeProvider } from '../views/peripheral';
@@ -13,11 +16,11 @@ export const activate = async (context: vscode.ExtensionContext): Promise<SvdReg
     const tracker = new DebugTracker();
     const registry = new SvdRegistry();
     const resolver = new SvdResolver(registry);
-    const peripheralTree = new PeripheralTreeProvider(tracker, resolver);
+    const peripheralTree = new PeripheralTreeProvider(tracker, resolver, context);
     const commands = new Commands(peripheralTree);
 
     await tracker.activate(context);
-    await peripheralTree.activate(context);
+    await peripheralTree.activate();
     await commands.activate(context);
 
     return registry;
