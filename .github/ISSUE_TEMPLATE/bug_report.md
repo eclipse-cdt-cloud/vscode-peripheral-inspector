@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 <!-- Prior to creating a bug report, please review
-existing issues at https://github.com/cortex-debug/svd-viewer/issues
+existing issues at https://github.com/eclipse-cdt-cloud/vscode-svd-viewer/issues
 to avoid creating duplicates.
 -->
 
