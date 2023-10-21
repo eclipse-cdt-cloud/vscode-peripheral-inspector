@@ -137,10 +137,6 @@
         {
           "command": "svd-viewer.svd.refreshAll",
           "when": "false"
-        },
-        {
-          "command": "svd-viewer.svd.collapseAll",
-          "when": "false"
         }
       ],
       "touchBar": [

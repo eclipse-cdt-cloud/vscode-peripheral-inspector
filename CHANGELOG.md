@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.1.3] - 2023-10-21
+
+### New Features
+
+- Synced with peripheral-viewer
+
 ## [v1.1.1] - 2023-01-30
 
 ### New Features
