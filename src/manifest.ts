@@ -17,3 +17,4 @@ export const DEFAULT_ADDRGAP = 16;
 export const CONFIG_ASSET_PATH = 'packAssetUrl';
 export const DEFAULT_ASSET_PATH = 'https://pack-content.cmsis.io';
 export const CONFIG_SAVE_LAYOUT = 'saveLayout';
+export const DEFAULT_SAVE_LAYOUT = true;

@@ -52,7 +52,7 @@ export class SvdResolver {
             }
         } catch(e) {
             // eslint-disable-next-line no-console
-            console.warn(e);
+            vscode.debug.activeDebugConsole.appendLine((e as Error).message);
         }
 
         return svdPath;

@@ -282,7 +282,7 @@
         },
         "svd-viewer.saveLayout": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Save layout of peripheral view between sessions"
         }
       }

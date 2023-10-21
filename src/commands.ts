@@ -34,7 +34,7 @@ export class Commands {
                 this.peripheralsForceRefresh();
             }
         } catch (error) {
-            vscode.window.showErrorMessage(`Unable to update value: ${(error as Error).message}`);
+            vscode.debug.activeDebugConsole.appendLine(`Unable to update value: ${(error as Error).message}`);
         }
     }
 

@@ -40,57 +40,10 @@ export class MemUtils {
                 }
             } catch (e: unknown) {
                 const err = e ? e.toString() : 'Unknown error';
-                errors.push(new Error(`peripheral-viewer: readMemory failed @ ${memoryReference} for ${request.count} bytes: ${err}, session=${session.id}`));
+                errors.push(new Error(`readMemory failed @ ${memoryReference} for ${request.count} bytes: ${err}, session=${session.id}`));
             }
         }
         return errors;
-
-        /*
-        const promises = specs.map(async r => {
-            try {
-                const memoryReference = '0x' + r.base.toString(16);
-                const request: DebugProtocol.ReadMemoryArguments = {
-                    memoryReference,
-                    count: r.length
-                };
-
-                const response: Partial<DebugProtocol.ReadMemoryResponse> = {};
-                response.body = await session.customRequest('readMemory', request);
-
-                if (response.body && response.body.data) {
-                    const bytes = Buffer.from(response.body.data, 'base64');
-                    let dst = r.base - startAddr;
-                    for (const byte of bytes) {
-                        storeTo[dst++] = byte;
-                    }
-                }
-
-                return true;
-            } catch(e) {
-                let dst = r.base - startAddr;
-                // tslint:disable-next-line: prefer-for-of
-                for (let ix = 0; ix < r.length; ix++) {
-                    storeTo[dst++] = 0xff;
-                }
-
-                throw (e);
-            }
-        });
-
-        const results = await Promise.all(promises.map((p) => p.catch((e) => e)));
-        const errs: string[] = [];
-        results.map((e) => {
-            if (e instanceof Error) {
-                errs.push(e.message);
-            }
-        });
-
-        if (errs.length !== 0) {
-            throw new Error(errs.join('\n'));
-        }
-
-        return true;
-        */
     }
 
     public static readMemory(session: vscode.DebugSession, startAddr: number, length: number, storeTo: number[]): Promise<Error[]> {
@@ -122,7 +75,7 @@ export class MemUtils {
             await session.customRequest('writeMemory', request);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
-            vscode.window.showErrorMessage(`Failed to write @ ${memoryReference}: ${e.toString()}`);
+            vscode.debug.activeDebugConsole.appendLine(`Failed to write @ ${memoryReference}: ${e.toString()}`);
             return false;
         }
         return true;

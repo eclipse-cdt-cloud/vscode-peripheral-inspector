@@ -270,7 +270,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
                 this.currentValue = buffer.readUInt32LE(0);
                 break;
             default:
-                vscode.window.showErrorMessage(`Register ${this.name} has invalid size: ${this.size}. Should be 8, 16 or 32.`);
+                vscode.debug.activeDebugConsole.appendLine(`Register ${this.name} has invalid size: ${this.size}. Should be 8, 16 or 32.`);
                 break;
         }
         this.children.forEach((f) => f.updateData());
