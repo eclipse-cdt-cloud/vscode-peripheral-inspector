@@ -1,6 +1,6 @@
 {
-  "name": "svd-viewer",
-  "displayName": "SVD Viewer",
+  "name": "peripheral-inspector",
+  "displayName": "Peripheral Inspector",
   "description": "Standalone SVD Viewer extension extracted from cortex-debug",
   "version": "1.3.0",
   "preview": true,
@@ -65,45 +65,45 @@
     "views": {
       "debug": [
         {
-          "id": "svd-viewer.svd",
+          "id": "peripheral-inspector.svd",
           "name": "Peripherals",
-          "when": "svd-viewer.svd.hasData"
+          "when": "peripheral-inspector.svd.hasData"
         }
       ]
     },
     "commands": [
       {
-        "command": "svd-viewer.svd.updateNode",
+        "command": "peripheral-inspector.svd.updateNode",
         "title": "Update Value",
         "icon": "$(edit)"
       },
       {
-        "command": "svd-viewer.svd.copyValue",
+        "command": "peripheral-inspector.svd.copyValue",
         "title": "Copy Value",
         "icon": "$(files)"
       },
       {
-        "command": "svd-viewer.svd.forceRefresh",
+        "command": "peripheral-inspector.svd.forceRefresh",
         "title": "Refresh",
         "icon": "$(refresh)"
       },
       {
-        "command": "svd-viewer.svd.pin",
+        "command": "peripheral-inspector.svd.pin",
         "title": "Pin",
         "icon": "$(pin)"
       },
       {
-        "command": "svd-viewer.svd.unpin",
+        "command": "peripheral-inspector.svd.unpin",
         "title": "Unpin",
         "icon": "$(pinned)"
       },
       {
-        "command": "svd-viewer.svd.setFormat",
+        "command": "peripheral-inspector.svd.setFormat",
         "title": "Set Value Format",
         "icon": "$(symbol-unit)"
       },
       {
-        "command": "svd-viewer.svd.refreshAll",
+        "command": "peripheral-inspector.svd.refreshAll",
         "title": "Refresh All",
         "icon": "$(refresh)"
       }
@@ -111,164 +111,164 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "svd-viewer.svd.updateNode",
+          "command": "peripheral-inspector.svd.updateNode",
           "when": "false"
         },
         {
-          "command": "svd-viewer.svd.copyValue",
+          "command": "peripheral-inspector.svd.copyValue",
           "when": "false"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
+          "command": "peripheral-inspector.svd.forceRefresh",
           "when": "false"
         },
         {
-          "command": "svd-viewer.svd.pin",
+          "command": "peripheral-inspector.svd.pin",
           "when": "false"
         },
         {
-          "command": "svd-viewer.svd.unpin",
+          "command": "peripheral-inspector.svd.unpin",
           "when": "false"
         },
         {
-          "command": "svd-viewer.svd.setFormat",
+          "command": "peripheral-inspector.svd.setFormat",
           "when": "false"
         },
         {
-          "command": "svd-viewer.svd.refreshAll",
+          "command": "peripheral-inspector.svd.refreshAll",
           "when": "false"
         }
       ],
       "touchBar": [
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem == registerRW"
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem == register"
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == register"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem == registerRO"
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem =~ /peripheral.*/"
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/"
         },
         {
-          "command": "svd-viewer.svd.pin",
-          "when": "view == svd-viewer.svd && viewItem == peripheral"
+          "command": "peripheral-inspector.svd.pin",
+          "when": "view == peripheral-inspector.svd && viewItem == peripheral"
         },
         {
-          "command": "svd-viewer.svd.unpin",
-          "when": "view == svd-viewer.svd && viewItem == peripheral.pinned"
+          "command": "peripheral-inspector.svd.unpin",
+          "when": "view == peripheral-inspector.svd && viewItem == peripheral.pinned"
         }
       ],
       "view/title": [
         {
-          "command": "svd-viewer.svd.refreshAll",
-          "when": "view == svd-viewer.svd && debugState == stopped",
+          "command": "peripheral-inspector.svd.refreshAll",
+          "when": "view == peripheral-inspector.svd && debugState == stopped",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "svd-viewer.svd.updateNode",
-          "when": "view == svd-viewer.svd && viewItem == field",
+          "command": "peripheral-inspector.svd.updateNode",
+          "when": "view == peripheral-inspector.svd && viewItem == field",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.updateNode",
-          "when": "view == svd-viewer.svd && viewItem == fieldWO",
+          "command": "peripheral-inspector.svd.updateNode",
+          "when": "view == peripheral-inspector.svd && viewItem == fieldWO",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.updateNode",
-          "when": "view == svd-viewer.svd && viewItem == registerRW",
+          "command": "peripheral-inspector.svd.updateNode",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.copyValue",
-          "when": "view == svd-viewer.svd && viewItem == field",
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == field",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.copyValue",
-          "when": "view == svd-viewer.svd && viewItem == fieldRO",
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == fieldRO",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.copyValue",
-          "when": "view == svd-viewer.svd && viewItem == registerRW",
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.copyValue",
-          "when": "view == svd-viewer.svd && viewItem == registerRO",
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem == registerRW",
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem == register",
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == register",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem == registerRO",
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.forceRefresh",
-          "when": "view == svd-viewer.svd && viewItem =~ /peripheral.*/",
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.pin",
-          "when": "view == svd-viewer.svd && viewItem == peripheral",
+          "command": "peripheral-inspector.svd.pin",
+          "when": "view == peripheral-inspector.svd && viewItem == peripheral",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.unpin",
-          "when": "view == svd-viewer.svd && viewItem == peripheral.pinned",
+          "command": "peripheral-inspector.svd.unpin",
+          "when": "view == peripheral-inspector.svd && viewItem == peripheral.pinned",
           "group": "inline"
         },
         {
-          "command": "svd-viewer.svd.setFormat",
-          "when": "view == svd-viewer.svd",
+          "command": "peripheral-inspector.svd.setFormat",
+          "when": "view == peripheral-inspector.svd",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
-      "title": "SVD Viewer",
+      "title": "Peripheral Inspector",
       "properties": {
-        "svd-viewer.svdPathConfig": {
+        "peripheral-inspector.svdPathConfig": {
           "type": "string",
           "default": "svdPath",
           "description": "Debug configuration key to use to get the SVD path"
         },
-        "svd-viewer.deviceConfig": {
+        "peripheral-inspector.deviceConfig": {
           "type": "string",
           "default": "deviceName",
           "description": "Debug configuration key to use to get the device name"
         },
-        "svd-viewer.processorConfig": {
+        "peripheral-inspector.processorConfig": {
           "type": "string",
           "default": "processorName",
           "description": "Debug configuration key to use to get the processor name"
         },
-        "svd-viewer.packAssetUrl": {
+        "peripheral-inspector.packAssetUrl": {
           "type": "string",
           "default": "https://pack-content.cmsis.io",
           "description": "Base URL for CMSIS pack assets"
         },
-        "svd-viewer.svdAddrGapThreshold": {
+        "peripheral-inspector.svdAddrGapThreshold": {
           "type": "number",
           "default": 16,
           "multipleOf": 1,
@@ -276,7 +276,7 @@
           "maximum": 32,
           "description": "If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow"
         },
-        "svd-viewer.saveLayout": {
+        "peripheral-inspector.saveLayout": {
           "type": "boolean",
           "default": true,
           "description": "Save layout of peripheral view between sessions"

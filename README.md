@@ -1,4 +1,4 @@
-# Cortex Debug SVD Viewer
+# Embedded Peripheral Inspector
 
 Standalone SVD Viewer extension extracted from [cortex-debug](https://github.com/Marus/cortex-debug)
 
@@ -77,6 +77,6 @@ All variable key names used to extract data from debug launch configurations can
 
 The following list outlines the setting names and default values:
 
-- `svd-viewer.svdPathConfig` - Debug configuration key to use to get the SVD path (default `svdPath`)
-- `svd-viewer.deviceConfig` - Debug configuration key to use to get the device name (default: `deviceName`)
-- `svd-viewer.processorConfig` - Debug configuration key to use to get the processor name (default: `processorName`)
+- `peripheral-inspector.svdPathConfig` - Debug configuration key to use to get the SVD path (default `svdPath`)
+- `peripheral-inspector.deviceConfig` - Debug configuration key to use to get the device name (default: `deviceName`)
+- `peripheral-inspector.processorConfig` - Debug configuration key to use to get the processor name (default: `processorName`)

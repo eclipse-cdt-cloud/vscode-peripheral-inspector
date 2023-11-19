@@ -5,7 +5,7 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-export const PACKAGE_NAME = 'svd-viewer';
+export const PACKAGE_NAME = 'peripheral-inspector';
 export const CONFIG_SVD_PATH = 'svdPathConfig';
 export const DEFAULT_SVD_PATH = 'svdPath';
 export const CONFIG_DEVICE = 'deviceConfig';
