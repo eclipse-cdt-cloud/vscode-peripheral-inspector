@@ -248,10 +248,10 @@
     "configuration": {
       "title": "Peripheral Inspector",
       "properties": {
-        "peripheral-inspector.svdPathConfig": {
+        "peripheral-inspector.definitionPathConfig": {
           "type": "string",
-          "default": "svdPath",
-          "description": "Debug configuration key to use to get the SVD path"
+          "default": "definitionPath",
+          "description": "Debug configuration key to use to get the path for the definition file"
         },
         "peripheral-inspector.deviceConfig": {
           "type": "string",

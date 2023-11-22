@@ -10,12 +10,12 @@ Choose one of the following methods to specify your SVD file in your `launch.jso
 
 ### Use the CMSIS pack asset service
 
-Set the `svdPath` configuration variable to a qualified pack reference in the form `<vendor>::<device family pack>@<version>` e.g.:
+Set the `definitionPath` configuration variable to a qualified pack reference in the form `<vendor>::<device family pack>@<version>` e.g.:
 
 ```json
 {
     ...
-    "svdPath": "NXP::K32L3A60_DFP@15.0.0"
+    "definitionPath": "NXP::K32L3A60_DFP@15.0.0"
     ...
 }
 ```
@@ -25,7 +25,7 @@ If the pack supports multiple devices and/or processors, you will be prompted to
 ```json
 {
     ...
-    "svdPath": "NXP::K32L3A60_DFP@15.0.0",
+    "definitionPath": "NXP::K32L3A60_DFP@15.0.0",
     "deviceName": "K32L3A60VPJ1A",
     "processorName": "cm4"
     ...
@@ -37,7 +37,7 @@ __TIP:__ The pack reference and device name can be automatically derived if you 
 ```json
 {
     ...
-    "svdPath": "${command:device-manager.getDevicePack}",
+    "definitionPath": "${command:device-manager.getDevicePack}",
     "deviceName": "${command:device-manager.getDeviceName}"
     ...
 }
@@ -61,12 +61,12 @@ You can obtain an SVD file from a [CMSIS pack](https://developer.arm.com/tools-a
 
 Other vendors may ship SVD files when you install their software or device packs or you could write your own custom SVD file.
 
-Once you have the SVD file, specify the location of it in your `launch.json` using the `svdPath` variable:
+Once you have the SVD file, specify the location of it in your `launch.json` using the `definitionPath` variable:
 
 ```json
 {
     ...
-    "svdPath": "${workspaceFolder}/STM32F103.svd"
+    "definitionPath": "${workspaceFolder}/STM32F103.svd"
     ...
 }
 ```
@@ -77,6 +77,6 @@ All variable key names used to extract data from debug launch configurations can
 
 The following list outlines the setting names and default values:
 
-- `peripheral-inspector.svdPathConfig` - Debug configuration key to use to get the SVD path (default `svdPath`)
+- `peripheral-inspector.definitionPathConfig` - Debug configuration key to use to get the SVD path (default `definitionPath`)
 - `peripheral-inspector.deviceConfig` - Debug configuration key to use to get the device name (default: `deviceName`)
 - `peripheral-inspector.processorConfig` - Debug configuration key to use to get the processor name (default: `processorName`)
