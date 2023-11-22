@@ -250,7 +250,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             this.peripherials.sort(PeripheralNode.compare);
             // this.fireCb();
         } catch(e) {
-            this.errMessage = `Unable to parse SVD file ${svdPath}: ${(e as Error).message}`;
+            this.errMessage = `Unable to parse definition file ${svdPath}: ${(e as Error).message}`;
             vscode.debug.activeDebugConsole.appendLine(this.errMessage);
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(this.errMessage);
