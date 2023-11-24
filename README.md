@@ -71,6 +71,20 @@ Once you have the SVD file, specify the location of it in your `launch.json` usi
 }
 ```
 
+### Extending Peripheral Inspector
+
+It is possible to extend the Peripheral Inspector with new file extension providers in your VSCode extension. This method will provide reading new file formats and load the peripherals information into the Peripheral Inspector.
+
+```json
+{
+    ...
+    "definitionPath": "${workspaceFolder}/STM32F103.<customFileExtension>"
+    ...
+}
+```
+
+For more details about the implementation, please check the [Extending Peripheral Inspector](./docs/extending-peripheral-inspector.md) document.
+
 ## Settings
 
 All variable key names used to extract data from debug launch configurations can be modified. This allows variable name clashes to be avoided as well as the need to duplicate configuration entries.

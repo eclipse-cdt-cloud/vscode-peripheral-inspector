@@ -12,20 +12,8 @@ import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './periph
 import { AddrRange, AddressRangesUtils } from '../../addrranges';
 import { NumberFormat, NodeSetting } from '../../common';
 import { MemUtils } from '../../memreadutils';
-import { AccessType } from '../../svd-parser';
 import { hexFormat } from '../../utils';
-import { EnumerationMap } from './peripheralfieldnode';
-
-export interface PeripheralOptions {
-    name: string;
-    baseAddress: number;
-    totalLength: number;
-    description: string;
-    groupName?: string;
-    accessType?: AccessType;
-    size?: number;
-    resetValue?: number;
-}
+import { AccessType, EnumerationMap, PeripheralOptions } from '../../api-types';
 
 export class PeripheralNode extends PeripheralBaseNode {
     private children: Array<PeripheralRegisterNode | PeripheralClusterNode>;
@@ -54,6 +42,16 @@ export class PeripheralNode extends PeripheralBaseNode {
         this.size = options.size || 32;
         this.children = [];
         this.addrRanges = [];
+
+        options.clusters?.forEach((clusterOptions) => {
+            const cluster = new PeripheralClusterNode(this, clusterOptions);
+            this.addChild(cluster);
+        });
+
+        options.registers?.forEach((registerOptions) => {
+            const register = new PeripheralRegisterNode(this, registerOptions);
+            this.addChild(register);
+        });
     }
 
     public getPeripheral(): PeripheralBaseNode {

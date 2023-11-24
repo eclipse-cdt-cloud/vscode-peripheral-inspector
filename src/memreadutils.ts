@@ -38,7 +38,7 @@ export class MemUtils {
                         storeTo[dst++] = byte;
                     }
                 }
-            } catch (e: unknown) {
+            } catch (e: any) {
                 const err = e ? e.toString() : 'Unknown error';
                 errors.push(new Error(`readMemory failed @ ${memoryReference} for ${request.count} bytes: ${err}, session=${session.id}`));
             }

@@ -9,15 +9,13 @@
 
 import { PeripheralRegisterNode } from './views/nodes/peripheralregisternode';
 import { PeripheralClusterNode, PeripheralOrClusterNode } from './views/nodes/peripheralclusternode';
-import { PeripheralFieldNode, EnumerationMap, EnumeratedValue } from './views/nodes/peripheralfieldnode';
+import { PeripheralFieldNode } from './views/nodes/peripheralfieldnode';
 import { PeripheralNode } from './views/nodes/peripheralnode';
 import { parseInteger, parseDimIndex } from './utils';
+import { parseStringPromise } from 'xml2js';
+import { AccessType, EnumerationMap } from './api-types';
+import { EnumeratedValue } from './enumerated-value';
 
-export enum AccessType {
-    ReadOnly = 1,
-    ReadWrite,
-    WriteOnly
-}
 
 const accessTypeFromString = (type: string): AccessType => {
     switch (type) {
@@ -62,7 +60,8 @@ export class SVDParser {
     constructor() {}
 
     public async parseSVD(
-        svdData: SvdData, gapThreshold: number): Promise<PeripheralNode[]> {
+        data: string, gapThreshold: number): Promise<PeripheralNode[]> {
+        const svdData: SvdData = await parseStringPromise(data);
         this.gapThreshold = gapThreshold;
         this.enumTypeValuesMap = {};
         this.peripheralRegisterMap = {};
@@ -479,3 +478,5 @@ export class SVDParser {
         return peripheral;
     }
 }
+
+

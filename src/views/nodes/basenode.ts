@@ -8,7 +8,7 @@
 import { Command, TreeItem, DebugSession } from 'vscode';
 import { NumberFormat, NodeSetting } from '../../common';
 import { AddrRange } from '../../addrranges';
-import { EnumerationMap } from './peripheralfieldnode';
+import { EnumerationMap } from '../../api-types';
 
 export abstract class BaseNode {
     public expanded: boolean;
