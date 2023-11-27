@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.4.0] - 2023-11-27
+
+### New Features
+
+- Renamed to peripheral-inspector
+
 ## [v1.3.0] - 2023-10-21
 
 ### New Features
