@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.5.0] - 2023-12-09
+
+### New Features
+
+- Added support for non-svd peripheral definition files ([Asim Gunes](https://github.com/asimgunes))
+
 ## [v1.4.0] - 2023-11-27
 
 ### New Features
