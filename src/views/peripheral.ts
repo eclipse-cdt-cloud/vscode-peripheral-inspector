@@ -7,17 +7,17 @@
 
 import * as vscode from 'vscode';
 import * as manifest from '../manifest';
-import { parseStringPromise } from 'xml2js';
 import { BaseNode, PeripheralBaseNode } from './nodes/basenode';
 import { PeripheralNode } from './nodes/peripheralnode';
 import { MessageNode } from './nodes/messagenode';
 import { NodeSetting } from '../common';
-import { SvdData, SVDParser } from '../svd-parser';
+import { SVDParser } from '../svd-parser';
 import { AddrRange } from '../addrranges';
 import { DebugTracker } from '../debug-tracker';
 import { SvdResolver } from '../svd-resolver';
 import { readFromUrl } from '../utils';
 import { PeripheralRegisterNode } from './nodes/peripheralregisternode';
+import { PeripheralInspectorAPI } from '../peripheral-inspector-api';
 
 const pathToUri = (path: string): vscode.Uri => {
     try {
@@ -42,6 +42,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
     constructor(
         public session: vscode.DebugSession,
+        protected api: PeripheralInspectorAPI,
         public state: vscode.TreeItemCollapsibleState,
         private fireCb: () => void) {
         super();
@@ -115,10 +116,9 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     }
 
     private async createPeripherals(svdPath: string, gapThreshold: number): Promise<void> {
-        let svdData: SvdData | undefined;
-
         this.errMessage = `Loading ${svdPath} ...`;
         let fileUri: vscode.Uri | undefined = undefined;
+        let peripherials: PeripheralNode[] | undefined;
         try {
             let contents: ArrayBuffer | undefined;
 
@@ -137,23 +137,38 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                 contents = await vscode.workspace.fs.readFile(fileUri);
             }
 
-            if (contents) {
-                const decoder = new TextDecoder();
-                const xml = decoder.decode(contents);
-                svdData = await parseStringPromise(xml);
+            if (!contents) {
+                return;
             }
-        } catch(e) {
+            const decoder = new TextDecoder();
+            const data = decoder.decode(contents);
+            const provider = this.api.getPeripheralsProvider(svdPath);
+            if (provider) {
+                const enumTypeValuesMap = {};
+                const poptions = await provider.getPeripherals(data, { gapThreshold });
+                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options));
+                peripherials.sort(PeripheralNode.compare);
+
+                for (const p of peripherials) {
+                    p.resolveDeferedEnums(enumTypeValuesMap); // This can throw an exception
+                    p.collectRanges();
+                }
+            } else {
+                const parser = new SVDParser();
+                peripherials = await parser.parseSVD(data, gapThreshold);
+            }
+
+        } catch(e: any) {
             this.errMessage = `${svdPath}: Error: ${e ? e.toString() : 'Unknown error'}`;
             vscode.debug.activeDebugConsole.appendLine(this.errMessage);
         }
 
-        if (!svdData) {
+        if(!peripherials || peripherials.length === 0) {
             return;
         }
 
         try {
-            const parser = new SVDParser();
-            this.peripherials = await parser.parseSVD(svdData, gapThreshold);
+            this.peripherials = peripherials;
             this.loaded = true;
             await this.setSession(this.session);
             if (fileUri) {
@@ -164,7 +179,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             this.loaded = false;
             throw e;
         }
-
+        this.loaded = true;
         this.errMessage = '';
     }
 
@@ -279,7 +294,7 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
     protected sessionPeripheralsMap = new Map <string, PeripheralTreeForSession>();
     protected oldState = new Map <string, vscode.TreeItemCollapsibleState>();
 
-    constructor(tracker: DebugTracker, protected resolver: SvdResolver, protected context: vscode.ExtensionContext) {
+    constructor(tracker: DebugTracker, protected resolver: SvdResolver, protected api: PeripheralInspectorAPI, protected context: vscode.ExtensionContext) {
         tracker.onWillStartSession(session => this.debugSessionStarted(session));
         tracker.onWillStopSession(session => this.debugSessionTerminated(session));
         tracker.onDidStopDebug(session => this.debugStopped(session));
@@ -359,7 +374,7 @@ export class PeripheralTreeProvider implements vscode.TreeDataProvider<Periphera
         if (state === undefined) {
             state = this.sessionPeripheralsMap.size === 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
         }
-        const regs = new PeripheralTreeForSession(session, state, () => {
+        const regs = new PeripheralTreeForSession(session, this.api, state, () => {
             this._onDidChangeTreeData.fire(undefined);
         });
 

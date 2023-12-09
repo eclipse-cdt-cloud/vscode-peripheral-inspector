@@ -9,13 +9,13 @@ import * as vscode from 'vscode';
 import * as manifest from './manifest';
 import { isAbsolute, join, normalize } from 'path';
 import { parseStringPromise } from 'xml2js';
-import { SvdRegistry } from './svd-registry';
+import { PeripheralInspectorAPI } from './peripheral-inspector-api';
 import { parsePackString, pdscFromPack, fileFromPack, Pack } from './cmsis-pack/pack-utils';
 import { PDSC, Device, DeviceVariant, getDevices, getSvdPath, getProcessors } from './cmsis-pack/pdsc';
 import { readFromUrl } from './utils';
 
 export class SvdResolver {
-    public constructor(protected registry: SvdRegistry) {
+    public constructor(protected api: PeripheralInspectorAPI) {
     }
 
     public async resolve(session: vscode.DebugSession, wsFolderPath?: vscode.Uri): Promise<string | undefined> {
@@ -45,9 +45,9 @@ export class SvdResolver {
                     }
                 }
             } else if (deviceName) {
-                svdPath = this.registry.getSVDFile(deviceName);
+                svdPath = this.api.getSVDFile(deviceName);
                 if (!svdPath) {
-                    svdPath = await this.registry.getSVDFileFromCortexDebug(deviceName);
+                    svdPath = await this.api.getSVDFileFromCortexDebug(deviceName);
                 }
             }
         } catch(e) {

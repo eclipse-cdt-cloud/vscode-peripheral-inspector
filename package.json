@@ -18,6 +18,7 @@
   "license": "MIT",
   "main": "dist/desktop/extension.js",
   "browser": "dist/browser/extension.js",
+  "types": "dist/desktop/extension.d.ts",
   "repository": "https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector",
   "qna": "https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues",
   "icon": "media/cdtcloud.png",

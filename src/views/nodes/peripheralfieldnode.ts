@@ -8,28 +8,10 @@
 import * as vscode from 'vscode';
 import { PeripheralBaseNode } from './basenode';
 import { PeripheralRegisterNode } from './peripheralregisternode';
-import { AccessType } from '../../svd-parser';
 import { AddrRange } from '../../addrranges';
 import { NumberFormat, NodeSetting } from '../../common';
 import { parseInteger, binaryFormat, hexFormat } from '../../utils';
-
-export interface EnumerationMap {
-    [value: number]: EnumeratedValue;
-}
-
-export class EnumeratedValue {
-    constructor(public name: string, public description: string, public value: number) {}
-}
-
-export interface FieldOptions {
-    name: string;
-    description: string;
-    offset: number;
-    width: number;
-    enumeration?: EnumerationMap;
-    derivedFrom?: string;           // Set this if unresolved
-    accessType?: AccessType;
-}
+import { AccessType, EnumerationMap, FieldOptions } from '../../api-types';
 
 export class PeripheralFieldNode extends PeripheralBaseNode {
     public session: vscode.DebugSession | undefined;

@@ -9,21 +9,12 @@ import * as vscode from 'vscode';
 import { PeripheralNode } from './peripheralnode';
 import { PeripheralClusterNode } from './peripheralclusternode';
 import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './basenode';
-import { EnumerationMap, PeripheralFieldNode } from './peripheralfieldnode';
+import { PeripheralFieldNode } from './peripheralfieldnode';
 import { extractBits, createMask, hexFormat, binaryFormat } from '../../utils';
 import { NumberFormat, NodeSetting } from '../../common';
-import { AccessType } from '../../svd-parser';
 import { AddrRange } from '../../addrranges';
 import { MemUtils } from '../../memreadutils';
-
-export interface PeripheralRegisterOptions {
-    name: string;
-    description?: string;
-    addressOffset: number;
-    accessType?: AccessType;
-    size?: number;
-    resetValue?: number;
-}
+import { AccessType, EnumerationMap, PeripheralRegisterOptions } from '../../api-types';
 
 export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     public children: PeripheralFieldNode[];
@@ -59,6 +50,10 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         this.hexRegex = new RegExp(`^0x[0-9a-f]{1,${this.hexLength}}$`, 'i');
         this.children = [];
         this.parent.addChild(this);
+
+        options.fields?.forEach((fieldOptions) => {
+            this.addChild(new PeripheralFieldNode(this, fieldOptions));
+        });
     }
 
     public reset(): void {

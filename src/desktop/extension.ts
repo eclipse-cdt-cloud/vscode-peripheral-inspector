@@ -9,21 +9,23 @@ import * as vscode from 'vscode';
 import { PeripheralTreeProvider } from '../views/peripheral';
 import { Commands } from '../commands';
 import { DebugTracker } from '../debug-tracker';
-import { SvdRegistry } from '../svd-registry';
+import { PeripheralInspectorAPI } from '../peripheral-inspector-api';
 import { SvdResolver } from '../svd-resolver';
+import { IPeripheralInspectorAPI } from '../api-types';
+export * as api from '../api-types';
 
-export const activate = async (context: vscode.ExtensionContext): Promise<SvdRegistry> => {
+export const activate = async (context: vscode.ExtensionContext): Promise<IPeripheralInspectorAPI> => {
     const tracker = new DebugTracker();
-    const registry = new SvdRegistry();
-    const resolver = new SvdResolver(registry);
-    const peripheralTree = new PeripheralTreeProvider(tracker, resolver, context);
+    const api = new PeripheralInspectorAPI();
+    const resolver = new SvdResolver(api);
+    const peripheralTree = new PeripheralTreeProvider(tracker, resolver, api, context);
     const commands = new Commands(peripheralTree);
 
     await tracker.activate(context);
     await peripheralTree.activate();
     await commands.activate(context);
 
-    return registry;
+    return api;
 };
 
 export const deactivate = async (): Promise<void> => {

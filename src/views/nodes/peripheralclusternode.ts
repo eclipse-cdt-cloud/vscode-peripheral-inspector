@@ -9,20 +9,11 @@ import * as vscode from 'vscode';
 import { PeripheralBaseNode, ClusterOrRegisterBaseNode } from './basenode';
 import { PeripheralRegisterNode } from './peripheralregisternode';
 import { PeripheralNode } from './peripheralnode';
-import { AccessType } from '../../svd-parser';
 import { NodeSetting, NumberFormat } from '../../common';
 import { AddrRange } from '../../addrranges';
 import { hexFormat } from '../../utils';
-import { EnumerationMap } from './peripheralfieldnode';
+import { AccessType, ClusterOptions, EnumerationMap } from '../../api-types';
 
-export interface ClusterOptions {
-    name: string;
-    description?: string;
-    addressOffset: number;
-    accessType?: AccessType;
-    size?: number;
-    resetValue?: number;
-}
 
 export type PeripheralOrClusterNode = PeripheralNode | PeripheralClusterNode;
 export type PeripheralRegisterOrClusterNode = PeripheralRegisterNode | PeripheralClusterNode;
@@ -46,6 +37,16 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         this.resetValue = options.resetValue || parent.resetValue;
         this.children = [];
         this.parent.addChild(this);
+
+        options.clusters?.forEach((clusterOptions) => {
+            const cluster = new PeripheralClusterNode(this, clusterOptions);
+            this.addChild(cluster);
+        });
+
+        options.registers?.forEach((registerOptions) => {
+            const register = new PeripheralRegisterNode(this, registerOptions);
+            this.addChild(register);
+        });
     }
 
     public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
