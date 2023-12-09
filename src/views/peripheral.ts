@@ -158,7 +158,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                 peripherials = await parser.parseSVD(data, gapThreshold);
             }
 
-        } catch(e: any) {
+        } catch(e: unknown) {
             this.errMessage = `${svdPath}: Error: ${e ? e.toString() : 'Unknown error'}`;
             vscode.debug.activeDebugConsole.appendLine(this.errMessage);
         }
