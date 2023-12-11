@@ -39,13 +39,13 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         this.parent.addChild(this);
 
         options.clusters?.forEach((clusterOptions) => {
-            const cluster = new PeripheralClusterNode(this, clusterOptions);
-            this.addChild(cluster);
+            // PeripheralClusterNode constructor already adding the reference as child to parent object (PeripheralClusterNode object)
+            new PeripheralClusterNode(this, clusterOptions);
         });
 
         options.registers?.forEach((registerOptions) => {
-            const register = new PeripheralRegisterNode(this, registerOptions);
-            this.addChild(register);
+            // PeripheralRegisterNode constructor already adding the reference as child to parent object (PeripheralClusterNode object)
+            new PeripheralRegisterNode(this, registerOptions);
         });
     }
 
