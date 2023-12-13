@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.5.1] - 2023-12-13
+
+### Bug Fixes
+
+- Fixed duplicate insertion of nodes ([Asim Gunes](https://github.com/asimgunes))
+
 ## [v1.5.0] - 2023-12-09
 
 ### New Features

@@ -2,7 +2,7 @@
   "name": "peripheral-inspector",
   "displayName": "Peripheral Inspector",
   "description": "Standalone Peripheral Inspector extension extracted from cortex-debug",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "publisher": "eclipse-cdt",
   "author": "marus25",
   "contributors": [
