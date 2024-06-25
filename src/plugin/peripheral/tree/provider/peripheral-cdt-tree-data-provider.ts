@@ -19,6 +19,9 @@ export class PeripheralCDTTreeDataProvider implements CDTTreeDataProvider<Periph
     public readonly onDidChangeTreeData = this.onDidChangeTreeDataEvent.event;
 
     constructor(protected readonly dataTracker: PeripheralDataTracker, protected context: vscode.ExtensionContext) {
+        this.dataTracker.onDidSelectionChange(() => {
+            this.onDidChangeTreeDataEvent.fire(undefined);
+        });
         this.dataTracker.onDidChange(() => {
             this.onDidChangeTreeDataEvent.fire(undefined);
         });
