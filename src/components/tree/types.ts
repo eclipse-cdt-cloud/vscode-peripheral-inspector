@@ -19,18 +19,24 @@ export interface CDTTreeOptions {
     tooltip?: string,
 }
 
-export interface CDTTreeTableExpanderColumn {
-    type: 'expander';
-    icon?: string;
-    label: string;
-    tooltip?: string;
+export interface EditableCellData {
+    type: string;
 }
 
-export interface CDTTreeTableStringColumn {
-    type: 'string';
-    label: string;
+export interface NoEditableData extends EditableCellData {
+    type: 'none';
+}
+
+export interface EditableTextData extends EditableCellData {
+    type: 'text';
+}
+
+export interface CDTTreeTableColumn {
+    value: string;
     highlight?: [number, number][];
     tooltip?: string;
+    icon?: string;
+    edit?: EditableTextData | NoEditableData;
 }
 
 export interface CDTTreeItem extends PrimeTreeNode {
@@ -40,13 +46,18 @@ export interface CDTTreeItem extends PrimeTreeNode {
     icon?: string;
     path: string[];
     options?: CDTTreeOptions;
-    columns?: Record<string, CDTTreeTableExpanderColumn | CDTTreeTableStringColumn>;
+    columns?: Record<string, CDTTreeTableColumn>;
     children?: CDTTreeItem[];
 }
 
 export namespace CDTTreeItem {
     export function is(item: PrimeTreeNode): item is CDTTreeItem {
         return '__type' in item && item.__type === 'CDTTreeItem';
+    }
+
+    export function as(item: PrimeTreeNode): CDTTreeItem {
+        assert(item);
+        return item;
     }
 
     export function assert(treeNode: PrimeTreeNode): asserts treeNode is CDTTreeItem {
@@ -67,7 +78,6 @@ export type CDTTreeViewType = 'tree' | 'treetable';
 
 export interface CDTTreeTableColumnDefinition {
     field: string;
-    expander?: boolean;
 }
 
 export interface CDTTreeState {
@@ -86,6 +96,7 @@ export interface CTDTreeWebviewContext {
     webviewSection: string;
     cdtTreeItemId: string;
     cdtTreeItemPath: string[];
+    context?: string;
 }
 
 export namespace CTDTreeWebviewContext {
@@ -98,10 +109,17 @@ export namespace CTDTreeWebviewContext {
     }
 }
 
+export interface CDTTreeItemChangeValue {
+    item: CDTTreeItem;
+    field: string;
+    value: string;
+}
+
 export namespace CTDTreeMessengerType {
     export const updateState: NotificationType<CDTTreeState> = { method: 'updateState' };
     export const ready: NotificationType<void> = { method: 'ready' };
     export const executeCommand: NotificationType<CDTTreeExecuteCommand> = { method: 'executeCommand' };
+    export const changeValue: NotificationType<CDTTreeItemChangeValue> = { method: 'changeValue' };
     export const toggleNode: NotificationType<CDTTreeItem> = { method: 'toggleNode' };
     export const clickNode: NotificationType<CDTTreeItem> = { method: 'clickNode' };
 }

@@ -18,6 +18,7 @@ import React from 'react';
 import { useCDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
 import { createActions, createHighlightedText, createLabelWithTooltip } from './utils';
+import { ExpandToggle } from './Expander';
 
 export type ComponentTreeProps = {
     nodes?: CDTTreeItem[];
@@ -61,13 +62,7 @@ export const ComponentTree = (props: ComponentTreeProps) => {
     };
 
     const togglerTemplate = (node: TreeNode) => {
-        return <div className={
-            classNames('tree-toggler-container', 'codicon', {
-                'codicon-chevron-down': node.expanded,
-                'codicon-chevron-right': !node.expanded && !node.leaf,
-            })
-        }>
-        </div>;
+        return <ExpandToggle item={node} />;
     };
 
     return <div>

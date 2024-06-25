@@ -48,8 +48,8 @@ export abstract class PeripheralBaseNode extends BaseNode {
         this.pinned = false;
     }
 
-    public selected(): Thenable<boolean> {
-        return Promise.resolve(false);
+    public async selected(): Promise<boolean> {
+        return false;
     }
 
     public getId(): string {
@@ -60,8 +60,8 @@ export abstract class PeripheralBaseNode extends BaseNode {
         return this.name ?? this.session?.id ?? 'unknown';
     }
 
-    public abstract performUpdate(): Thenable<boolean>;
-    public abstract updateData(): Thenable<boolean>;
+    public abstract performUpdate(value?: string): Promise<boolean>;
+    public abstract updateData(): Promise<boolean>;
 
     public abstract getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]>;
     public abstract getPeripheral(): PeripheralBaseNode | undefined;

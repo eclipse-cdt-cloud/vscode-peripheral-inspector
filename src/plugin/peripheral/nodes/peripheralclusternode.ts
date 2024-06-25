@@ -15,8 +15,6 @@ import { NumberFormat, NodeSetting } from '../../../common';
 import { hexFormat } from '../../../utils';
 import { CDTTreeItem } from '../../../components/tree/types';
 
-
-
 export type PeripheralOrClusterNode = PeripheralNode | PeripheralClusterNode;
 export type PeripheralRegisterOrClusterNode = PeripheralRegisterNode | PeripheralClusterNode;
 
@@ -92,13 +90,11 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
             },
             columns: {
                 'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
+                    value: this.getLabelTitle(),
                     tooltip: this.description,
                 },
                 'value': {
-                    type: 'string',
-                    label: this.getLabelValue(),
+                    value: this.getLabelValue(),
                     tooltip: this.getLabelValue()
                 }
             }
@@ -139,15 +135,9 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         }
     }
 
-    public updateData(): Thenable<boolean> {
-        return new Promise((resolve, reject) => {
-            const promises = this.children.map((r) => r.updateData());
-            Promise.all(promises).then(() => {
-                resolve(true);
-            }).catch(() => {
-                reject('Failed');
-            });
-        });
+    public async updateData(): Promise<boolean> {
+        await Promise.all(this.children.map((r) => r.updateData()));
+        return true;
     }
 
     public saveState(path: string): NodeSetting[] {
@@ -189,7 +179,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         throw new Error('Method not implemented.');
     }
 
-    public performUpdate(): Thenable<boolean> {
+    public performUpdate(): Promise<boolean> {
         throw new Error('Method not implemented.');
     }
 

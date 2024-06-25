@@ -14,11 +14,12 @@ import './treetable.css';
 import { Column } from 'primereact/column';
 import { TreeNode } from 'primereact/treenode';
 import { TreeTable, TreeTableEvent } from 'primereact/treetable';
-import { classNames } from 'primereact/utils';
 import React from 'react';
 import { useCDTTreeContext } from '../tree-context';
-import { CDTTreeItem, CDTTreeTableColumnDefinition, CDTTreeTableExpanderColumn, CDTTreeTableStringColumn, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
-import { createActions, createHighlightedText, createIcon, createLabelWithTooltip } from './utils';
+import { CDTTreeItem, CDTTreeTableColumnDefinition, CTDTreeMessengerType } from '../types';
+import { LabelCell } from './LabelCell';
+import { TextFieldCell } from './TextFieldCell';
+import { createActions } from './utils';
 
 export type ComponentTreeTableProps = {
     nodes?: CDTTreeItem[];
@@ -52,55 +53,25 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     };
 
     // Sub Components
-    const template = (node: TreeNode, field: string) => {
+    const cellRenderer = (node: TreeNode, field: string, expander: boolean) => {
         CDTTreeItem.assert(node);
 
         const column = node.columns?.[field];
-
-        if (column?.type === 'expander') {
-            return expanderTemplate(node, column);
-        } else if (column?.type === 'string') {
-            return stringTemplate(node, column);
+        if (!column) {
+            return <span>No columns provided for field {field}</span>;
         }
 
-        return <span>No columns provided for field {field}</span>;
-    };
-
-    const expanderTemplate = (node: TreeNode, column: CDTTreeTableExpanderColumn) => {
-        CDTTreeItem.assert(node);
-
-        return <div style={{ paddingLeft: `${((node.path.length ?? 1)) * 8}px` }}
-        >
-            <div className='treetable-node' >
-                <div
-                    className={
-                        classNames('tree-toggler-container', 'codicon', {
-                            'codicon-chevron-down': node.expanded,
-                            'codicon-chevron-right': !node.expanded && !node.leaf,
-                        })
-                    }>
-                </div>
-                {createIcon(node)}
-                {createLabelWithTooltip(<span>{column.label}</span>, column.tooltip)}
-            </div>
-        </div>;
-    };
-
-    const stringTemplate = (node: CDTTreeItem, column: CDTTreeTableStringColumn) => {
-        const text = createHighlightedText(column.label, column.highlight);
-
-        return <div
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.path })}
-        >
-            {createLabelWithTooltip(text, column.tooltip)}
-        </div>;
+        if (column.edit?.type === 'text') {
+            return <TextFieldCell key={node.id} row={node} cell={column} expander={expander} field={field} />;
+        }
+        return <LabelCell key={node.id} row={node} cell={column} expander={expander} />;
     };
 
     const togglerTemplate = () => {
         return <div></div>;
     };
 
-    const actionsTemplate = (node: TreeNode) => {
+    const actionsRenderer = (node: TreeNode) => {
         return <div className='flex align-items-center justify-content-end'>
             {createActions(treeContext, node)}
         </div>;
@@ -125,10 +96,10 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
             onCollapse={event => onToggle(event)}
             onRowClick={event => onClick(event)}
         >
-            {props.columnDefinitions?.map(c => {
-                return <Column field={c.field} body={(node) => template(node, c.field)} expander={c.expander} />;
+            {props.columnDefinitions?.map((column, idx) => {
+                return <Column key={column.field + '-column'} field={column.field} body={(node) => cellRenderer(node, column.field, idx === 0)} expander={idx === 0} />;
             })}
-            <Column field="actions" style={{ width: '64px' }} body={actionsTemplate} />
+            <Column key={'actions-column'} field="actions" style={{ width: '64px' }} body={actionsRenderer} />
         </TreeTable>
     </div>;
 };

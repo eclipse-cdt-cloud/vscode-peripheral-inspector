@@ -52,12 +52,8 @@ export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: strin
     }
 
     return <Tooltip>
-        <TooltipTrigger>
-            {label}
-        </TooltipTrigger>
-        <TooltipContent>
-            <Markdown className="markdown" remarkPlugins={[remarkGfm]}>{tooltip}</Markdown>
-        </TooltipContent>
+        <TooltipTrigger> {label} </TooltipTrigger>
+        <TooltipContent> <Markdown className="markdown" remarkPlugins={[remarkGfm]}>{tooltip}</Markdown> </TooltipContent>
     </Tooltip>;
 }
 
@@ -71,7 +67,7 @@ export function createActions(context: CDTTreeContext, node: TreeNode): React.JS
     };
 
     return <div className="tree-actions">
-        {node.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
+        {node.options?.commands?.map(a => <i key={a.commandId} title={a.title} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
     </div>;
 }
 

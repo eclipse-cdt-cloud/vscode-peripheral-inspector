@@ -9,11 +9,11 @@ import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
 import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
+import { CDTTreeItem } from '../../../components/tree/types';
 import { Commands } from '../../../manifest';
 import { binaryFormat, hexFormat, parseInteger } from '../../../utils';
 import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
 import { PeripheralRegisterNode } from './peripheralregisternode';
-import { CDTTreeItem } from '../../../components/tree/types';
 
 export type PeripheralFieldNodeContextValue = 'field' | 'field-res' | 'fieldRO' | 'fieldWO'
 
@@ -133,17 +133,16 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
             },
             columns: {
                 'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
+                    value: this.getLabelTitle(),
                     tooltip: this.generateTooltipMarkdown(this.isReserved())?.value ?? undefined,
                 },
                 'value': {
-                    type: 'string',
-                    label: labelValue,
+                    value: labelValue,
                     highlight: this.hasHighlights() ?
                         [[0, labelValue.length]]
                         : undefined,
-                    tooltip: labelValue
+                    tooltip: labelValue,
+                    edit: { type: this.getContextValue() === 'field' || this.getContextValue() === 'fieldWO' ? 'text' : 'none' }
                 }
             }
         });
@@ -305,9 +304,10 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return [];
     }
 
-    public performUpdate(): Thenable<boolean> {
-        return new Promise((resolve, reject) => {
-            if (this.enumeration) {
+    public async performUpdate(value?: string): Promise<boolean> {
+        if (this.enumeration) {
+            let numval = value && this.enumerationValues.includes(value) ? this.enumerationMap[value] : undefined;
+            if (numval === undefined) {
                 const items: vscode.QuickPickItem[] = [];
                 for (const eStr of this.enumerationValues) {
                     const numval = this.enumerationMap[eStr];
@@ -318,26 +318,24 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
                     };
                     items.push(item);
                 }
-                vscode.window.showQuickPick(items).then((val) => {
-                    if (val === undefined) {
-                        return false;
-                    }
-
-                    const numval = this.enumerationMap[val.label];
-                    this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
-                });
-            } else {
-                vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() }).then((val) => {
-                    if (typeof val === 'string') {
-                        const numval = parseInteger(val);
-                        if (numval === undefined) {
-                            return false;
-                        }
-                        this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
-                    }
-                });
+                const val = await vscode.window.showQuickPick(items);
+                if (val === undefined) {
+                    return false;
+                }
+                numval = this.enumerationMap[val.label];
             }
-        });
+            return this.parent.updateBits(this.offset, this.width, numval);
+        } else {
+            const val = value ?? await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() });
+            if (typeof val === 'string') {
+                const numval = parseInteger(val);
+                if (numval === undefined) {
+                    return false;
+                }
+                return this.parent.updateBits(this.offset, this.width, numval);
+            }
+        }
+        return false;
     }
 
     public getCopyValue(): string {
@@ -354,9 +352,8 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
-    public updateData(): Thenable<boolean> {
-        this.prevValue = this.getLabelValue();
-        return Promise.resolve(true);
+    public async updateData(): Promise<boolean> {
+        return true;
     }
 
     public getFormat(): NumberFormat {

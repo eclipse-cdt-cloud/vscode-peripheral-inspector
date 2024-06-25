@@ -107,3 +107,7 @@
   overflow: hidden;
   align-items: center;
 }
+
+.tree-node :first-child {
+  flex-grow: 1;
+}

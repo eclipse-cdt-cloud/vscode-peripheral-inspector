@@ -112,13 +112,12 @@ export class PeripheralNode extends PeripheralBaseNode {
             },
             columns: {
                 'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
+                    value: this.getLabelTitle(),
                     tooltip: this.description,
+                    icon: this.pinned ? 'codicon codicon-pinned' : undefined
                 },
                 'value': {
-                    type: 'string',
-                    label: this.getLabelValue(),
+                    value: this.getLabelValue(),
                     tooltip: this.getLabelValue()
                 }
             }
@@ -251,7 +250,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         return this;
     }
 
-    public selected(): Thenable<boolean> {
+    public selected(): Promise<boolean> {
         return this.performUpdate();
     }
 
@@ -287,7 +286,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         }
     }
 
-    public performUpdate(): Thenable<boolean> {
+    public performUpdate(): Promise<boolean> {
         throw new Error('Method not implemented.');
     }
 

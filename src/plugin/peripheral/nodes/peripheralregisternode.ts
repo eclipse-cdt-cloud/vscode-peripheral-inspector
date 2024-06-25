@@ -17,6 +17,7 @@ import { MemUtils } from '../../../memreadutils';
 import { extractBits, hexFormat, createMask, binaryFormat } from '../../../utils';
 import { Commands } from '../../../manifest';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { resolve } from 'dns';
 
 export type PeripheralRegisterNodeContextValue = 'registerRW' | 'registerRO' | 'registerWO'
 
@@ -69,18 +70,15 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return extractBits(this.currentValue, offset, width);
     }
 
-    public updateBits(offset: number, width: number, value: number): Thenable<boolean> {
-        return new Promise((resolve, reject) => {
-            const limit = Math.pow(2, width);
-            if (value > limit) {
-                return reject(`Value entered is invalid. Maximum value for this field is ${limit - 1} (${hexFormat(limit - 1, 0)})`);
-            } else {
-                const mask = createMask(offset, width);
-                const sv = value << offset;
-                const newval = (this.currentValue & ~mask) | sv;
-                this.updateValueInternal(newval).then(resolve, reject);
-            }
-        });
+    public async updateBits(offset: number, width: number, value: number): Promise<boolean> {
+        const limit = Math.pow(2, width);
+        if (value > limit) {
+            throw new Error(`Value entered is invalid. Maximum value for this field is ${limit - 1} (${hexFormat(limit - 1, 0)})`);
+        }
+        const mask = createMask(offset, width);
+        const sv = value << offset;
+        const newval = (this.currentValue & ~mask) | sv;
+        return this.updateValueInternal(newval);
     }
 
     public getCommands(): CommandDefinition[] {
@@ -155,6 +153,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
             expanded: this.expanded,
             path: this.getId().split(PERIPHERAL_ID_SEP),
             options: {
+                // Show edit command even if inline editing is possible until we have more controls to cover proper enum support
                 commands: this.getCommands(),
                 contextValue: this.getContextValue(),
                 tooltip: this.generateTooltipMarkdown()?.value ?? undefined,
@@ -162,17 +161,16 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
             },
             columns: {
                 'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
+                    value: this.getLabelTitle(),
                     tooltip: this.generateTooltipMarkdown()?.value ?? undefined,
                 },
                 'value': {
-                    type: 'string',
-                    label: labelValue,
+                    value: labelValue,
                     highlight: this.hasHighlights() ?
                         [[0, labelValue.length]]
                         : undefined,
-                    tooltip: labelValue
+                    tooltip: labelValue,
+                    edit: { type: this.getContextValue() === 'registerRW' ? 'text' : 'none' }
                 }
             }
         });
@@ -290,17 +288,17 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         }
     }
 
-    public async performUpdate(): Promise<boolean> {
-        const val = await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() });
+    public async performUpdate(value?: string): Promise<boolean> {
+        const val = value ?? await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() });
         if (!val) {
             return false;
         }
 
         let numval: number;
         if (val.match(this.hexRegex)) {
-            numval = parseInt(val.substr(2), 16);
+            numval = parseInt(val.substring(2), 16);
         } else if (val.match(this.binaryRegex)) {
-            numval = parseInt(val.substr(2), 2);
+            numval = parseInt(val.substring(2), 2);
         } else if (val.match(/^[0-9]+/)) {
             numval = parseInt(val, 10);
             if (numval >= this.maxValue) {
@@ -329,7 +327,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return success;
     }
 
-    public updateData(): Thenable<boolean> {
+    public async updateData(): Promise<boolean> {
         const bc = this.size / 8;
         const bytes = this.parent.getBytes(this.offset, bc);
         const buffer = Buffer.from(bytes);
@@ -350,7 +348,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         this.children.forEach((f) => f.updateData());
         this.prevValue = this.getLabelValue();
 
-        return Promise.resolve(true);
+        return true;
     }
 
     public saveState(path?: string): NodeSetting[] {

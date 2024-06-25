@@ -11,7 +11,7 @@
 import * as vscode from 'vscode';
 import { Messenger } from 'vscode-messenger';
 import { WebviewIdMessageParticipant } from 'vscode-messenger-common';
-import { CDTTreeExecuteCommand, CDTTreeItem, CDTTreeState, CDTTreeViewType, CTDTreeMessengerType } from '../../types';
+import { CDTTreeExecuteCommand, CDTTreeItem, CDTTreeItemChangeValue, CDTTreeState, CDTTreeViewType, CTDTreeMessengerType } from '../../types';
 import { CDTTreeDataProvider } from '../tree-data-provider';
 
 export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.WebviewViewProvider {
@@ -22,6 +22,8 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     public readonly onDidExecuteCommand = this.onDidExecuteCommandEvent.event;
     protected onDidClickNodeEvent = new vscode.EventEmitter<CDTTreeItem>();
     public readonly onDidClickNode = this.onDidClickNodeEvent.event;
+    protected onDidChangeValueEvent = new vscode.EventEmitter<CDTTreeItemChangeValue>();
+    public readonly onDidChangeValue = this.onDidChangeValueEvent.event;
 
     abstract readonly type: CDTTreeViewType;
 
@@ -110,6 +112,7 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
             this.messenger.onNotification(CTDTreeMessengerType.executeCommand, (command) => this.onDidExecuteCommandEvent.fire(command), { sender: this.participant }),
             this.messenger.onNotification(CTDTreeMessengerType.toggleNode, node => this.onDidToggleNodeEvent.fire(node), { sender: this.participant }),
             this.messenger.onNotification(CTDTreeMessengerType.clickNode, node => this.onDidClickNodeEvent.fire(node), { sender: this.participant }),
+            this.messenger.onNotification(CTDTreeMessengerType.changeValue, change => this.onDidChangeValueEvent.fire(change), { sender: this.participant }),
         ];
 
         webview.onDidDispose(() => disposables.forEach(disposible => disposible.dispose()));

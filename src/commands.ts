@@ -81,7 +81,7 @@ export class PeripheralCommands {
                 await p.updateData();
             }
         } else {
-            this.dataTracker.updateData();
+            return this.dataTracker.updateData();
         }
     }
 
