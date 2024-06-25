@@ -1,0 +1,109 @@
+/*********************************************************************
+ * Copyright (c) 2024 Arm Limited and others
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *********************************************************************/
+
+.p-tree {
+  border: var(--vscode-border);
+  background: var(--vscode-background);
+  border-radius: 0;
+  padding: 0;
+  font-size: 13px;
+  font-family: var(--vscode-font-family);
+}
+
+.p-tree * {
+  color: var(--vscode-foreground);
+}
+
+.p-tree .p-tree-container {
+  overflow: unset;
+}
+
+.p-tree .p-treenode {
+  padding: 0;
+  outline: 0 none;
+}
+
+.p-tree .p-treenode:focus > .p-treenode-content {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+.p-tree:focus-within .p-treenode > .p-treenode-content.p-highlight {
+  outline: 1px solid var(--vscode-list-focusOutline);
+  outline-offset: -1px;
+  box-shadow: none;
+}
+
+.p-tree .p-treenode-content {
+  line-height: 22px;
+  height: 22px;
+  border-radius: 0;
+  transition: none;
+  padding: 0 0.2rem 0 0.5rem;
+}
+
+.p-tree .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.p-tree .p-treenode-content.p-highlight {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.p-tree:focus-within .p-treenode-content.p-highlight {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.p-tree .p-tree-toggler {
+  margin-right: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--vscode-foreground);
+  border: 0 none;
+  background: transparent;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.p-tree .p-tree-toggler:enabled:hover {
+  color: var(--vscode-foreground);
+  border-color: transparent;
+  background: var(--vscode-input-background);
+}
+
+.p-tree .p-tree-toggler:focus-visible {
+  outline: 0 none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+.p-tree .p-treenode-icon {
+  margin-right: 0.5rem;
+  color: var(--vscode-foreground);
+}
+
+.p-tree .p-treenode-content:hover .tree-actions,
+.p-tree .p-treenode-content:focus .tree-actions,
+.p-tree .p-treenode-content.p-highlight .tree-actions {
+  display: flex;
+  align-items: center;
+}
+
+.p-tree .p-treenode-children {
+  padding: 0 0 0 8px;
+}
+
+.tree-node {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  align-items: center;
+}
