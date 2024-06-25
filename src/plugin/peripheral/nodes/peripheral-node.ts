@@ -14,8 +14,8 @@ import { MemUtils } from '../../../memreadutils';
 import { hexFormat } from '../../../utils';
 import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
 import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
-import { PeripheralRegisterNode } from './peripheral-register-node';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { PeripheralRegisterNode } from './peripheral-register-node';
 
 export type PeripheralNodeContextValue = 'peripheral' | 'peripheral.pinned'
 
@@ -100,7 +100,6 @@ export class PeripheralNode extends PeripheralBaseNode {
     public getCDTTreeItem(): CDTTreeItem {
         return CDTTreeItem.create({
             id: this.getId(),
-            key: this.getId(),
             label: this.getLabel(),
             icon: this.pinned ? 'codicon codicon-pinned' : undefined,
             expanded: this.expanded,

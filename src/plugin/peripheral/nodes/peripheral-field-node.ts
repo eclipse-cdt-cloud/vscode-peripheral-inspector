@@ -12,8 +12,8 @@ import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
 import { Commands } from '../../../manifest';
 import { binaryFormat, hexFormat, parseInteger } from '../../../utils';
 import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
-import { PeripheralRegisterNode } from './peripheral-register-node';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { PeripheralRegisterNode } from './peripheral-register-node';
 
 export type PeripheralFieldNodeContextValue = 'field' | 'field-res' | 'fieldRO' | 'fieldWO'
 
@@ -121,7 +121,6 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
 
         return CDTTreeItem.create({
             id: this.getId(),
-            key: this.getId(),
             label: this.getLabel(),
             leaf: true,
             path: this.getId().split(PERIPHERAL_ID_SEP),

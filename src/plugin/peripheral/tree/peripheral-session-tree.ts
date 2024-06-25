@@ -231,7 +231,6 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     public getCDTTreeItem(): MaybePromise<CDTTreeItem> {
         return CDTTreeItem.create({
             id: this.getId(),
-            key: this.getId(),
             label: this.getTitle(),
             path: [],
         });

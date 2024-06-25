@@ -14,6 +14,8 @@ import { classNames } from 'primereact/utils';
 import React, { useEffect, useState } from 'react';
 import { useCDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
+import { SearchOverlay } from './search-overlay';
+
 import { createActions, createHighlightedText, createLabelWithTooltip } from './utils';
 import { ProgressBar } from 'primereact/progressbar';
 
@@ -25,12 +27,14 @@ export type ComponentTreeProps = {
 
 const PROGRESS_BAR_HIDE_DELAY = 200;
 
-export const ComponentTree = (props: ComponentTreeProps) => {
+export const ComponentTree = ({ nodes, selectedNode, isLoading }: ComponentTreeProps) => {
     const treeContext = useCDTTreeContext();
     const [showProgressBar, setShowProgressBar] = useState(false);
+    const [filter, setFilter] = React.useState<string | undefined>();
+    const searchRef = React.useRef<SearchOverlay>(null);
 
     useEffect(() => {
-        if (!props.isLoading) {
+        if (!isLoading) {
             // Delay hiding the progress bar to allow the animation to complete
             const timer = setTimeout(() => {
                 setShowProgressBar(false);
@@ -39,19 +43,23 @@ export const ComponentTree = (props: ComponentTreeProps) => {
         } else {
             setShowProgressBar(true);
         }
-    }, [props.isLoading]);
+    }, [isLoading]);
 
     // Assemble the tree
-    if (props.nodes === undefined) {
+    if (nodes === undefined) {
+        return <div>loading</div>;
+    }
+
+    // Assemble the tree
+    if (nodes === undefined) {
         return <div>
             <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
         </div>;
     }
 
-    if (!props.nodes.length) {
+    if (!nodes.length) {
         return <div>No children provided</div>;
     }
-
 
     // Event handler
     const onToggle = async (event: TreeEventNodeEvent) => {
@@ -70,9 +78,9 @@ export const ComponentTree = (props: ComponentTreeProps) => {
     const nodeTemplate = (node: TreeNode) => {
         CDTTreeItem.assert(node);
         return <div className='tree-node'
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.path })}
+            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.data.path })}
         >
-            {createLabelWithTooltip(createHighlightedText(node.label, node.options?.highlights), node.options?.tooltip)}
+            {createLabelWithTooltip(createHighlightedText(node.label, node.data.options?.highlights), node.data.options?.tooltip)}
             {createActions(treeContext, node)}
         </div>;
     };
@@ -87,24 +95,42 @@ export const ComponentTree = (props: ComponentTreeProps) => {
         </div>;
     };
 
-    return <div>
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            e.stopPropagation();
+            searchRef.current?.show();
+        }
+    };
+
+    const onSearchShow = () => setFilter(searchRef.current?.value());
+    const onSearchHide = () => setFilter(undefined);
+    const onSearchChange = (text: string) => setFilter(text);
+
+    return <div onKeyDown={onKeyDown}>
         <div className='progress-bar-container'>
             {showProgressBar &&
                 <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
             }
         </div>
+        <SearchOverlay key={'search'} ref={searchRef} onHide={onSearchHide} onShow={onSearchShow} onChange={onSearchChange} />
         <Tree
-            value={props.nodes}
+            value={nodes}
             className="w-full md:w-30rem"
             style={{ minWidth: '10rem' }}
             nodeTemplate={nodeTemplate}
             togglerTemplate={togglerTemplate}
             selectionMode='single'
-            selectionKeys={props.selectedNode?.key?.toString()}
+            selectionKeys={selectedNode?.key?.toString()}
             onNodeClick={event => onClick(event)}
             onExpand={event => onToggle(event)}
             onCollapse={event => onToggle(event)}
+            filter={true}
+            filterMode='strict'
+            filterValue={filter}
+            onFilterValueChange={() => { /* needed as otherwise the filter value is not taken into account */ }}
+            showHeader={false}
         />
-    </div >;
+    </div>;
 };
 

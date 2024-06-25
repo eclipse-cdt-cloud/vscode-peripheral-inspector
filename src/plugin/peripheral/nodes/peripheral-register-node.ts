@@ -150,7 +150,6 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         const labelValue = this.getLabelValue();
         return CDTTreeItem.create({
             id: this.getId(),
-            key: this.getId(),
             label: this.getLabel(),
             expanded: this.expanded,
             path: this.getId().split(PERIPHERAL_ID_SEP),
