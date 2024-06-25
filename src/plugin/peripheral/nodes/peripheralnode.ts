@@ -100,7 +100,6 @@ export class PeripheralNode extends PeripheralBaseNode {
     public getCDTTreeItem(): CDTTreeItem {
         return CDTTreeItem.create({
             id: this.getId(),
-            key: this.getId(),
             label: this.getLabel(),
             icon: this.pinned ? 'codicon codicon-pinned' : undefined,
             expanded: this.expanded,

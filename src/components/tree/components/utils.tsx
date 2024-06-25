@@ -71,7 +71,7 @@ export function createActions(context: CDTTreeContext, node: TreeNode): React.JS
     };
 
     return <div className="tree-actions">
-        {node.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
+        {node.data.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
     </div>;
 }
 

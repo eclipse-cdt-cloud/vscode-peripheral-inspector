@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  *********************************************************************/
 
-import './common.css';
-import './tree.css';
-
 import { Tree, TreeEventNodeEvent, TreeNodeClickEvent } from 'primereact/tree';
 import { TreeNode } from 'primereact/treenode';
 import { classNames } from 'primereact/utils';
 import React from 'react';
 import { useCDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
+import './common.css';
+import { SearchOverlay } from './search-overlay';
+import './tree.css';
 import { createActions, createHighlightedText, createLabelWithTooltip } from './utils';
 
 export type ComponentTreeProps = {
@@ -24,17 +24,19 @@ export type ComponentTreeProps = {
     selectedNode?: CDTTreeItem;
 };
 
-export const ComponentTree = (props: ComponentTreeProps) => {
+export const ComponentTree = ({ nodes, selectedNode }: ComponentTreeProps) => {
     // Assemble the tree
-    if (props.nodes === undefined) {
+    if (nodes === undefined) {
         return <div>loading</div>;
     }
 
-    if (!props.nodes.length) {
+    if (!nodes.length) {
         return <div>No children provided</div>;
     }
 
     const treeContext = useCDTTreeContext();
+    const [filter, setFilter] = React.useState<string | undefined>();
+    const searchRef = React.useRef<SearchOverlay>(null);
 
     // Event handler
     const onToggle = (event: TreeEventNodeEvent) => {
@@ -53,9 +55,9 @@ export const ComponentTree = (props: ComponentTreeProps) => {
     const nodeTemplate = (node: TreeNode) => {
         CDTTreeItem.assert(node);
         return <div className='tree-node'
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.path })}
+            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.data.path })}
         >
-            {createLabelWithTooltip(createHighlightedText(node.label, node.options?.highlights), node.options?.tooltip)}
+            {createLabelWithTooltip(createHighlightedText(node.label, node.data.options?.highlights), node.data.options?.tooltip)}
             {createActions(treeContext, node)}
         </div>;
     };
@@ -70,19 +72,37 @@ export const ComponentTree = (props: ComponentTreeProps) => {
         </div>;
     };
 
-    return <div>
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            e.stopPropagation();
+            searchRef.current?.show();
+        }
+    };
+
+    const onSearchShow = () => setFilter(searchRef.current?.value());
+    const onSearchHide = () => setFilter(undefined);
+    const onSearchChange = (text: string) => setFilter(text);
+
+    return <div onKeyDown={onKeyDown}>
+        <SearchOverlay key={'search'} ref={searchRef} onHide={onSearchHide} onShow={onSearchShow} onChange={onSearchChange} />
         <Tree
-            value={props.nodes}
+            value={nodes}
             className="w-full md:w-30rem"
             style={{ minWidth: '10rem' }}
             nodeTemplate={nodeTemplate}
             togglerTemplate={togglerTemplate}
             selectionMode='single'
-            selectionKeys={props.selectedNode?.key?.toString()}
+            selectionKeys={selectedNode?.key?.toString()}
             onNodeClick={event => onClick(event)}
             onExpand={event => onToggle(event)}
             onCollapse={event => onToggle(event)}
+            filter={true}
+            filterMode='strict'
+            filterValue={filter}
+            onFilterValueChange={() => { /* needed as otherwise the filter value is not taken into account */ }}
+            showHeader={false}
         />
-    </div >;
+    </div>;
 };
 

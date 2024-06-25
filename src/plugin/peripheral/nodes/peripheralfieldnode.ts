@@ -121,7 +121,6 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
 
         return CDTTreeItem.create({
             id: this.getId(),
-            key: this.getId(),
             label: this.getLabel(),
             leaf: true,
             path: this.getId().split(PERIPHERAL_ID_SEP),

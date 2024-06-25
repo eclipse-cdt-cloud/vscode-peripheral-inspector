@@ -19,6 +19,7 @@ import React from 'react';
 import { useCDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CDTTreeTableColumnDefinition, CDTTreeTableExpanderColumn, CDTTreeTableStringColumn, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
 import { createActions, createHighlightedText, createIcon, createLabelWithTooltip } from './utils';
+import { SearchOverlay } from './search-overlay';
 
 export type ComponentTreeTableProps = {
     nodes?: CDTTreeItem[];
@@ -37,6 +38,8 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     }
 
     const treeContext = useCDTTreeContext();
+    const [filter, setFilter] = React.useState<string | undefined>();
+    const searchRef = React.useRef<SearchOverlay>(null);
 
     // Event handler
     const onToggle = (event: TreeTableEvent) => {
@@ -55,7 +58,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const template = (node: TreeNode, field: string) => {
         CDTTreeItem.assert(node);
 
-        const column = node.columns?.[field];
+        const column = node.data.columns?.[field];
 
         if (column?.type === 'expander') {
             return expanderTemplate(node, column);
@@ -69,7 +72,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const expanderTemplate = (node: TreeNode, column: CDTTreeTableExpanderColumn) => {
         CDTTreeItem.assert(node);
 
-        return <div style={{ paddingLeft: `${((node.path.length ?? 1)) * 8}px` }}
+        return <div style={{ paddingLeft: `${((node.data.path.length ?? 1)) * 8}px` }}
         >
             <div className='treetable-node' >
                 <div
@@ -90,7 +93,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
         const text = createHighlightedText(column.label, column.highlight);
 
         return <div
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.path })}
+            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.data.path })}
         >
             {createLabelWithTooltip(text, column.tooltip)}
         </div>;
@@ -109,7 +112,20 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const expandedState = getExpandedState(props.nodes);
     const selectedKey = props.selectedNode ? props.selectedNode.key as string : undefined;
 
-    return <div>
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            e.stopPropagation();
+            searchRef.current?.show();
+        }
+    };
+
+    const onSearchShow = () => setFilter(searchRef.current?.value());
+    const onSearchHide = () => setFilter(undefined);
+    const onSearchChange = (text: string) => setFilter(text);
+
+    return <div onKeyDown={onKeyDown}>
+        <SearchOverlay key={'search'} ref={searchRef} onHide={onSearchHide} onShow={onSearchShow} onChange={onSearchChange} />
         <TreeTable
             value={props.nodes}
             selectionKeys={selectedKey}
@@ -124,11 +140,13 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
             onExpand={event => onToggle(event)}
             onCollapse={event => onToggle(event)}
             onRowClick={event => onClick(event)}
+            filterMode='strict' // continue searching on children
+            globalFilter={filter}
         >
             {props.columnDefinitions?.map(c => {
-                return <Column field={c.field} body={(node) => template(node, c.field)} expander={c.expander} />;
+                return <Column key={c.field} field={'columns.' + c.field + '.label'} body={(node) => template(node, c.field)} expander={c.expander} filter={true} />;
             })}
-            <Column field="actions" style={{ width: '64px' }} body={actionsTemplate} />
+            <Column key={'actions'} field="actions" style={{ width: '64px' }} body={actionsTemplate} />
         </TreeTable>
     </div>;
 };
