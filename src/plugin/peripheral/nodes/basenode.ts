@@ -5,10 +5,11 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { Command, TreeItem, DebugSession } from 'vscode';
-import { NumberFormat, NodeSetting } from '../../common';
-import { AddrRange } from '../../addrranges';
-import { EnumerationMap } from '../../api-types';
+import { Command, DebugSession, TreeItem } from 'vscode';
+import { AddrRange } from '../../../addrranges';
+import { EnumerationMap } from '../../../api-types';
+import { CommandDefinition, MaybePromise, NodeSetting, NumberFormat } from '../../../common';
+import { CDTTreeItem } from '../../../components/tree/types';
 
 export abstract class BaseNode {
     public expanded: boolean;
@@ -23,6 +24,8 @@ export abstract class BaseNode {
 
     public abstract getChildren(): BaseNode[] | Promise<BaseNode[]>;
     public abstract getTreeItem(): TreeItem | Promise<TreeItem>;
+    public abstract getCDTTreeItem(): MaybePromise<CDTTreeItem>;
+
 
     public getCommand(): Command | undefined {
         return undefined;
@@ -30,6 +33,8 @@ export abstract class BaseNode {
 
     public abstract getCopyValue(): string | undefined;
 }
+
+export const PERIPHERAL_ID_SEP = '-';
 
 export abstract class PeripheralBaseNode extends BaseNode {
     public format: NumberFormat;
@@ -47,6 +52,14 @@ export abstract class PeripheralBaseNode extends BaseNode {
         return Promise.resolve(false);
     }
 
+    public getId(): string {
+        if (this.parent) {
+            return `${this.parent.getId()}${PERIPHERAL_ID_SEP}${this.name}`;
+        }
+
+        return this.name ?? this.session?.id ?? 'unknown';
+    }
+
     public abstract performUpdate(): Thenable<boolean>;
     public abstract updateData(): Thenable<boolean>;
 
@@ -57,6 +70,9 @@ export abstract class PeripheralBaseNode extends BaseNode {
 
     public abstract saveState(path?: string): NodeSetting[];
     public abstract findByPath(path: string[]): PeripheralBaseNode | undefined;
+    public getCommands(): CommandDefinition[] {
+        return [];
+    }
 
     public async setSession(session: DebugSession): Promise<void> {
         this.session = session;
