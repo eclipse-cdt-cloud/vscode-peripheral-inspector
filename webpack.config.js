@@ -8,13 +8,20 @@ const webpack = require('webpack');
 /** @type WebpackConfig */
 const common = {
     mode: 'development',
-    devtool: 'source-map',
+    devtool: 'inline-source-map',
     module: {
         rules: [
             {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
                 exclude: /node_modules/
+            },
+            {
+                test: /\.css$/i,
+                use: [
+                    'style-loader',
+                    'css-loader',
+                ],
             }
         ]
     },
@@ -29,7 +36,7 @@ module.exports = [
         ...common,
         target: 'node',
         entry: {
-            extension: './src/desktop/extension.ts'
+            extension: './src/entry-points/desktop/extension.ts'
         },
         output: {
             filename: '[name].js',
@@ -49,7 +56,7 @@ module.exports = [
         ...common,
         target: 'webworker',
         entry: {
-            extension: './src/browser/extension.ts'
+            extension: './src/entry-points/browser/extension.ts'
         },
         output: {
             filename: '[name].js',
@@ -63,6 +70,28 @@ module.exports = [
                 path: require.resolve('path-browserify'),
                 stream: require.resolve('stream-browserify'),
                 timers: require.resolve('timers-browserify')
+            }
+        },
+        plugins: [
+            new webpack.ProvidePlugin({
+                Buffer: ['buffer', 'Buffer']
+            })
+        ]
+    },
+    {
+        ...common,
+        target: 'web',
+        entry: {
+            treeWebView: './src/components/tree/tree-view.tsx'
+        },
+        output: {
+            filename: '[name].js',
+            path: path.resolve(__dirname, 'dist', 'views')
+        },
+        resolve: {
+            extensions: ['.tsx', '.ts', '.js', '.css'],
+            fallback: {
+                buffer: require.resolve('buffer')
             }
         },
         plugins: [

@@ -6,9 +6,10 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralBaseNode } from './basenode';
-import { AddrRange } from '../../addrranges';
-import { NodeSetting } from '../../common';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
+import { AddrRange } from '../../../addrranges';
+import { NodeSetting } from '../../../common';
+import { CDTTreeItem } from '../../../components/tree/types';
 
 export class MessageNode extends PeripheralBaseNode {
 
@@ -16,28 +17,44 @@ export class MessageNode extends PeripheralBaseNode {
         super();
     }
 
+    public getId(): string {
+        return 'message';
+    }
+
     public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         return [];
     }
 
     public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const ti = new vscode.TreeItem(this.message, vscode.TreeItemCollapsibleState.None);
+        const ti = new vscode.TreeItem(this.getTitle(), vscode.TreeItemCollapsibleState.None);
         if (this.tooltip) { // A null crashes VSCode Tree renderer
             ti.tooltip = this.tooltip;
         }
         return ti;
     }
 
+    public getCDTTreeItem(): CDTTreeItem {
+        return CDTTreeItem.create({
+            id: this.getId(),
+            key: this.getId(),
+            path: this.getId().split(PERIPHERAL_ID_SEP),
+        });
+    }
+
+    public getTitle(): string {
+        return this.message;
+    }
+
     public getCopyValue(): string | undefined {
         return undefined;
     }
 
-    public performUpdate(): Thenable<boolean> {
-        return Promise.resolve(false);
+    public async performUpdate(): Promise<boolean> {
+        return false;
     }
 
-    public updateData(): Thenable<boolean> {
-        return Promise.resolve(false);
+    public async updateData(): Promise<boolean> {
+        return false;
     }
 
     public getPeripheral(): PeripheralBaseNode | undefined {

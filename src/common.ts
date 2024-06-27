@@ -5,6 +5,7 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
+
 export enum NumberFormat {
     Auto = 0,
     Hexadecimal,
@@ -54,5 +55,20 @@ export function toStringDecHexOctBin(val: number/* should be an integer*/): stri
         str = str.slice(0, -8);
     }
     ret += `\nbin: ${tmp}`;
-    return ret ;
+    return ret;
 }
+
+
+export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
+
+export interface CommandDefinition {
+    commandId: string;
+    icon: string;
+    title?: string;
+}
+
+export interface VscodeContext {
+    'data-vscode-context': string;
+}
+
+export type MaybePromise<T> = T | Promise<T>

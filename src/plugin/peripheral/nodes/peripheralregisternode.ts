@@ -8,13 +8,18 @@
 import * as vscode from 'vscode';
 import { PeripheralNode } from './peripheralnode';
 import { PeripheralClusterNode } from './peripheralclusternode';
-import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './basenode';
+import { ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
 import { PeripheralFieldNode } from './peripheralfieldnode';
-import { extractBits, createMask, hexFormat, binaryFormat } from '../../utils';
-import { NumberFormat, NodeSetting } from '../../common';
-import { AddrRange } from '../../addrranges';
-import { MemUtils } from '../../memreadutils';
-import { AccessType, EnumerationMap, PeripheralRegisterOptions } from '../../api-types';
+import { AddrRange } from '../../../addrranges';
+import { AccessType, PeripheralRegisterOptions, EnumerationMap } from '../../../api-types';
+import { NumberFormat, NodeSetting, CommandDefinition } from '../../../common';
+import { MemUtils } from '../../../memreadutils';
+import { extractBits, hexFormat, createMask, binaryFormat } from '../../../utils';
+import { Commands } from '../../../manifest';
+import { CDTTreeItem } from '../../../components/tree/types';
+import { resolve } from 'dns';
+
+export type PeripheralRegisterNodeContextValue = 'registerRW' | 'registerRO' | 'registerWO'
 
 export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     public children: PeripheralFieldNode[];
@@ -65,56 +70,127 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return extractBits(this.currentValue, offset, width);
     }
 
-    public updateBits(offset: number, width: number, value: number): Thenable<boolean> {
-        return new Promise((resolve, reject) => {
-            const limit = Math.pow(2, width);
-            if (value > limit) {
-                return reject(`Value entered is invalid. Maximum value for this field is ${limit - 1} (${hexFormat(limit - 1, 0)})`);
-            } else {
-                const mask = createMask(offset, width);
-                const sv = value << offset;
-                const newval = (this.currentValue & ~mask) | sv;
-                this.updateValueInternal(newval).then(resolve, reject);
-            }
-        });
+    public async updateBits(offset: number, width: number, value: number): Promise<boolean> {
+        const limit = Math.pow(2, width);
+        if (value > limit) {
+            throw new Error(`Value entered is invalid. Maximum value for this field is ${limit - 1} (${hexFormat(limit - 1, 0)})`);
+        }
+        const mask = createMask(offset, width);
+        const sv = value << offset;
+        const newval = (this.currentValue & ~mask) | sv;
+        return this.updateValueInternal(newval);
+    }
+
+    public getCommands(): CommandDefinition[] {
+        switch (this.getContextValue()) {
+            case 'registerRO':
+                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND];
+            case 'registerRW':
+                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.UPDATE_NODE_COMMAND];
+            case 'registerWO':
+                return [];
+            default:
+                return [];
+        }
+    }
+
+    public getContextValue(): PeripheralRegisterNodeContextValue {
+        return this.accessType === AccessType.ReadWrite ? 'registerRW' : (this.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
+    }
+
+    public getLabelTitle(): string {
+        return `${this.name} @ ${hexFormat(this.offset, 0)}`;
+    }
+
+    public getLabelValue(): string {
+        return this.getFormattedValue(this.getFormat());
+    }
+
+    public getLabel(): string {
+        return this.getLabelTitle() + ' ' + this.getLabelValue();
+    }
+
+    public hasHighlights(): boolean {
+        const displayValue = this.getLabelValue();
+
+        return displayValue !== this.prevValue;
+    }
+
+    public getLabelHighlights(): [number, number][] | undefined {
+        const title = this.getLabelTitle();
+        const label = this.getLabel();
+
+        if (this.hasHighlights()) {
+            return [[title.length + 1, label.length]];
+        }
+
+        return undefined;
     }
 
     public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = `${this.name} @ ${hexFormat(this.offset, 0)}`;
         const collapseState = this.children && this.children.length > 0
             ? (this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed)
             : vscode.TreeItemCollapsibleState.None;
 
-        const displayValue = this.getFormattedValue(this.getFormat());
         const labelItem: vscode.TreeItemLabel = {
-            label: label + ' ' + displayValue
+            label: this.getLabel(),
+            highlights: this.getLabelHighlights()
         };
-        if (displayValue !== this.prevValue) {
-            labelItem.highlights = [[label.length + 1, labelItem.label.length]];
-            this.prevValue = displayValue;
-        }
         const item = new vscode.TreeItem(labelItem, collapseState);
-        item.contextValue = this.accessType === AccessType.ReadWrite ? 'registerRW' : (this.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
+        item.id = this.getId();
+        item.contextValue = this.getContextValue();
         item.tooltip = this.generateTooltipMarkdown() || undefined;
 
         return item;
+    }
+
+    public getCDTTreeItem(): CDTTreeItem {
+        const labelValue = this.getLabelValue();
+        return CDTTreeItem.create({
+            id: this.getId(),
+            key: this.getId(),
+            label: this.getLabel(),
+            expanded: this.expanded,
+            path: this.getId().split(PERIPHERAL_ID_SEP),
+            options: {
+                // Show edit command even if inline editing is possible until we have more controls to cover proper enum support
+                commands: this.getCommands(),
+                contextValue: this.getContextValue(),
+                tooltip: this.generateTooltipMarkdown()?.value ?? undefined,
+                highlights: this.getLabelHighlights(),
+            },
+            columns: {
+                'title': {
+                    value: this.getLabelTitle(),
+                    tooltip: this.generateTooltipMarkdown()?.value ?? undefined,
+                },
+                'value': {
+                    value: labelValue,
+                    highlight: this.hasHighlights() ?
+                        [[0, labelValue.length]]
+                        : undefined,
+                    tooltip: labelValue,
+                    edit: { type: this.getContextValue() === 'registerRW' ? 'text' : 'none' }
+                }
+            }
+        });
     }
 
     private generateTooltipMarkdown(): vscode.MarkdownString | null {
         const mds = new vscode.MarkdownString('', true);
         mds.isTrusted = true;
 
-        const address = `${ hexFormat(this.getAddress()) }`;
+        const address = `${hexFormat(this.getAddress())}`;
 
         const formattedValue = this.getFormattedValue(this.getFormat());
 
         const roLabel = this.accessType === AccessType.ReadOnly ? '(Read Only)' : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 
-        mds.appendMarkdown(`| ${ this.name }@${ address } | ${ roLabel } | *${ formattedValue }* |\n`);
+        mds.appendMarkdown(`| ${this.name}@${address} | ${roLabel} | *${formattedValue}* |\n`);
         mds.appendMarkdown('|:---|:---:|---:|\n\n');
 
         if (this.accessType !== AccessType.WriteOnly) {
-            mds.appendMarkdown(`**Reset Value:** ${ this.getFormattedResetValue(this.getFormat()) }\n`);
+            mds.appendMarkdown(`**Reset Value:** ${this.getFormattedResetValue(this.getFormat())}\n`);
         }
 
         mds.appendMarkdown('\n____\n\n');
@@ -135,7 +211,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
 
         mds.appendMarkdown('| Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
         mds.appendMarkdown('|:---|:---|:---|\n');
-        mds.appendMarkdown(`| ${ hex } &nbsp;&nbsp; | ${ decimal } &nbsp;&nbsp; | ${ binary } &nbsp;&nbsp; |\n\n`);
+        mds.appendMarkdown(`| ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n\n`);
 
         const children = this.getChildren();
         if (children.length === 0) { return mds; }
@@ -145,8 +221,8 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         mds.appendMarkdown('|:---|:---:|:---|:---|\n');
 
         children.forEach((field) => {
-            mds.appendMarkdown(`| ${ field.name } | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ${ field.getFormattedRange() } | `
-                + `${ field.getFormattedValue(field.getFormat(), true) } |\n`);
+            mds.appendMarkdown(`| ${field.name} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ${field.getFormattedRange()} | `
+                + `${field.getFormattedValue(field.getFormat(), true)} |\n`);
         });
 
         return mds;
@@ -212,17 +288,17 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         }
     }
 
-    public async performUpdate(): Promise<boolean> {
-        const val = await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() });
+    public async performUpdate(value?: string): Promise<boolean> {
+        const val = value ?? await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() });
         if (!val) {
             return false;
         }
 
         let numval: number;
         if (val.match(this.hexRegex)) {
-            numval = parseInt(val.substr(2), 16);
+            numval = parseInt(val.substring(2), 16);
         } else if (val.match(this.binaryRegex)) {
-            numval = parseInt(val.substr(2), 2);
+            numval = parseInt(val.substring(2), 2);
         } else if (val.match(/^[0-9]+/)) {
             numval = parseInt(val, 10);
             if (numval >= this.maxValue) {
@@ -251,7 +327,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return success;
     }
 
-    public updateData(): Thenable<boolean> {
+    public async updateData(): Promise<boolean> {
         const bc = this.size / 8;
         const bytes = this.parent.getBytes(this.offset, bc);
         const buffer = Buffer.from(bytes);
@@ -270,8 +346,9 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
                 break;
         }
         this.children.forEach((f) => f.updateData());
+        this.prevValue = this.getLabelValue();
 
-        return Promise.resolve(true);
+        return true;
     }
 
     public saveState(path?: string): NodeSetting[] {
