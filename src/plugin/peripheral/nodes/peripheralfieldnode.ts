@@ -6,12 +6,16 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralBaseNode } from './basenode';
+import { AddrRange } from '../../../addrranges';
+import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
+import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
+import { Commands } from '../../../manifest';
+import { binaryFormat, hexFormat, parseInteger } from '../../../utils';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
 import { PeripheralRegisterNode } from './peripheralregisternode';
-import { AddrRange } from '../../addrranges';
-import { NumberFormat, NodeSetting } from '../../common';
-import { parseInteger, binaryFormat, hexFormat } from '../../utils';
-import { AccessType, EnumerationMap, FieldOptions } from '../../api-types';
+import { CDTTreeItem } from '../../../components/tree/types';
+
+export type PeripheralFieldNodeContextValue = 'field' | 'field-res' | 'fieldRO' | 'fieldWO'
 
 export class PeripheralFieldNode extends PeripheralBaseNode {
     public session: vscode.DebugSession | undefined;
@@ -67,11 +71,102 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const isReserved = this.name.toLowerCase() === 'reserved';
+    public getLabelTitle(): string {
+        const rangestart = this.offset;
+        const rangeend = this.offset + this.width - 1;
+        return `${this.name} [${rangeend}:${rangestart}]`;
+    }
 
-        let context = 'field';
-        if (isReserved) {
+    public getLabelValue(): string {
+        return this.getFormattedValue(this.getFormat());
+    }
+
+    public getLabel(): string {
+        return this.getLabelTitle() + ' ' + this.getLabelValue();
+    }
+
+
+    public hasHighlights(): boolean {
+        const displayValue = this.getLabelValue();
+
+        return displayValue !== this.prevValue;
+    }
+
+    public getLabelHighlights(): [number, number][] | undefined {
+        const title = this.getLabelTitle();
+        const label = this.getLabel();
+
+        if (this.hasHighlights()) {
+            return [[title.length + 1, label.length]];
+        }
+
+        return undefined;
+    }
+
+    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
+        const labelItem: vscode.TreeItemLabel = {
+            label: this.getLabel(),
+            highlights: this.getLabelHighlights()
+        };
+        const item = new vscode.TreeItem(labelItem, vscode.TreeItemCollapsibleState.None);
+        item.id = this.getId();
+        item.contextValue = this.getContextValue();
+        item.tooltip = this.generateTooltipMarkdown(this.isReserved()) || undefined;
+
+        return item;
+    }
+
+    public getCDTTreeItem(): CDTTreeItem {
+        const labelValue = this.getLabelValue();
+
+        return CDTTreeItem.create({
+            id: this.getId(),
+            key: this.getId(),
+            label: this.getLabel(),
+            leaf: true,
+            path: this.getId().split(PERIPHERAL_ID_SEP),
+            options: {
+                commands: this.getCommands(),
+                contextValue: this.getContextValue(),
+                tooltip: this.generateTooltipMarkdown(this.isReserved())?.value ?? undefined,
+                highlights: this.getLabelHighlights()
+            },
+            columns: {
+                'title': {
+                    type: 'expander',
+                    label: this.getLabelTitle(),
+                    tooltip: this.generateTooltipMarkdown(this.isReserved())?.value ?? undefined,
+                },
+                'value': {
+                    type: 'string',
+                    label: labelValue,
+                    highlight: this.hasHighlights() ?
+                        [[0, labelValue.length]]
+                        : undefined,
+                    tooltip: labelValue
+                }
+            }
+        });
+    }
+
+    public getCommands(): CommandDefinition[] {
+        switch (this.getContextValue()) {
+            case 'field':
+                return [Commands.COPY_VALUE_COMMAND, Commands.UPDATE_NODE_COMMAND,];
+            case 'field-res':
+                return [];
+            case 'fieldRO':
+                return [Commands.COPY_VALUE_COMMAND];
+            case 'fieldWO':
+                return [Commands.UPDATE_NODE_COMMAND];
+            default:
+                return [];
+        }
+    }
+
+    public getContextValue(): PeripheralFieldNodeContextValue {
+        let context: PeripheralFieldNodeContextValue = 'field';
+        if (this.isReserved()) {
             context = 'field-res';
         } else if (this.accessType === AccessType.ReadOnly) {
             context = 'fieldRO';
@@ -79,33 +174,21 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
             context = 'fieldWO';
         }
 
-        const rangestart = this.offset;
-        const rangeend = this.offset + this.width - 1;
-        const label = `${this.name} [${rangeend}:${rangestart}]`;
-        const displayValue = this.getFormattedValue(this.getFormat());
-        const labelItem: vscode.TreeItemLabel = {
-            label: label + ' ' + displayValue
-        };
-        if (displayValue !== this.prevValue) {
-            labelItem.highlights = [[label.length + 1, labelItem.label.length]];
-            this.prevValue = displayValue;
-        }
-        const item = new vscode.TreeItem(labelItem, vscode.TreeItemCollapsibleState.None);
+        return context;
+    }
 
-        item.contextValue = context;
-        item.tooltip = this.generateTooltipMarkdown(isReserved) || undefined;
-
-        return item;
+    public isReserved(): boolean {
+        return this.name.toLowerCase() === 'reserved';
     }
 
     private generateTooltipMarkdown(isReserved: boolean): vscode.MarkdownString | null {
         const mds = new vscode.MarkdownString('', true);
         mds.isTrusted = true;
 
-        const address = `${ hexFormat(this.parent.getAddress()) }${ this.getFormattedRange() }`;
+        const address = `${hexFormat(this.parent.getAddress())}${this.getFormattedRange()}`;
 
         if (isReserved) {
-            mds.appendMarkdown(`| ${ this.name }@${ address } | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | *Reserved* |\n`);
+            mds.appendMarkdown(`| ${this.name}@${address} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | *Reserved* |\n`);
             mds.appendMarkdown('|:---|:---:|---:|');
             return mds;
         }
@@ -114,11 +197,11 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
 
         const roLabel = this.accessType === AccessType.ReadOnly ? '(Read Only)' : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 
-        mds.appendMarkdown(`| ${ this.name }@${ address } | ${ roLabel } | *${ formattedValue }* |\n`);
+        mds.appendMarkdown(`| ${this.name}@${address} | ${roLabel} | *${formattedValue}* |\n`);
         mds.appendMarkdown('|:---|:---:|---:|\n\n');
 
         if (this.accessType !== AccessType.WriteOnly) {
-            mds.appendMarkdown(`**Reset Value:** ${ this.formatValue(this.getResetValue(), this.getFormat()) }\n`);
+            mds.appendMarkdown(`**Reset Value:** ${this.formatValue(this.getResetValue(), this.getFormat())}\n`);
         }
 
         mds.appendMarkdown('\n____\n\n');
@@ -144,14 +227,14 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
                 ev = this.enumeration[value].name;
             }
 
-            mds.appendMarkdown(`| ${ ev } &nbsp;&nbsp; | ${ hex } &nbsp;&nbsp; | ${ decimal } &nbsp;&nbsp; | ${ binary } &nbsp;&nbsp; |\n\n`);
+            mds.appendMarkdown(`| ${ev} &nbsp;&nbsp; | ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n\n`);
             if (this.enumeration[value] && this.enumeration[value].description) {
                 mds.appendMarkdown(this.enumeration[value].description);
             }
         } else {
             mds.appendMarkdown('| Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
             mds.appendMarkdown('|:---|:---|:---|\n');
-            mds.appendMarkdown(`| ${ hex } &nbsp;&nbsp; | ${ decimal } &nbsp;&nbsp; | ${ binary } &nbsp;&nbsp; |\n`);
+            mds.appendMarkdown(`| ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n`);
         }
 
         return mds;
@@ -272,6 +355,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     }
 
     public updateData(): Thenable<boolean> {
+        this.prevValue = this.getLabelValue();
         return Promise.resolve(true);
     }
 
@@ -285,7 +369,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
 
     public saveState(path: string): NodeSetting[] {
         if (this.format !== NumberFormat.Auto) {
-            return [ { node: `${path}.${this.name}`, format: this.format }];
+            return [{ node: `${path}.${this.name}`, format: this.format }];
         } else {
             return [];
         }
