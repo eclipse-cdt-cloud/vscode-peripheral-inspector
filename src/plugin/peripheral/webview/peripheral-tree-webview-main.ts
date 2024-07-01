@@ -1,12 +1,9 @@
-/*********************************************************************
- * Copyright (c) 2024 Arm Limited and others
+/********************************************************************************
+ * Copyright (C) 2024 Arm Limited and others.
  *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
- *
- * SPDX-License-Identifier: EPL-2.0
- *********************************************************************/
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
 
 import * as vscode from 'vscode';
 import * as manifest from '../../../manifest';
