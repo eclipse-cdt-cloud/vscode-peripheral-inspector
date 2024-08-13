@@ -11,30 +11,48 @@ import './tree.css';
 import { Tree, TreeEventNodeEvent, TreeNodeClickEvent } from 'primereact/tree';
 import { TreeNode } from 'primereact/treenode';
 import { classNames } from 'primereact/utils';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
 import { createActions, createHighlightedText, createLabelWithTooltip } from './utils';
+import { ProgressBar } from 'primereact/progressbar';
 
 export type ComponentTreeProps = {
     nodes?: CDTTreeItem[];
     selectedNode?: CDTTreeItem;
+    isLoading: boolean;
 };
 
 export const ComponentTree = (props: ComponentTreeProps) => {
+    const treeContext = useCDTTreeContext();
+    const [showProgressBar, setShowProgressBar] = useState(false);
+
+    useEffect(() => {
+        if (!props.isLoading) {
+            // Delay hiding the progress bar to allow the animation to complete
+            const timer = setTimeout(() => {
+                setShowProgressBar(false);
+            }, 200);
+            return () => clearTimeout(timer);
+        } else {
+            setShowProgressBar(true);
+        }
+    }, [props.isLoading]);
+
     // Assemble the tree
     if (props.nodes === undefined) {
-        return <div>loading</div>;
+        return <div>
+            <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
+        </div>;
     }
 
     if (!props.nodes.length) {
         return <div>No children provided</div>;
     }
 
-    const treeContext = useCDTTreeContext();
 
     // Event handler
-    const onToggle = (event: TreeEventNodeEvent) => {
+    const onToggle = async (event: TreeEventNodeEvent) => {
         if (event.node.leaf) {
             // Cannot expand leaf || already expanded
             return;
@@ -42,7 +60,7 @@ export const ComponentTree = (props: ComponentTreeProps) => {
         treeContext.notify(CTDTreeMessengerType.toggleNode, event.node);
     };
 
-    const onClick = (event: TreeNodeClickEvent) => {
+    const onClick = async (event: TreeNodeClickEvent) => {
         treeContext.notify(CTDTreeMessengerType.clickNode, event.node);
     };
 
@@ -68,6 +86,11 @@ export const ComponentTree = (props: ComponentTreeProps) => {
     };
 
     return <div>
+        <div style={{ height: '2px' }}>
+            {showProgressBar &&
+                <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
+            }
+        </div>
         <Tree
             value={props.nodes}
             className="w-full md:w-30rem"

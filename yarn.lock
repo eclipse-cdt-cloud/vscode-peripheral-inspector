@@ -3011,10 +3011,10 @@ primeflex@^3.3.1:
   resolved "https://registry.yarnpkg.com/primeflex/-/primeflex-3.3.1.tgz#361dddf6eb5db50d733e4cddd4b6e376a3d7bd68"
   integrity sha512-zaOq3YvcOYytbAmKv3zYc+0VNS9Wg5d37dfxZnveKBFPr7vEIwfV5ydrpiouTft8MVW6qNjfkaQphHSnvgQbpQ==
 
-primereact@^10.3.1:
-  version "10.6.6"
-  resolved "https://registry.yarnpkg.com/primereact/-/primereact-10.6.6.tgz#33b391f3fef57bfd64ced84cbb37ba2812eaac19"
-  integrity sha512-+C0Bt6vS/jh09DQVS4UXpVctbvqJDUC3t3mVdGmhmIINYD8kdfL3fvc3bUGniGxkKKzwkSYdAQXhZlcgj8LUgw==
+primereact@^10.8.2:
+  version "10.8.2"
+  resolved "https://registry.yarnpkg.com/primereact/-/primereact-10.8.2.tgz#6cd56c65f95a79aeaaa11c1efa1a1da797021e45"
+  integrity sha512-bf7vktogGh0PmKT9WLDcJQoQNqqFqcAlP2crUqccnlTu63FNnQV82qEYyaFvE12Qd5qhm3EYmpsHjpf6/+olTQ==
   dependencies:
     "@types/react-transition-group" "^4.4.1"
     react-transition-group "^4.4.1"

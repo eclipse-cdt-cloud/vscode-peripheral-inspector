@@ -41,3 +41,12 @@
 .tree-actions .codicon:hover {
   background: var(--vscode-toolbar-hoverBackground);
 }
+
+.p-progressbar {
+  height: 2px;
+  background: var(--vscode-editor-background);
+}
+
+.p-progressbar .p-progressbar-value {
+  background-color: var(--vscode-progressBar-background);
+}

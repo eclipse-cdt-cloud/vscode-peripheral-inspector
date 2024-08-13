@@ -22,46 +22,56 @@ import {
 import { CDTTreeContext } from './tree-context';
 import { ComponentTreeTable } from './components/treetable';
 
-export class CDTTreeView extends React.Component<unknown, CDTTreeState> {
+interface State {
+    tree: CDTTreeState;
+    isLoading: boolean;
+}
+
+export class CDTTreeView extends React.Component<unknown, State> {
 
     public constructor(props: unknown) {
         super(props);
         this.state = {
-            items: [],
-            type: 'tree'
+            tree: {
+                type: 'tree'
+            },
+            isLoading: false
         };
     }
 
     public async componentDidMount(): Promise<void> {
-        messenger.onNotification(CTDTreeMessengerType.updateState, state => {
-            this.setState(state);
+        messenger.onNotification(CTDTreeMessengerType.updateState, tree => {
+            this.setState(prev => ({ ...prev, tree, isLoading: false }));
         });
         messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 
     protected notify<TNotification extends NotificationType<P>, P>(notification: TNotification, params: P): void {
+        this.setState(prev => ({ ...prev, isLoading: true }));
         messenger.sendNotification(notification, HOST_EXTENSION, params);
     }
 
     // Create TreeView flavors
     protected createTree(): React.ReactNode {
         return <ComponentTree
-            nodes={this.state.items}
-            selectedNode={this.state.selectedItem}
+            nodes={this.state.tree.items}
+            selectedNode={this.state.tree.selectedItem}
+            isLoading={this.state.isLoading}
         />;
     }
 
     protected createTreeTable(): React.ReactNode {
         return <ComponentTreeTable
-            nodes={this.state.items}
-            selectedNode={this.state.selectedItem}
-            columnDefinitions={this.state.columnFields}
+            nodes={this.state.tree.items}
+            selectedNode={this.state.tree.selectedItem}
+            columnDefinitions={this.state.tree.columnFields}
+            isLoading={this.state.isLoading}
         />;
     }
 
     public render(): React.ReactNode {
         const child = (() => {
-            switch (this.state.type) {
+            switch (this.state.tree.type) {
                 case 'tree':
                     return this.createTree();
                 case 'treetable':

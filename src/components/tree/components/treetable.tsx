@@ -12,28 +12,46 @@ import { Column } from 'primereact/column';
 import { TreeNode } from 'primereact/treenode';
 import { TreeTable, TreeTableEvent } from 'primereact/treetable';
 import { classNames } from 'primereact/utils';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CDTTreeTableColumnDefinition, CDTTreeTableExpanderColumn, CDTTreeTableStringColumn, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
 import { createActions, createHighlightedText, createIcon, createLabelWithTooltip } from './utils';
+import { ProgressBar } from 'primereact/progressbar';
 
 export type ComponentTreeTableProps = {
     nodes?: CDTTreeItem[];
     selectedNode?: CDTTreeItem;
     columnDefinitions?: CDTTreeTableColumnDefinition[];
+    isLoading: boolean;
 };
 
 export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
+    const treeContext = useCDTTreeContext();
+    const [showProgressBar, setShowProgressBar] = useState(false);
+
+    useEffect(() => {
+        if (!props.isLoading) {
+            // Delay hiding the progress bar to allow the animation to complete
+            const timer = setTimeout(() => {
+                setShowProgressBar(false);
+            }, 200);
+            return () => clearTimeout(timer);
+        } else {
+            setShowProgressBar(true);
+        }
+    }, [props.isLoading]);
+
     // Assemble the treetable
     if (props.nodes === undefined) {
-        return <div>loading</div>;
+        return <div>
+            <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
+        </div>;
     }
 
     if (!props.nodes?.length) {
         return <div>No children provided</div>;
     }
 
-    const treeContext = useCDTTreeContext();
 
     // Event handler
     const onToggle = (event: TreeTableEvent) => {
@@ -107,6 +125,11 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const selectedKey = props.selectedNode ? props.selectedNode.key as string : undefined;
 
     return <div>
+        <div style={{ height: '2px' }}>
+            {showProgressBar &&
+                <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
+            }
+        </div>
         <TreeTable
             value={props.nodes}
             selectionKeys={selectedKey}
@@ -123,7 +146,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
             onRowClick={event => onClick(event)}
         >
             {props.columnDefinitions?.map(c => {
-                return <Column field={c.field} body={(node) => template(node, c.field)} expander={c.expander} />;
+                return <Column key={`${c.field}_column`} field={c.field} body={(node) => template(node, c.field)} expander={c.expander} />;
             })}
             <Column field="actions" style={{ width: '64px' }} body={actionsTemplate} />
         </TreeTable>
