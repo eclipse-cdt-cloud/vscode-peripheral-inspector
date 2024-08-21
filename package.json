@@ -82,20 +82,9 @@
     "views": {
       "debug": [
         {
-          "id": "peripheral-inspector.svd",
-          "name": "Peripherals",
-          "when": "peripheral-inspector.svd.hasData"
-        },
-        {
           "type": "webview",
           "id": "peripheral-inspector.peripheral-tree",
-          "name": "Peripherals Tree",
-          "when": "peripheral-inspector.svd.hasData"
-        },
-        {
-          "type": "webview",
-          "id": "peripheral-inspector.peripheral-treetable",
-          "name": "Peripherals Tree-table",
+          "name": "Peripherals",
           "when": "peripheral-inspector.svd.hasData"
         }
       ]

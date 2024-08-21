@@ -19,7 +19,7 @@ import {
     CDTTreeState,
     CTDTreeMessengerType
 } from './types';
-import { CDTTreeContext } from './tree-context';
+import { CDTTreeContext, NotifyOptions } from './tree-context';
 import { ComponentTreeTable } from './components/treetable';
 
 interface State {
@@ -46,8 +46,8 @@ export class CDTTreeView extends React.Component<unknown, State> {
         messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 
-    protected notify<TNotification extends NotificationType<P>, P>(notification: TNotification, params: P): void {
-        this.setState(prev => ({ ...prev, isLoading: true }));
+    protected notify<TNotification extends NotificationType<P>, P>(notification: TNotification, params: P, options?: NotifyOptions): void {
+        this.setState(prev => ({ ...prev, isLoading: options?.isLoading ?? true }));
         messenger.sendNotification(notification, HOST_EXTENSION, params);
     }
 

@@ -12,6 +12,7 @@ import { CommandDefinition } from '../../../common';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';
 import { CDTTreeContext } from '../tree-context';
 import { CDTTreeItem, CTDTreeMessengerType } from '../types';
+import { NonBlockingCommands } from '../../../manifest';
 
 export function createHighlightedText(label?: string, highlights?: [number, number][]): React.JSX.Element {
     if (label === undefined) {
@@ -66,7 +67,7 @@ export function createActions(context: CDTTreeContext, node: TreeNode): React.JS
     CDTTreeItem.assert(node);
 
     const onClick = (event: React.MouseEvent, action: CommandDefinition) => {
-        context.notify(CTDTreeMessengerType.executeCommand, { commandId: action.commandId, item: node });
+        context.notify(CTDTreeMessengerType.executeCommand, { commandId: action.commandId, item: node }, { isLoading: !NonBlockingCommands.IDS.includes(action.commandId) });
         event.stopPropagation();
     };
 

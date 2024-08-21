@@ -9,8 +9,12 @@ import { createContext } from 'react';
 import { NotificationType } from 'vscode-messenger-common';
 import React from 'react';
 
+export interface NotifyOptions {
+    isLoading?: boolean
+}
+
 export interface CDTTreeContext {
-    notify<TParam>(notification: NotificationType<TParam>, params: TParam): void;
+    notify<TParam>(notification: NotificationType<TParam>, params: TParam, options?: NotifyOptions): void;
 }
 export const CDTTreeContext = createContext<CDTTreeContext>({
     notify: () => {

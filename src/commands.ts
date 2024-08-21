@@ -34,8 +34,11 @@ export class PeripheralCommands {
         try {
             const result = await node.performUpdate();
             if (result) {
-                this.peripheralsForceRefresh();
+                await this.peripheralsForceRefresh();
+            } else {
+                this.dataTracker.refresh();
             }
+
         } catch (error) {
             vscode.debug.activeDebugConsole.appendLine(`Unable to update value: ${(error as Error).message}`);
         }
@@ -80,8 +83,10 @@ export class PeripheralCommands {
             if (p) {
                 await p.updateData();
             }
+
+            this.dataTracker.refresh();
         } else {
-            this.dataTracker.updateData();
+            await this.dataTracker.updateData();
         }
     }
 
