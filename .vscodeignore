@@ -3,3 +3,5 @@
 node_modules
 src
 *.vsix
+!node_modules/@vscode/codicons/dist/codicon.css
+!node_modules/@vscode/codicons/dist/codicon.ttf

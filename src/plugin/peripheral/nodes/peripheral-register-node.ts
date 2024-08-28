@@ -6,10 +6,10 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralNode } from './peripheralnode';
-import { PeripheralClusterNode } from './peripheralclusternode';
-import { ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
-import { PeripheralFieldNode } from './peripheralfieldnode';
+import { PeripheralNode } from './peripheral-node';
+import { PeripheralClusterNode } from './peripheral-cluster-node';
+import { ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
+import { PeripheralFieldNode } from './peripheral-field-node';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, PeripheralRegisterOptions, EnumerationMap } from '../../../api-types';
 import { NumberFormat, NodeSetting, CommandDefinition } from '../../../common';

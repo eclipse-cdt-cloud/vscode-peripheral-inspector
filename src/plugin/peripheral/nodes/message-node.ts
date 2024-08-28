@@ -6,7 +6,7 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
 import { AddrRange } from '../../../addrranges';
 import { NodeSetting } from '../../../common';
 import { CDTTreeItem } from '../../../components/tree/types';

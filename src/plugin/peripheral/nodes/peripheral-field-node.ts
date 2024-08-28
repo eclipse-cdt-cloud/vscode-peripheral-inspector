@@ -11,8 +11,8 @@ import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
 import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
 import { Commands } from '../../../manifest';
 import { binaryFormat, hexFormat, parseInteger } from '../../../utils';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
-import { PeripheralRegisterNode } from './peripheralregisternode';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
+import { PeripheralRegisterNode } from './peripheral-register-node';
 import { CDTTreeItem } from '../../../components/tree/types';
 
 export type PeripheralFieldNodeContextValue = 'field' | 'field-res' | 'fieldRO' | 'fieldWO'

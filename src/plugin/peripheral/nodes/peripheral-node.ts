@@ -12,9 +12,9 @@ import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
 import { Commands } from '../../../manifest';
 import { MemUtils } from '../../../memreadutils';
 import { hexFormat } from '../../../utils';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './basenode';
-import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheralclusternode';
-import { PeripheralRegisterNode } from './peripheralregisternode';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
+import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
+import { PeripheralRegisterNode } from './peripheral-register-node';
 import { CDTTreeItem } from '../../../components/tree/types';
 
 export type PeripheralNodeContextValue = 'peripheral' | 'peripheral.pinned'

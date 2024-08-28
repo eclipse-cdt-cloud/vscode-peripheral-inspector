@@ -12,8 +12,10 @@
   padding: 0;
   font-size: 13px;
   font-family: var(--vscode-font-family);
+  min-width: 10rem;
 }
 
+/* Reset all colors */
 .p-tree * {
   color: var(--vscode-foreground);
 }

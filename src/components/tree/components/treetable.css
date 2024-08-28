@@ -8,8 +8,10 @@
 .p-treetable {
   font-size: 13px;
   font-family: var(--vscode-font-family);
+  min-width: 10rem;
 }
 
+/* Reset all colors */
 .p-treetable * {
   color: var(--vscode-foreground);
 }

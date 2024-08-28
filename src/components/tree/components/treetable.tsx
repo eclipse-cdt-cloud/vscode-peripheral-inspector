@@ -25,6 +25,8 @@ export type ComponentTreeTableProps = {
     isLoading: boolean;
 };
 
+const PROGRESS_BAR_HIDE_DELAY = 200;
+
 export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const treeContext = useCDTTreeContext();
     const [showProgressBar, setShowProgressBar] = useState(false);
@@ -34,7 +36,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
             // Delay hiding the progress bar to allow the animation to complete
             const timer = setTimeout(() => {
                 setShowProgressBar(false);
-            }, 200);
+            }, PROGRESS_BAR_HIDE_DELAY);
             return () => clearTimeout(timer);
         } else {
             setShowProgressBar(true);
@@ -125,7 +127,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const selectedKey = props.selectedNode ? props.selectedNode.key as string : undefined;
 
     return <div>
-        <div style={{ height: '2px' }}>
+        <div className='progress-bar-container'>
             {showProgressBar &&
                 <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
             }

@@ -191,12 +191,12 @@
       "view/title": [
         {
           "command": "peripheral-inspector.svd.refreshAll",
-          "when": "(view == peripheral-inspector.svd || view == peripheral-inspector.peripheral-tree || view == peripheral-inspector.peripheral-treetable) && debugState == stopped",
+          "when": "view == peripheral-inspector.peripheral-tree && debugState == stopped",
           "group": "navigation"
         },
         {
           "command": "peripheral-inspector.svd.collapseAll",
-          "when": "(view == peripheral-inspector.peripheral-tree || view == peripheral-inspector.peripheral-treetable) && debugState == stopped",
+          "when": "view == peripheral-inspector.peripheral-tree && debugState == stopped",
           "group": "navigation"
         }
       ],
@@ -275,7 +275,7 @@
       "webview/context": [
         {
           "command": "peripheral-inspector.svd.setFormat",
-          "when": "(webviewId == peripheral-inspector.peripheral-tree || webviewId == peripheral-inspector.peripheral-treetable) && webviewSection == tree-item",
+          "when": "webviewId == peripheral-inspector.peripheral-tree && webviewSection == tree-item",
           "group": "navigation"
         }
       ]
