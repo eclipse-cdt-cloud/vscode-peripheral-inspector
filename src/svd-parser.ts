@@ -7,14 +7,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PeripheralRegisterNode } from './views/nodes/peripheralregisternode';
-import { PeripheralClusterNode, PeripheralOrClusterNode } from './views/nodes/peripheralclusternode';
-import { PeripheralFieldNode } from './views/nodes/peripheralfieldnode';
-import { PeripheralNode } from './views/nodes/peripheralnode';
 import { parseInteger, parseDimIndex } from './utils';
 import { parseStringPromise } from 'xml2js';
 import { AccessType, EnumerationMap } from './api-types';
 import { EnumeratedValue } from './enumerated-value';
+import { PeripheralNode, PeripheralRegisterNode, PeripheralFieldNode, PeripheralClusterNode, PeripheralOrClusterNode } from './plugin/peripheral/nodes';
 
 
 const accessTypeFromString = (type: string): AccessType => {
@@ -57,7 +54,7 @@ export class SVDParser {
     private gapThreshold = 16;
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    constructor() {}
+    constructor() { }
 
     public async parseSVD(
         data: string, gapThreshold: number): Promise<PeripheralNode[]> {
@@ -366,7 +363,7 @@ export class SVDParser {
 
         if (!clusterInfo) { return []; }
 
-        clusterInfo.forEach((c:any) => {
+        clusterInfo.forEach((c: any) => {
             const baseOptions: any = {};
             if (c.access) {
                 baseOptions.accessType = accessTypeFromString(c.access[0]);

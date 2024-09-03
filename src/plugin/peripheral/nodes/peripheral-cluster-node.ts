@@ -6,13 +6,15 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralBaseNode, ClusterOrRegisterBaseNode } from './basenode';
-import { PeripheralRegisterNode } from './peripheralregisternode';
-import { PeripheralNode } from './peripheralnode';
-import { NodeSetting, NumberFormat } from '../../common';
-import { AddrRange } from '../../addrranges';
-import { hexFormat } from '../../utils';
-import { AccessType, ClusterOptions, EnumerationMap } from '../../api-types';
+import { PeripheralBaseNode, ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP } from './base-node';
+import { PeripheralRegisterNode } from './peripheral-register-node';
+import { PeripheralNode } from './peripheral-node';
+import { AddrRange } from '../../../addrranges';
+import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
+import { NumberFormat, NodeSetting } from '../../../common';
+import { hexFormat } from '../../../utils';
+import { CDTTreeItem } from '../../../components/tree/types';
+
 
 
 export type PeripheralOrClusterNode = PeripheralNode | PeripheralClusterNode;
@@ -49,14 +51,58 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         });
     }
 
+    public getLabel(): string {
+        return `${this.getLabelTitle()} [${this.getLabelValue()}]`;
+    }
+
+    public getLabelTitle(): string {
+        return this.name;
+    }
+
+    public getLabelValue(): string {
+        return hexFormat(this.offset, 0);
+    }
+
+    public getContextValue(): string {
+        return 'cluster';
+    }
+
     public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = `${this.name} [${hexFormat(this.offset, 0)}]`;
+        const label = this.getLabel();
 
         const item = new vscode.TreeItem(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
-        item.contextValue = 'cluster';
+        item.id = this.getId();
+        item.contextValue = this.getContextValue();
         item.tooltip = this.description || undefined;
 
         return item;
+    }
+
+    public getCDTTreeItem(): CDTTreeItem {
+        return CDTTreeItem.create({
+            id: this.getId(),
+            key: this.getId(),
+            expanded: this.expanded,
+            label: this.getLabel(),
+            path: this.getId().split(PERIPHERAL_ID_SEP),
+            options: {
+                commands: this.getCommands(),
+                contextValue: this.getContextValue(),
+                tooltip: this.description,
+            },
+            columns: {
+                'title': {
+                    type: 'expander',
+                    label: this.getLabelTitle(),
+                    tooltip: this.description,
+                },
+                'value': {
+                    type: 'string',
+                    label: this.getLabelValue(),
+                    tooltip: this.getLabelValue()
+                }
+            }
+        });
     }
 
     public getChildren(): PeripheralRegisterOrClusterNode[] {
