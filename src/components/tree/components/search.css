@@ -9,7 +9,7 @@
   position: fixed;
   top: -33px;
   opacity: 0;
-  right: 5px;
+  right: 20px;
   background-color: var(--vscode-editorWidget-background);
   box-shadow: 0 0 4px 1px var(--vscode-widget-shadow);
   color: var(--vscode-editorWidget-foreground);
@@ -28,16 +28,20 @@
   flex-direction: row;
   gap: 5px;
 
-  -webkit-transition: all 0.2s ease;
-  -moz-transition: all 0.2s ease;
-  -ms-transition: all 0.2s ease;
-  -o-transition: all 0.2s ease;
-  transition: all 0.2s ease;
+  -webkit-transition: top 0.2s ease, opacity 0.2s ease;
+  -moz-transition: top 0.2s ease, opacity 0.2s ease;
+  -ms-transition: top 0.2s ease, opacity 0.2s ease;
+  -o-transition: top 0.2s ease, opacity 0.2s ease;
+  transition: top 0.2s ease, opacity 0.2s ease;
 }
 
 .search-overlay.visible {
   top: 5px;
   opacity: 1;
+}
+
+body.has-scrollbar .search-overlay {
+  right: 5px;
 }
 
 .search-overlay .search-input {

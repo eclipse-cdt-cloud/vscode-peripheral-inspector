@@ -27,37 +27,39 @@ export type ComponentTreeProps = {
 
 const PROGRESS_BAR_HIDE_DELAY = 200;
 
-export const ComponentTree = ({ nodes, selectedNode, isLoading }: ComponentTreeProps) => {
+export const ComponentTree = (props: ComponentTreeProps) => {
     const treeContext = useCDTTreeContext();
     const [showProgressBar, setShowProgressBar] = useState(false);
     const [filter, setFilter] = React.useState<string | undefined>();
     const searchRef = React.useRef<SearchOverlay>(null);
 
     useEffect(() => {
-        if (!isLoading) {
-            // Delay hiding the progress bar to allow the animation to complete
-            const timer = setTimeout(() => {
-                setShowProgressBar(false);
-            }, PROGRESS_BAR_HIDE_DELAY);
-            return () => clearTimeout(timer);
+        // Slightly delay showing/hiding the progress bar to avoid flickering
+        const timer = setTimeout(() => setShowProgressBar(props.isLoading), PROGRESS_BAR_HIDE_DELAY);
+        return () => clearTimeout(timer);
+    }, [props.isLoading]);
+
+    useEffect(() => {
+        if (document.documentElement.scrollHeight > document.documentElement.clientHeight) {
+            document.body.classList.add('has-scrollbar');
         } else {
-            setShowProgressBar(true);
+            document.body.classList.remove('has-scrollbar');
         }
-    }, [isLoading]);
+    });
 
     // Assemble the tree
-    if (nodes === undefined) {
+    if (props.nodes === undefined) {
         return <div>loading</div>;
     }
 
     // Assemble the tree
-    if (nodes === undefined) {
+    if (props.nodes === undefined) {
         return <div>
             <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
         </div>;
     }
 
-    if (!nodes.length) {
+    if (!props.nodes.length) {
         return <div>No children provided</div>;
     }
 
@@ -115,13 +117,13 @@ export const ComponentTree = ({ nodes, selectedNode, isLoading }: ComponentTreeP
         </div>
         <SearchOverlay key={'search'} ref={searchRef} onHide={onSearchHide} onShow={onSearchShow} onChange={onSearchChange} />
         <Tree
-            value={nodes}
+            value={props.nodes}
             className="w-full md:w-30rem"
             style={{ minWidth: '10rem' }}
             nodeTemplate={nodeTemplate}
             togglerTemplate={togglerTemplate}
             selectionMode='single'
-            selectionKeys={selectedNode?.key?.toString()}
+            selectionKeys={props.selectedNode?.key?.toString()}
             onNodeClick={event => onClick(event)}
             onExpand={event => onToggle(event)}
             onCollapse={event => onToggle(event)}

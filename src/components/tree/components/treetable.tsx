@@ -35,16 +35,18 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const searchRef = React.useRef<SearchOverlay>(null);
 
     useEffect(() => {
-        if (!props.isLoading) {
-            // Delay hiding the progress bar to allow the animation to complete
-            const timer = setTimeout(() => {
-                setShowProgressBar(false);
-            }, PROGRESS_BAR_HIDE_DELAY);
-            return () => clearTimeout(timer);
-        } else {
-            setShowProgressBar(true);
-        }
+        // Slightly delay showing/hiding the progress bar to avoid flickering
+        const timer = setTimeout(() => setShowProgressBar(props.isLoading), PROGRESS_BAR_HIDE_DELAY);
+        return () => clearTimeout(timer);
     }, [props.isLoading]);
+
+    useEffect(() => {
+        if (document.documentElement.scrollHeight > document.documentElement.clientHeight) {
+            document.body.classList.add('has-scrollbar');
+        } else {
+            document.body.classList.remove('has-scrollbar');
+        }
+    });
 
     // Assemble the treetable
     if (props.nodes === undefined) {
