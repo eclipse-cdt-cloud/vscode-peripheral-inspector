@@ -90,7 +90,7 @@ export class PeripheralCDTTreeDataProvider implements CDTTreeDataProvider<Periph
     }
 
     protected findNodeByCDTTreeItem(item: CDTTreeItem): PeripheralBaseNode | undefined {
-        return this.dataTracker.findNodeByPath(item.path);
+        return this.dataTracker.findNodeByPath(item.data.path);
     }
 
     protected getNodeByCDTTreeItem(item: CDTTreeItem): PeripheralBaseNode {

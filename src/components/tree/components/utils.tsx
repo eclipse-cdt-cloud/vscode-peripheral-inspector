@@ -46,7 +46,7 @@ export function createHighlightedText(label?: string, highlights?: [number, numb
 export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: string): React.JSX.Element {
     const label = <div className="tree-label flex-auto flex align-items-center">
         {child}
-    </div >;
+    </div>;
 
     if (tooltip === undefined) {
         return label;
@@ -72,7 +72,7 @@ export function createActions(context: CDTTreeContext, node: TreeNode): React.JS
     };
 
     return <div className="tree-actions">
-        {node.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
+        {node.data.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
     </div>;
 }
 

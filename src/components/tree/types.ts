@@ -30,14 +30,22 @@ export interface CDTTreeTableStringColumn {
     tooltip?: string;
 }
 
-export interface CDTTreeItem extends PrimeTreeNode {
-    __type: 'CDTTreeItem'
-    id: string;
-    key: string;
-    icon?: string;
+export interface CDTTreeItemData {
     path: string[];
     options?: CDTTreeOptions;
     columns?: Record<string, CDTTreeTableExpanderColumn | CDTTreeTableStringColumn>;
+}
+
+export interface CDTTreeItemOptions extends Omit<PrimeTreeNode, 'id' | 'key' | 'icon' | 'children'> {
+    id: string; /* we require the user to provide an id */
+    key?: string;  /* we only allow string keys */
+    icon?: string; /* we need to provide icons as string as they cannot be serialized otherwise */
+    children?: CDTTreeItem[]; /* children are typed to our own tree items */
+}
+
+export interface CDTTreeItem extends CDTTreeItemOptions {
+    __type: 'CDTTreeItem'
+    data: CDTTreeItemData;
     children?: CDTTreeItem[];
 }
 
@@ -52,10 +60,13 @@ export namespace CDTTreeItem {
         }
     }
 
-    export function create(options: Omit<CDTTreeItem, '__type'>): CDTTreeItem {
+    export function create(props: CDTTreeItemOptions & CDTTreeItemData): CDTTreeItem {
+        const { path, options, columns, ...itemProps } = props;
         return {
             __type: 'CDTTreeItem',
-            ...options
+            ...itemProps,
+            key: props.key ?? itemProps.id,
+            data: { path, options, columns }
         };
     }
 }
