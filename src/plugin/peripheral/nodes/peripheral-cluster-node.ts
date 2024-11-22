@@ -6,22 +6,24 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralBaseNode, ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP } from './base-node';
-import { PeripheralRegisterNode } from './peripheral-register-node';
-import { PeripheralNode } from './peripheral-node';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
-import { NumberFormat, NodeSetting } from '../../../common';
-import { hexFormat } from '../../../utils';
+import { NodeSetting } from '../../../common';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { hexFormat } from '../../../utils';
+import { ClusterOrRegisterBaseNodeImpl, PeripheralBaseNodeImpl } from './base-node';
+import { PeripheralNodeImpl } from './peripheral-node';
+import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
+import { PERIPHERAL_ID_SEP, PeripheralClusterNode } from '../../../common/peripherals';
+import { NumberFormat } from '../../../common/format';
 
 
 
-export type PeripheralOrClusterNode = PeripheralNode | PeripheralClusterNode;
-export type PeripheralRegisterOrClusterNode = PeripheralRegisterNode | PeripheralClusterNode;
+export type PeripheralOrClusterNodeImpl = PeripheralNodeImpl | PeripheralClusterNodeImpl;
+export type PeripheralRegisterOrClusterNodeImpl = PeripheralRegisterNodeImpl | PeripheralClusterNodeImpl;
 
-export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
-    private children: PeripheralRegisterOrClusterNode[];
+export class PeripheralClusterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
+    private children: PeripheralRegisterOrClusterNodeImpl[];
     public readonly name: string;
     public readonly description?: string;
     public readonly offset: number;
@@ -29,7 +31,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
     public readonly resetValue: number;
     public readonly accessType: AccessType;
 
-    constructor(public parent: PeripheralOrClusterNode, options: ClusterOptions) {
+    constructor(public parent: PeripheralOrClusterNodeImpl, protected options: ClusterOptions) {
         super(parent);
         this.name = options.name;
         this.description = options.description;
@@ -42,27 +44,39 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
 
         options.clusters?.forEach((clusterOptions) => {
             // PeripheralClusterNode constructor already adding the reference as child to parent object (PeripheralClusterNode object)
-            new PeripheralClusterNode(this, clusterOptions);
+            new PeripheralClusterNodeImpl(this, clusterOptions);
         });
 
         options.registers?.forEach((registerOptions) => {
             // PeripheralRegisterNode constructor already adding the reference as child to parent object (PeripheralClusterNode object)
-            new PeripheralRegisterNode(this, registerOptions);
+            new PeripheralRegisterNodeImpl(this, registerOptions);
         });
     }
 
+    /**
+     * @deprecated
+     */
     public getLabel(): string {
         return `${this.getLabelTitle()} [${this.getLabelValue()}]`;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelTitle(): string {
         return this.name;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelValue(): string {
         return hexFormat(this.offset, 0);
     }
 
+    /**
+     * @deprecated
+     */
     public getContextValue(): string {
         return 'cluster';
     }
@@ -78,12 +92,16 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         return item;
     }
 
+    /**
+     * @deprecated
+     */
     public getCDTTreeItem(): CDTTreeItem {
         return CDTTreeItem.create({
             id: this.getId(),
             key: this.getId(),
             expanded: this.expanded,
             label: this.getLabel(),
+            resource: undefined,
             path: this.getId().split(PERIPHERAL_ID_SEP),
             options: {
                 commands: this.getCommands(),
@@ -104,17 +122,16 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
             }
         });
     }
-
-    public getChildren(): PeripheralRegisterOrClusterNode[] {
+    public getChildren(): PeripheralRegisterOrClusterNodeImpl[] {
         return this.children;
     }
 
-    public setChildren(children: PeripheralRegisterOrClusterNode[]): void {
+    public setChildren(children: PeripheralRegisterOrClusterNodeImpl[]): void {
         this.children = children.slice(0, children.length);
         this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
     }
 
-    public addChild(child: PeripheralRegisterOrClusterNode): void {
+    public addChild(child: PeripheralRegisterOrClusterNodeImpl): void {
         this.children.push(child);
         this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
     }
@@ -164,7 +181,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         return results;
     }
 
-    public findByPath(path: string[]): PeripheralBaseNode | undefined {
+    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
         if (path.length === 0) {
             return this;
         } else {
@@ -181,7 +198,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         this.children.map((r) => { r.collectRanges(ary); });
     }
 
-    public getPeripheral(): PeripheralBaseNode {
+    public getPeripheral(): PeripheralBaseNodeImpl {
         return this.parent.getPeripheral();
     }
 
@@ -198,4 +215,14 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
             child.resolveDeferedEnums(enumTypeValuesMap);
         }
     }
+
+    serialize(): PeripheralClusterNode {
+        return PeripheralClusterNode.create({
+            ...super.serialize(),
+            ...this.options,
+            offset: this.offset,
+            children: []
+        });
+    }
+
 }

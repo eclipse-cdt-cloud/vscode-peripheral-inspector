@@ -59,18 +59,18 @@ export const ComponentTree = (props: ComponentTreeProps) => {
             // Cannot expand leaf || already expanded
             return;
         }
-        treeContext.notify(CTDTreeMessengerType.toggleNode, event.node);
+        treeContext.notify(CTDTreeMessengerType.toggleNode, { data: event.node as any });
     };
 
     const onClick = async (event: TreeNodeClickEvent) => {
-        treeContext.notify(CTDTreeMessengerType.clickNode, event.node);
+        treeContext.notify(CTDTreeMessengerType.clickNode, { data: event.node as any });
     };
 
     // Sub components
     const nodeTemplate = (node: TreeNode) => {
         CDTTreeItem.assert(node);
         return <div className='tree-node'
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.path })}
+            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id })}
         >
             {createLabelWithTooltip(createHighlightedText(node.label, node.options?.highlights), node.options?.tooltip)}
             {createActions(treeContext, node)}

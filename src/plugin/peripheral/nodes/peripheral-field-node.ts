@@ -8,16 +8,18 @@
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
-import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
+import { CommandDefinition, NodeSetting } from '../../../common';
+import { PERIPHERAL_ID_SEP, PeripheralFieldNode, PeripheralFieldNodeContextValue } from '../../../common/peripherals';
+import { CDTTreeItem } from '../../../components/tree/types';
 import { Commands } from '../../../manifest';
 import { binaryFormat, hexFormat, parseInteger } from '../../../utils';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
-import { PeripheralRegisterNode } from './peripheral-register-node';
-import { CDTTreeItem } from '../../../components/tree/types';
+import { PeripheralBaseNodeImpl } from './base-node';
+import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
+import { NumberFormat } from '../../../common/format';
 
-export type PeripheralFieldNodeContextValue = 'field' | 'field-res' | 'fieldRO' | 'fieldWO'
 
-export class PeripheralFieldNode extends PeripheralBaseNode {
+
+export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
     public session: vscode.DebugSession | undefined;
     public readonly name: string;
     public readonly description: string;
@@ -30,8 +32,9 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private enumerationMap: any;
     private prevValue = '';
+    private previousValue?: number;
 
-    constructor(public parent: PeripheralRegisterNode, private options: FieldOptions) {
+    constructor(public parent: PeripheralRegisterNodeImpl, protected options: FieldOptions) {
         super(parent);
 
         this.name = options.name;
@@ -71,27 +74,41 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelTitle(): string {
         const rangestart = this.offset;
         const rangeend = this.offset + this.width - 1;
         return `${this.name} [${rangeend}:${rangestart}]`;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelValue(): string {
         return this.getFormattedValue(this.getFormat());
     }
 
+    /**
+     * @deprecated
+     */
     public getLabel(): string {
         return this.getLabelTitle() + ' ' + this.getLabelValue();
     }
 
-
+    /**
+     * @deprecated
+     */
     public hasHighlights(): boolean {
         const displayValue = this.getLabelValue();
 
         return displayValue !== this.prevValue;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelHighlights(): [number, number][] | undefined {
         const title = this.getLabelTitle();
         const label = this.getLabel();
@@ -116,6 +133,9 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return item;
     }
 
+    /**
+     * @deprecated
+     */
     public getCDTTreeItem(): CDTTreeItem {
         const labelValue = this.getLabelValue();
 
@@ -124,6 +144,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
             key: this.getId(),
             label: this.getLabel(),
             leaf: true,
+            resource: undefined,
             path: this.getId().split(PERIPHERAL_ID_SEP),
             options: {
                 commands: this.getCommands(),
@@ -149,6 +170,9 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         });
     }
 
+    /**
+     * @deprecated
+     */
     public getCommands(): CommandDefinition[] {
         switch (this.getContextValue()) {
             case 'field':
@@ -177,10 +201,16 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return context;
     }
 
+    /**
+     * @deprecated
+     */
     public isReserved(): boolean {
         return this.name.toLowerCase() === 'reserved';
     }
 
+    /**
+     * @deprecated
+     */
     private generateTooltipMarkdown(isReserved: boolean): vscode.MarkdownString | null {
         const mds = new vscode.MarkdownString('', true);
         mds.isTrusted = true;
@@ -240,6 +270,9 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return mds;
     }
 
+    /**
+     * @deprecated
+     */
     public getFormattedRange(): string {
         const rangestart = this.offset;
         const rangeend = this.offset + this.width - 1;
@@ -254,10 +287,16 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return this.parent.extractBitsFromReset(this.offset, this.width);
     }
 
+    /**
+     * @deprecated
+     */
     public getFormattedValue(format: NumberFormat, includeEnumeration = true): string {
         return this.formatValue(this.getCurrentValue(), format, includeEnumeration);
     }
 
+    /**
+     * @deprecated
+     */
     private formatValue(value: number, format: NumberFormat, includeEnumeration = true): string {
         if (this.accessType === AccessType.WriteOnly) {
             return '(Write Only)';
@@ -301,7 +340,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
-    public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
+    public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
         return [];
     }
 
@@ -356,9 +395,13 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
 
     public updateData(): Thenable<boolean> {
         this.prevValue = this.getLabelValue();
+        this.previousValue = this.getCurrentValue();
         return Promise.resolve(true);
     }
 
+    /**
+     * @deprecated
+     */
     public getFormat(): NumberFormat {
         if (this.format !== NumberFormat.Auto) {
             return this.format;
@@ -375,7 +418,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
-    public findByPath(path: string[]): PeripheralBaseNode | undefined {
+    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
         if (path.length === 0) {
             return this;
         } else {
@@ -383,7 +426,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
-    public getPeripheral(): PeripheralBaseNode {
+    public getPeripheral(): PeripheralBaseNodeImpl {
         return this.parent.getPeripheral();
     }
 
@@ -401,5 +444,16 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
                 throw new Error(`Invalid derivedFrom=${this.options.derivedFrom} for enumeratedValues of field ${this.name}`);
             }
         }
+    }
+
+    serialize(): PeripheralFieldNode {
+        return PeripheralFieldNode.create({
+            ...super.serialize(),
+            ...this.options,
+            parentAddress: this.parent.getAddress(),
+            previousValue: this.previousValue,
+            currentValue: this.getCurrentValue(),
+            resetValue: this.getResetValue(),
+        });
     }
 }

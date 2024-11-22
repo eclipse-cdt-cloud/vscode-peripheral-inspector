@@ -5,13 +5,9 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
+import { NumberFormat } from './common/format';
 
-export enum NumberFormat {
-    Auto = 0,
-    Hexadecimal,
-    Decimal,
-    Binary
-}
+
 
 export interface NodeSetting {
     node: string;

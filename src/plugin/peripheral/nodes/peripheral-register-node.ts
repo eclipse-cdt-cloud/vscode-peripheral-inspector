@@ -6,22 +6,22 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralNode } from './peripheral-node';
-import { PeripheralClusterNode } from './peripheral-cluster-node';
-import { ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
-import { PeripheralFieldNode } from './peripheral-field-node';
 import { AddrRange } from '../../../addrranges';
-import { AccessType, PeripheralRegisterOptions, EnumerationMap } from '../../../api-types';
-import { NumberFormat, NodeSetting, CommandDefinition } from '../../../common';
-import { MemUtils } from '../../../memreadutils';
-import { extractBits, hexFormat, createMask, binaryFormat } from '../../../utils';
-import { Commands } from '../../../manifest';
+import { AccessType, EnumerationMap, PeripheralRegisterOptions } from '../../../api-types';
+import { NodeSetting } from '../../../common';
+import { PERIPHERAL_ID_SEP, PeripheralRegisterNode, PeripheralRegisterNodeContextValue } from '../../../common/peripherals';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { MemUtils } from '../../../memreadutils';
+import { binaryFormat, createMask, extractBits, hexFormat } from '../../../utils';
+import { ClusterOrRegisterBaseNodeImpl, PeripheralBaseNodeImpl } from './base-node';
+import { PeripheralClusterNodeImpl } from './peripheral-cluster-node';
+import { PeripheralFieldNodeImpl } from './peripheral-field-node';
+import { PeripheralNodeImpl } from './peripheral-node';
+import { NumberFormat } from '../../../common/format';
 
-export type PeripheralRegisterNodeContextValue = 'registerRW' | 'registerRO' | 'registerWO'
 
-export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
-    public children: PeripheralFieldNode[];
+export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
+    public children: PeripheralFieldNodeImpl[];
     public readonly name: string;
     public readonly description?: string;
     public readonly offset: number;
@@ -35,8 +35,9 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     private binaryRegex: RegExp;
     private currentValue: number;
     private prevValue = '';
+    private previousValue?: number;
 
-    constructor(public parent: PeripheralNode | PeripheralClusterNode, options: PeripheralRegisterOptions) {
+    constructor(public parent: PeripheralNodeImpl | PeripheralClusterNodeImpl, protected options: PeripheralRegisterOptions) {
         super(parent);
 
         this.name = options.name;
@@ -57,7 +58,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
 
         options.fields?.forEach((fieldOptions) => {
             // PeripheralFieldNode constructor already adding the reference as child to parent object (PeripheralRegisterNode object)
-            new PeripheralFieldNode(this, fieldOptions);
+            new PeripheralFieldNodeImpl(this, fieldOptions);
         });
     }
 
@@ -83,41 +84,47 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         });
     }
 
-    public getCommands(): CommandDefinition[] {
-        switch (this.getContextValue()) {
-            case 'registerRO':
-                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND];
-            case 'registerRW':
-                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.UPDATE_NODE_COMMAND];
-            case 'registerWO':
-                return [];
-            default:
-                return [];
-        }
-    }
 
+    /**
+     * @deprecated
+     */
     public getContextValue(): PeripheralRegisterNodeContextValue {
         return this.accessType === AccessType.ReadWrite ? 'registerRW' : (this.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelTitle(): string {
         return `${this.name} @ ${hexFormat(this.offset, 0)}`;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelValue(): string {
         return this.getFormattedValue(this.getFormat());
     }
 
+    /**
+     * @deprecated
+     */
     public getLabel(): string {
         return this.getLabelTitle() + ' ' + this.getLabelValue();
     }
 
+    /**
+     * @deprecated
+     */
     public hasHighlights(): boolean {
         const displayValue = this.getLabelValue();
 
         return displayValue !== this.prevValue;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelHighlights(): [number, number][] | undefined {
         const title = this.getLabelTitle();
         const label = this.getLabel();
@@ -146,6 +153,9 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return item;
     }
 
+    /**
+     * @deprecated
+     */
     public getCDTTreeItem(): CDTTreeItem {
         const labelValue = this.getLabelValue();
         return CDTTreeItem.create({
@@ -153,6 +163,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
             key: this.getId(),
             label: this.getLabel(),
             expanded: this.expanded,
+            resource: undefined,
             path: this.getId().split(PERIPHERAL_ID_SEP),
             options: {
                 commands: this.getCommands(),
@@ -178,6 +189,9 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         });
     }
 
+    /**
+     * @deprecated
+     */
     private generateTooltipMarkdown(): vscode.MarkdownString | null {
         const mds = new vscode.MarkdownString('', true);
         mds.isTrusted = true;
@@ -230,14 +244,23 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return mds;
     }
 
+    /**
+     * @deprecated
+     */
     public getFormattedValue(format: NumberFormat): string {
         return this.formatValue(this.currentValue, format);
     }
 
+    /**
+     * @deprecated
+     */
     public getFormattedResetValue(format: NumberFormat): string {
         return this.formatValue(this.resetValue, format);
     }
 
+    /**
+     * @deprecated
+     */
     private formatValue(value: number, format: NumberFormat): string {
         if (this.accessType === AccessType.WriteOnly) {
             return '(Write Only)';
@@ -257,20 +280,23 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return extractBits(this.resetValue, offset, width);
     }
 
-    public getChildren(): PeripheralFieldNode[] {
+    public getChildren(): PeripheralFieldNodeImpl[] {
         return this.children || [];
     }
 
-    public setChildren(children: PeripheralFieldNode[]): void {
+    public setChildren(children: PeripheralFieldNodeImpl[]): void {
         this.children = children.slice(0, children.length);
         this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
     }
 
-    public addChild(child: PeripheralFieldNode): void {
+    public addChild(child: PeripheralFieldNodeImpl): void {
         this.children.push(child);
         this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
     }
 
+    /**
+     * @deprecated
+     */
     public getFormat(): NumberFormat {
         if (this.format !== NumberFormat.Auto) {
             return this.format;
@@ -333,6 +359,8 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         const bc = this.size / 8;
         const bytes = this.parent.getBytes(this.offset, bc);
         const buffer = Buffer.from(bytes);
+        this.previousValue = this.currentValue;
+
         switch (bc) {
             case 1:
                 this.currentValue = buffer.readUInt8(0);
@@ -367,7 +395,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return results;
     }
 
-    public findByPath(path: string[]): PeripheralBaseNode | undefined {
+    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
         if (path.length === 0) {
             return this;
         } else if (path.length === 1) {
@@ -378,7 +406,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         }
     }
 
-    public getPeripheral(): PeripheralBaseNode {
+    public getPeripheral(): PeripheralBaseNodeImpl {
         return this.parent.getPeripheral();
     }
 
@@ -391,5 +419,19 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         for (const child of this.children) {
             child.resolveDeferedEnums(enumTypeValuesMap);
         }
+    }
+
+    serialize(): PeripheralRegisterNode {
+        return PeripheralRegisterNode.create({
+            ...super.serialize(),
+            ...this.options,
+            previousValue: this.previousValue,
+            currentValue: this.currentValue,
+            resetValue: this.resetValue,
+            offset: this.offset,
+            hexLength: this.hexLength,
+            children: [],
+            address: this.getAddress()
+        });
     }
 }

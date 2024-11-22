@@ -61,11 +61,11 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
             // Cannot expand leaf || already expanded
             return;
         }
-        treeContext.notify(CTDTreeMessengerType.toggleNode, event.node);
+        treeContext.notify(CTDTreeMessengerType.toggleNode, { data: event.node as any });
     };
 
     const onClick = (event: TreeTableEvent) => {
-        treeContext.notify(CTDTreeMessengerType.clickNode, event.node);
+        treeContext.notify(CTDTreeMessengerType.clickNode, { data: event.node as any });
     };
 
     // Sub Components
@@ -86,7 +86,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
     const expanderTemplate = (node: TreeNode, column: CDTTreeTableExpanderColumn) => {
         CDTTreeItem.assert(node);
 
-        return <div style={{ paddingLeft: `${((node.path.length ?? 1)) * 8}px` }}
+        return <div style={{ paddingLeft: `${((node.path?.length ?? 1)) * 8}px` }}
         >
             <div className='treetable-node' >
                 <div
@@ -107,7 +107,7 @@ export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
         const text = createHighlightedText(column.label, column.highlight);
 
         return <div
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id, cdtTreeItemPath: node.path })}
+            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id })}
         >
             {createLabelWithTooltip(text, column.tooltip)}
         </div>;

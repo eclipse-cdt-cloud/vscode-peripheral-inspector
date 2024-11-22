@@ -6,12 +6,13 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
+import { PeripheralBaseNodeImpl } from './base-node';
 import { AddrRange } from '../../../addrranges';
 import { NodeSetting } from '../../../common';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { PERIPHERAL_ID_SEP } from '../../../common/peripherals';
 
-export class MessageNode extends PeripheralBaseNode {
+export class MessageNode extends PeripheralBaseNodeImpl {
 
     constructor(public message: string, public tooltip?: string | vscode.MarkdownString) {
         super();
@@ -21,7 +22,7 @@ export class MessageNode extends PeripheralBaseNode {
         return 'message';
     }
 
-    public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
+    public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
         return [];
     }
 
@@ -37,6 +38,7 @@ export class MessageNode extends PeripheralBaseNode {
         return CDTTreeItem.create({
             id: this.getId(),
             key: this.getId(),
+            resource: undefined,
             path: this.getId().split(PERIPHERAL_ID_SEP),
         });
     }
@@ -57,7 +59,7 @@ export class MessageNode extends PeripheralBaseNode {
         return Promise.resolve(false);
     }
 
-    public getPeripheral(): PeripheralBaseNode | undefined {
+    public getPeripheral(): PeripheralBaseNodeImpl | undefined {
         return undefined;
     }
 
@@ -69,7 +71,7 @@ export class MessageNode extends PeripheralBaseNode {
         return [];
     }
 
-    public findByPath(_path: string[]): PeripheralBaseNode | undefined {
+    public findByPath(_path: string[]): PeripheralBaseNodeImpl | undefined {
         return undefined;
     }
 }

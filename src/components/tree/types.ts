@@ -8,6 +8,8 @@
 import { TreeNode as PrimeTreeNode } from 'primereact/treenode';
 import { NotificationType } from 'vscode-messenger-common';
 import { CommandDefinition, VscodeContext } from '../../common';
+import { PeripheralNode } from '../../common/peripherals';
+import { TreeNotification } from '../../common/notification';
 
 export interface CDTTreeOptions {
     contextValue?: string,
@@ -25,20 +27,33 @@ export interface CDTTreeTableExpanderColumn {
 
 export interface CDTTreeTableStringColumn {
     type: 'string';
+    icon?: string;
     label: string;
     highlight?: [number, number][];
     tooltip?: string;
 }
 
-export interface CDTTreeItem extends PrimeTreeNode {
+export interface CDTTreeTableActionColumn {
+    type: 'action';
+    commands: CommandDefinition[];
+}
+
+export type CDTTreeTableColumn = CDTTreeTableExpanderColumn | CDTTreeTableStringColumn | CDTTreeTableActionColumn;
+
+export interface CDTTreeItem<T = unknown> extends PrimeTreeNode {
     __type: 'CDTTreeItem'
     id: string;
     key: string;
     icon?: string;
-    path: string[];
+    path?: string[];
+    parentId?: string;
+    children?: CDTTreeItem<T>[];
+    resource: T;
     options?: CDTTreeOptions;
-    columns?: Record<string, CDTTreeTableExpanderColumn | CDTTreeTableStringColumn>;
-    children?: CDTTreeItem[];
+    columns?: Record<string, CDTTreeTableColumn>;
+    pinnable?: boolean;
+    pinned?: boolean;
+    expanded?: boolean;
 }
 
 export namespace CDTTreeItem {
@@ -52,7 +67,7 @@ export namespace CDTTreeItem {
         }
     }
 
-    export function create(options: Omit<CDTTreeItem, '__type'>): CDTTreeItem {
+    export function create<TResource>(options: Omit<CDTTreeItem<TResource>, '__type'>): CDTTreeItem<TResource> {
         return {
             __type: 'CDTTreeItem',
             ...options
@@ -60,15 +75,17 @@ export namespace CDTTreeItem {
     }
 }
 
-export type CDTTreeViewType = 'tree' | 'treetable';
+export type CDTTreeViewType = 'tree' | 'treetable' | 'antd-treetable';
 
 export interface CDTTreeTableColumnDefinition {
+    type: string;
     field: string;
     expander?: boolean;
 }
 
 export interface CDTTreeState {
     items?: CDTTreeItem[];
+    peripherals?: PeripheralNode[];
     selectedItem?: CDTTreeItem;
     columnFields?: CDTTreeTableColumnDefinition[];
     type: CDTTreeViewType;
@@ -82,12 +99,11 @@ export interface CDTTreeExecuteCommand {
 export interface CTDTreeWebviewContext {
     webviewSection: string;
     cdtTreeItemId: string;
-    cdtTreeItemPath: string[];
 }
 
 export namespace CTDTreeWebviewContext {
     export function is(context: object): context is CTDTreeWebviewContext {
-        return 'cdtTreeItemId' in context && 'cdtTreeItemPath' in context;
+        return 'cdtTreeItemId' in context;
     }
 
     export function create(context: CTDTreeWebviewContext): VscodeContext {
@@ -95,10 +111,12 @@ export namespace CTDTreeWebviewContext {
     }
 }
 
+
 export namespace CTDTreeMessengerType {
     export const updateState: NotificationType<CDTTreeState> = { method: 'updateState' };
     export const ready: NotificationType<void> = { method: 'ready' };
-    export const executeCommand: NotificationType<CDTTreeExecuteCommand> = { method: 'executeCommand' };
-    export const toggleNode: NotificationType<CDTTreeItem> = { method: 'toggleNode' };
-    export const clickNode: NotificationType<CDTTreeItem> = { method: 'clickNode' };
+
+    export const executeCommand: NotificationType<TreeNotification<CDTTreeExecuteCommand>> = { method: 'executeCommand' };
+    export const toggleNode: NotificationType<TreeNotification<CDTTreeItem>> = { method: 'toggleNode' };
+    export const clickNode: NotificationType<TreeNotification<CDTTreeItem>> = { method: 'clickNode' };
 }

@@ -12,7 +12,7 @@ import { DebugTracker } from '../../debug-tracker';
 import { PeripheralInspectorAPI } from '../../peripheral-inspector-api';
 import { PeripheralDataTracker } from '../../plugin/peripheral/tree/peripheral-data-tracker';
 import { SvdResolver } from '../../svd-resolver';
-import { enableCDTTree } from '../tree';
+import { enableCDTAntDTreeTable } from '../tree';
 export * as api from '../../api-types';
 
 export const activate = async (context: vscode.ExtensionContext): Promise<IPeripheralInspectorAPI> => {
@@ -26,7 +26,9 @@ export const activate = async (context: vscode.ExtensionContext): Promise<IPerip
     await tracker.activate(context);
     await commands.activate(context);
 
-    await enableCDTTree(context, peripheralDataTracker);
+    // await enableCDTTree(context, peripheralDataTracker);
+    // await enableCDTTreeTable(context, peripheralDataTracker);
+    await enableCDTAntDTreeTable(context, peripheralDataTracker);
 
     return api;
 };

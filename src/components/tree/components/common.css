@@ -29,15 +29,20 @@
 .tree-toggler-container {
   width: 1rem;
   margin-right: 6px;
+  cursor: pointer;
+  padding-top: 3px;
 }
 
 .tree-actions {
   display: none;
+  flex: 1;
+  justify-content: end;
 }
 
 .tree-actions .codicon {
   padding: 2px;
   border-radius: 5px;
+  font-size: var(--vscode-font-size);
 }
 
 .tree-actions .codicon:hover {

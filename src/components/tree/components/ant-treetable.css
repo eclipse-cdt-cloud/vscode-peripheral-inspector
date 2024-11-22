@@ -1,0 +1,45 @@
+/********************************************************************************
+ * Copyright (C) 2024 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
+
+/* AntD Table Variables */
+.css-var-r0 {
+  --ant-font-family: var(--vscode-font-family);
+  --ant-color-text: var(--vscode-sideBar-foreground);
+  --ant-color-bg-container: var(--vscode-sideBar-background);
+}
+
+.ant-table-tbody-virtual-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background) !important;
+}
+
+.ant-table.ant-table-css-var {
+  --ant-table-row-hover-bg: var(--vscode-list-hoverBackground);
+  --ant-table-border-color: var(--vscode-sideBar-background);
+  --ant-table-cell-font-size: var(--vscode-font-size);
+  --ant-table-cell-padding-block: 0;
+  --ant-table-cell-padding-inline: 4px;
+}
+
+.ant-table .ant-table-row .ant-table-cell {
+  display: flex;
+}
+
+.ant-table .ant-table-row .ant-table-cell .cell-icon {
+  margin-right: 4px;
+  padding-top: 4px;
+  font-size: var(--vscode-font-size);
+}
+
+.ant-table .ant-table-row:hover .tree-actions,
+.ant-table .ant-table-row:focus .tree-actions {
+  display: flex;
+  align-items: center;
+}
+
+.ant-table .tree-actions {
+  padding-right: 8px;
+}

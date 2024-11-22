@@ -8,20 +8,20 @@
 import * as vscode from 'vscode';
 import { AddrRange, AddressRangesUtils } from '../../../addrranges';
 import { AccessType, EnumerationMap, PeripheralOptions } from '../../../api-types';
-import { CommandDefinition, NodeSetting, NumberFormat } from '../../../common';
+import { CommandDefinition, NodeSetting } from '../../../common';
+import { CDTTreeItem } from '../../../components/tree/types';
 import { Commands } from '../../../manifest';
 import { MemUtils } from '../../../memreadutils';
 import { hexFormat } from '../../../utils';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from './base-node';
-import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
-import { PeripheralRegisterNode } from './peripheral-register-node';
-import { CDTTreeItem } from '../../../components/tree/types';
+import { PeripheralBaseNodeImpl } from './base-node';
+import { PeripheralClusterNodeImpl, PeripheralRegisterOrClusterNodeImpl } from './peripheral-cluster-node';
+import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
+import { PERIPHERAL_ID_SEP, PeripheralNode, PeripheralNodeContextValue } from '../../../common/peripherals';
+import { NumberFormat } from '../../../common/format';
 
-export type PeripheralNodeContextValue = 'peripheral' | 'peripheral.pinned'
 
-export class PeripheralNode extends PeripheralBaseNode {
-    private children: Array<PeripheralRegisterNode | PeripheralClusterNode>;
-
+export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
+    public children: Array<PeripheralRegisterNodeImpl | PeripheralClusterNodeImpl>;
     public readonly name: string;
     public readonly baseAddress: number;
     public readonly description: string;
@@ -34,7 +34,7 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     private currentValue: number[] = [];
 
-    constructor(public gapThreshold: number, options: PeripheralOptions) {
+    constructor(public gapThreshold: number, protected options: PeripheralOptions) {
         super();
 
         this.name = options.name;
@@ -49,19 +49,22 @@ export class PeripheralNode extends PeripheralBaseNode {
 
         options.clusters?.forEach((clusterOptions) => {
             // PeripheralClusterNode constructor already adding the reference as child to parent object (PeripheralNode object)
-            new PeripheralClusterNode(this, clusterOptions);
+            new PeripheralClusterNodeImpl(this, clusterOptions);
         });
 
         options.registers?.forEach((registerOptions) => {
             // PeripheralRegisterNode constructor already adding the reference as child to parent object (PeripheralNode object)
-            new PeripheralRegisterNode(this, registerOptions);
+            new PeripheralRegisterNodeImpl(this, registerOptions);
         });
     }
 
-    public getPeripheral(): PeripheralBaseNode {
+    public getPeripheral(): PeripheralBaseNodeImpl {
         return this;
     }
 
+    /**
+     * @deprecated Webview manages the display state
+     */
     public getCommands(): CommandDefinition[] {
         switch (this.getContextValue()) {
             case 'peripheral':
@@ -73,14 +76,23 @@ export class PeripheralNode extends PeripheralBaseNode {
         }
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelTitle(): string {
         return this.name;
     }
 
+    /**
+     * @deprecated
+     */
     public getLabelValue(): string {
         return hexFormat(this.baseAddress);
     }
 
+    /**
+     * @deprecated
+     */
     public getLabel(): string {
         return `${this.getLabelTitle()} @ ${this.getLabelValue()}`;
     }
@@ -97,11 +109,15 @@ export class PeripheralNode extends PeripheralBaseNode {
         return item;
     }
 
+    /**
+     * @deprecated
+     */
     public getCDTTreeItem(): CDTTreeItem {
         return CDTTreeItem.create({
             id: this.getId(),
             key: this.getId(),
             label: this.getLabel(),
+            resource: undefined,
             icon: this.pinned ? 'codicon codicon-pinned' : undefined,
             expanded: this.expanded,
             path: this.getId().split(PERIPHERAL_ID_SEP),
@@ -125,6 +141,9 @@ export class PeripheralNode extends PeripheralBaseNode {
         });
     }
 
+    /**
+     * @deprecated
+     */
     public getContextValue(): PeripheralNodeContextValue {
         return this.pinned ? 'peripheral.pinned' : 'peripheral';
     }
@@ -133,16 +152,16 @@ export class PeripheralNode extends PeripheralBaseNode {
         throw new Error('Method not implemented.');
     }
 
-    public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
+    public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
         return this.children;
     }
 
-    public setChildren(children: Array<PeripheralRegisterNode | PeripheralClusterNode>): void {
+    public setChildren(children: Array<PeripheralRegisterNodeImpl | PeripheralClusterNodeImpl>): void {
         this.children = children;
         this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
     }
 
-    public addChild(child: PeripheralRegisterOrClusterNode): void {
+    public addChild(child: PeripheralRegisterOrClusterNodeImpl): void {
         this.children.push(child);
         this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
     }
@@ -247,7 +266,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         this.addrRanges = AddressRangesUtils.splitIntoChunks(ranges, maxBytes, this.name, this.totalLength);
     }
 
-    public getPeripheralNode(): PeripheralNode {
+    public getPeripheralNode(): PeripheralNodeImpl {
         return this;
     }
 
@@ -274,7 +293,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         return results;
     }
 
-    public findByPath(path: string[]): PeripheralBaseNode | undefined {
+    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
         if (path.length === 0) {
             return this;
         } else {
@@ -291,24 +310,18 @@ export class PeripheralNode extends PeripheralBaseNode {
         throw new Error('Method not implemented.');
     }
 
-    public static compare(p1: PeripheralNode, p2: PeripheralNode): number {
-        if ((p1.pinned && p2.pinned) || (!p1.pinned && !p2.pinned)) {
-            // none or both peripherals are pinned, sort by name prioritizing groupname
-            if (p1.groupName !== p2.groupName) {
-                return p1.groupName > p2.groupName ? 1 : -1;
-            } else if (p1.name !== p2.name) {
-                return p1.name > p2.name ? 1 : -1;
-            } else {
-                return 0;
-            }
-        } else {
-            return p1.pinned ? -1 : 1;
-        }
-    }
-
     public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
         for (const child of this.children) {
             child.resolveDeferedEnums(enumTypeValuesMap);
         }
+    }
+
+    serialize(): PeripheralNode {
+        return PeripheralNode.create({
+            ...super.serialize(),
+            ...this.options,
+            groupName: this.groupName,
+            children: []
+        });
     }
 }

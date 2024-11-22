@@ -41,6 +41,7 @@
     "@floating-ui/react": "^0.26.17",
     "@vscode/codicons": "0.0.20",
     "@vscode/webview-ui-toolkit": "^1.4.0",
+    "antd": "^5.22.1",
     "jszip": "^3.10.1",
     "node-fetch": "^2.6.7",
     "primeflex": "^3.3.1",
@@ -83,8 +84,8 @@
       "debug": [
         {
           "type": "webview",
-          "id": "peripheral-inspector.peripheral-tree",
-          "name": "Peripherals",
+          "id": "peripheral-inspector.peripheral-antd-treetable",
+          "name": "Peripherals AntD Tree-table",
           "when": "peripheral-inspector.svd.hasData"
         }
       ]
@@ -191,12 +192,12 @@
       "view/title": [
         {
           "command": "peripheral-inspector.svd.refreshAll",
-          "when": "view == peripheral-inspector.peripheral-tree && debugState == stopped",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
           "group": "navigation"
         },
         {
           "command": "peripheral-inspector.svd.collapseAll",
-          "when": "view == peripheral-inspector.peripheral-tree && debugState == stopped",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
           "group": "navigation"
         }
       ],
@@ -275,7 +276,7 @@
       "webview/context": [
         {
           "command": "peripheral-inspector.svd.setFormat",
-          "when": "webviewId == peripheral-inspector.peripheral-tree && webviewSection == tree-item",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item",
           "group": "navigation"
         }
       ]

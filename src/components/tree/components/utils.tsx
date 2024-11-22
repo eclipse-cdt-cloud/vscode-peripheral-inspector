@@ -18,7 +18,7 @@ export function createHighlightedText(label?: string, highlights?: [number, numb
     if (label === undefined) {
         return <span>No label provided</span>;
     }
-    if (highlights === undefined) {
+    if (highlights === undefined || highlights.length === 0) {
         return <span>{label}</span>;
     }
 
@@ -40,7 +40,9 @@ export function createHighlightedText(label?: string, highlights?: [number, numb
         result.push(<span key="text-end">{label.slice(currentPosition)}</span>);
     }
 
-    return <span>{result}</span>;
+    return <div className='tree-label'>
+        <span>{result}</span>
+    </div>;
 }
 
 export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: string): React.JSX.Element {
@@ -63,16 +65,16 @@ export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: strin
 }
 
 
-export function createActions(context: CDTTreeContext, node: TreeNode): React.JSX.Element {
+export function createActions(context: CDTTreeContext, node: TreeNode, handler?: (event: React.MouseEvent, action: CommandDefinition) => void): React.JSX.Element {
     CDTTreeItem.assert(node);
 
     const onClick = (event: React.MouseEvent, action: CommandDefinition) => {
-        context.notify(CTDTreeMessengerType.executeCommand, { commandId: action.commandId, item: node }, { isLoading: !NonBlockingCommands.IDS.includes(action.commandId) });
+        context.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: action.commandId, item: node } }, { isLoading: !NonBlockingCommands.IDS.includes(action.commandId) });
         event.stopPropagation();
     };
 
     return <div className="tree-actions">
-        {node.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => onClick(event, a)}></i>)}
+        {node.options?.commands?.map(a => <i key={a.commandId} className={`codicon codicon-${a.icon}`} onClick={(event) => handler?.(event, a) ?? onClick(event, a)}></i>)}
     </div>;
 }
 

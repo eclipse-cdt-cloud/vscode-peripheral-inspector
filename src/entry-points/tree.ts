@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { PeripheralDataTracker } from '../plugin/peripheral/tree/peripheral-data-tracker';
 import { PeripheralCDTTreeDataProvider } from '../plugin/peripheral/tree/provider/peripheral-cdt-tree-data-provider';
 import { PeripheralTreeDataProvider } from '../plugin/peripheral/tree/provider/peripheral-tree-data-provider';
-import { PeripheralsTreeTableWebView, PeripheralsTreeWebView } from '../plugin/peripheral/webview/peripheral-tree-webview-main';
+import { PeripheralsAntDTreeTableWebView, PeripheralsTreeTableWebView, PeripheralsTreeWebView } from '../plugin/peripheral/webview/peripheral-tree-webview-main';
 
 /**
  * **Notice**
@@ -66,4 +66,25 @@ export async function enableCDTTreeTable(context: vscode.ExtensionContext, perip
     const peripheralTreeTableWebView = new PeripheralsTreeTableWebView(peripheralCDTTreeTableDataProvider, context);
     await peripheralCDTTreeTableDataProvider.activate(peripheralTreeTableWebView);
     await peripheralTreeTableWebView.activate(context);
+}
+
+
+/**
+ * **Notice**
+ * You also need to add the view in package.json
+ *
+ * ```json
+   {
+    "type": "webview",
+    "id": "peripheral-inspector.peripheral-antd-treetable",
+    "name": "Peripherals AntD Tree-table",
+    "when": "peripheral-inspector.svd.hasData"
+   }
+ * ```
+ */
+export async function enableCDTAntDTreeTable(context: vscode.ExtensionContext, peripheralDataTracker: PeripheralDataTracker): Promise<void> {
+    const dataProvider = new PeripheralCDTTreeDataProvider(peripheralDataTracker, context);
+    const webView = new PeripheralsAntDTreeTableWebView(dataProvider, context);
+    await dataProvider.activate(webView);
+    await webView.activate(context);
 }
