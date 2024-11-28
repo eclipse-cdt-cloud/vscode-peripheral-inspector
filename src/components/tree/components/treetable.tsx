@@ -16,19 +16,55 @@ import { getNestedValue } from '../../../common/utils';
 import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
 import { classNames, createHighlightedText, createLabelWithTooltip } from './utils';
 
+/**
+ * Component to render a tree table.
+ */
 export type ComponentTreeTableProps<T = unknown> = {
+    /**
+     * Information about the columns to be rendered.
+     */
     columnDefinitions?: CDTTreeTableColumnDefinition[];
+    /**
+     * Data source to be rendered.
+     */
     dataSource?: CDTTreeItem<T>[];
+    /**
+     * Function to sort the root elements of the data source.
+     */
     dataSourceComparer?: (a: CDTTreeItem<T>, b: CDTTreeItem<T>) => number;
+    /**
+     * Configuration for the expansion of the tree table.
+     */
     expansion?: {
+        /**
+         * List of expanded row keys.
+         */
         expandedRowKeys?: string[];
+        /**
+         * Callback to be called when a row is expanded or collapsed.
+         */
         onExpand?: ExpandableConfig<CDTTreeItem<unknown>>['onExpand'];
     },
+    /**
+     * Configuration for the pinning of the tree table.
+     */
     pin?: {
+        /**
+         * List of pinned row keys.
+         */
         pinnedRowKeys?: string[];
+        /**
+         * Callback to be called when a row is pinned or unpinned.
+         */
         onPin?: (event: React.MouseEvent, pinned: boolean, record: CDTTreeItem<unknown>) => void;
     }
+    /**
+     * Configuration for the actions of the tree table.
+     */
     action?: {
+        /**
+         * Callback to be called when an action is triggered.
+         */
         onAction?: (event: React.MouseEvent, command: CommandDefinition, value: unknown, record: CDTTreeItem<unknown>) => void;
     }
 };
@@ -38,6 +74,7 @@ interface BodyRowProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const BodyRow = React.forwardRef<HTMLDivElement, BodyRowProps>((props, ref) => {
+    // Support VSCode context menu items
     return (
         <div
             ref={ref}
@@ -91,7 +128,7 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
     const renderActionColumn = (column: CDTTreeTableActionColumn | undefined, record: CDTTreeItem) => {
         const actions: React.ReactNode[] = [];
 
-        if (record.pinnable) {
+        if (record.pinned !== undefined) {
             if (record.pinned) {
                 actions.push(<i
                     key={'unpin'}

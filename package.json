@@ -84,7 +84,7 @@
         {
           "type": "webview",
           "id": "peripheral-inspector.peripheral-treetable",
-          "name": "Peripherals Tree",
+          "name": "Peripherals",
           "when": "peripheral-inspector.svd.hasData"
         }
       ]

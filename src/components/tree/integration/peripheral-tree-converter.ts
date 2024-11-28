@@ -69,7 +69,6 @@ export class PeripheralNodeConverter implements TreeResourceConverter<Peripheral
             resource,
             expanded: context.expandedKeys.includes(resource.id),
             pinned: context.pinnedKeys.includes(resource.id),
-            pinnable: true,
             columns: this.getColumns(resource, context),
         });
     }

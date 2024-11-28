@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { Messenger } from 'vscode-messenger';
 import { WebviewIdMessageParticipant } from 'vscode-messenger-common';
 import { TreeNotification } from '../../../../common/notification';
-import { CDTTreeExecuteCommand, CDTTreeExtensionModel, CDTTreeItem, CTDTreeMessengerType } from '../../types';
+import { CDTTreeExecuteCommand, CDTTreeItem, CTDTreeMessengerType } from '../../types';
 import { CDTTreeDataProvider } from '../tree-data-provider';
 
 export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.WebviewViewProvider {
@@ -29,7 +29,7 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     protected participant: WebviewIdMessageParticipant | undefined;
 
     public constructor(
-        protected readonly dataProvider: CDTTreeDataProvider<TNode, any>,
+        protected readonly dataProvider: CDTTreeDataProvider<TNode, unknown>,
         protected readonly context: vscode.ExtensionContext,
         protected readonly messenger = new Messenger({ ignoreHiddenViews: false, debugLog: true })
     ) {

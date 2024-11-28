@@ -89,7 +89,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
             dataSource={this.state.viewModel.items}
             dataSourceComparer={(p1, p2) => {
                 if (PeripheralNode.is(p1.resource) && PeripheralNode.is(p2.resource)) {
-                    PeripheralNode.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
+                    return PeripheralNode.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
                 }
 
                 return 0;
