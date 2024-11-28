@@ -8,14 +8,12 @@
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
-import { CommandDefinition, NodeSetting } from '../../../common';
-import { PERIPHERAL_ID_SEP, PeripheralFieldNode, PeripheralFieldNodeContextValue } from '../../../common/peripherals';
-import { CDTTreeItem } from '../../../components/tree/types';
-import { Commands } from '../../../manifest';
-import { binaryFormat, hexFormat, parseInteger } from '../../../utils';
+import { NodeSetting } from '../../../common';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralFieldNode } from '../../../common/peripherals';
+import { parseInteger } from '../../../utils';
 import { PeripheralBaseNodeImpl } from './base-node';
 import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
-import { NumberFormat } from '../../../common/format';
 
 
 
@@ -31,7 +29,6 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
     private enumerationValues: string[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private enumerationMap: any;
-    private prevValue = '';
     private previousValue?: number;
 
     constructor(public parent: PeripheralRegisterNodeImpl, protected options: FieldOptions) {
@@ -74,260 +71,12 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         }
     }
 
-    /**
-     * @deprecated
-     */
-    public getLabelTitle(): string {
-        const rangestart = this.offset;
-        const rangeend = this.offset + this.width - 1;
-        return `${this.name} [${rangeend}:${rangestart}]`;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelValue(): string {
-        return this.getFormattedValue(this.getFormat());
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabel(): string {
-        return this.getLabelTitle() + ' ' + this.getLabelValue();
-    }
-
-    /**
-     * @deprecated
-     */
-    public hasHighlights(): boolean {
-        const displayValue = this.getLabelValue();
-
-        return displayValue !== this.prevValue;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelHighlights(): [number, number][] | undefined {
-        const title = this.getLabelTitle();
-        const label = this.getLabel();
-
-        if (this.hasHighlights()) {
-            return [[title.length + 1, label.length]];
-        }
-
-        return undefined;
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const labelItem: vscode.TreeItemLabel = {
-            label: this.getLabel(),
-            highlights: this.getLabelHighlights()
-        };
-        const item = new vscode.TreeItem(labelItem, vscode.TreeItemCollapsibleState.None);
-        item.id = this.getId();
-        item.contextValue = this.getContextValue();
-        item.tooltip = this.generateTooltipMarkdown(this.isReserved()) || undefined;
-
-        return item;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getCDTTreeItem(): CDTTreeItem {
-        const labelValue = this.getLabelValue();
-
-        return CDTTreeItem.create({
-            id: this.getId(),
-            key: this.getId(),
-            label: this.getLabel(),
-            leaf: true,
-            resource: undefined,
-            path: this.getId().split(PERIPHERAL_ID_SEP),
-            options: {
-                commands: this.getCommands(),
-                contextValue: this.getContextValue(),
-                tooltip: this.generateTooltipMarkdown(this.isReserved())?.value ?? undefined,
-                highlights: this.getLabelHighlights()
-            },
-            columns: {
-                'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
-                    tooltip: this.generateTooltipMarkdown(this.isReserved())?.value ?? undefined,
-                },
-                'value': {
-                    type: 'string',
-                    label: labelValue,
-                    highlight: this.hasHighlights() ?
-                        [[0, labelValue.length]]
-                        : undefined,
-                    tooltip: labelValue
-                }
-            }
-        });
-    }
-
-    /**
-     * @deprecated
-     */
-    public getCommands(): CommandDefinition[] {
-        switch (this.getContextValue()) {
-            case 'field':
-                return [Commands.COPY_VALUE_COMMAND, Commands.UPDATE_NODE_COMMAND,];
-            case 'field-res':
-                return [];
-            case 'fieldRO':
-                return [Commands.COPY_VALUE_COMMAND];
-            case 'fieldWO':
-                return [Commands.UPDATE_NODE_COMMAND];
-            default:
-                return [];
-        }
-    }
-
-    public getContextValue(): PeripheralFieldNodeContextValue {
-        let context: PeripheralFieldNodeContextValue = 'field';
-        if (this.isReserved()) {
-            context = 'field-res';
-        } else if (this.accessType === AccessType.ReadOnly) {
-            context = 'fieldRO';
-        } else if (this.accessType === AccessType.WriteOnly) {
-            context = 'fieldWO';
-        }
-
-        return context;
-    }
-
-    /**
-     * @deprecated
-     */
-    public isReserved(): boolean {
-        return this.name.toLowerCase() === 'reserved';
-    }
-
-    /**
-     * @deprecated
-     */
-    private generateTooltipMarkdown(isReserved: boolean): vscode.MarkdownString | null {
-        const mds = new vscode.MarkdownString('', true);
-        mds.isTrusted = true;
-
-        const address = `${hexFormat(this.parent.getAddress())}${this.getFormattedRange()}`;
-
-        if (isReserved) {
-            mds.appendMarkdown(`| ${this.name}@${address} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | *Reserved* |\n`);
-            mds.appendMarkdown('|:---|:---:|---:|');
-            return mds;
-        }
-
-        const formattedValue = this.getFormattedValue(this.getFormat(), true);
-
-        const roLabel = this.accessType === AccessType.ReadOnly ? '(Read Only)' : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-
-        mds.appendMarkdown(`| ${this.name}@${address} | ${roLabel} | *${formattedValue}* |\n`);
-        mds.appendMarkdown('|:---|:---:|---:|\n\n');
-
-        if (this.accessType !== AccessType.WriteOnly) {
-            mds.appendMarkdown(`**Reset Value:** ${this.formatValue(this.getResetValue(), this.getFormat())}\n`);
-        }
-
-        mds.appendMarkdown('\n____\n\n');
-        mds.appendMarkdown(this.description);
-
-        mds.appendMarkdown('\n_____\n\n');
-
-        // Don't try to display current value table for write only fields
-        if (this.accessType === AccessType.WriteOnly) {
-            return mds;
-        }
-
-        const value = this.parent.extractBits(this.offset, this.width);
-        const hex = hexFormat(value, Math.ceil(this.width / 4), true);
-        const decimal = value.toString();
-        const binary = binaryFormat(value, this.width);
-
-        if (this.enumeration) {
-            mds.appendMarkdown('| Enumeration Value &nbsp;&nbsp; | Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
-            mds.appendMarkdown('|:---|:---|:---|:---|\n');
-            let ev = 'Unknown';
-            if (this.enumeration[value]) {
-                ev = this.enumeration[value].name;
-            }
-
-            mds.appendMarkdown(`| ${ev} &nbsp;&nbsp; | ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n\n`);
-            if (this.enumeration[value] && this.enumeration[value].description) {
-                mds.appendMarkdown(this.enumeration[value].description);
-            }
-        } else {
-            mds.appendMarkdown('| Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
-            mds.appendMarkdown('|:---|:---|:---|\n');
-            mds.appendMarkdown(`| ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n`);
-        }
-
-        return mds;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getFormattedRange(): string {
-        const rangestart = this.offset;
-        const rangeend = this.offset + this.width - 1;
-        return `[${rangeend}:${rangestart}]`;
-    }
-
     private getCurrentValue(): number {
         return this.parent.extractBits(this.offset, this.width);
     }
 
     private getResetValue(): number {
         return this.parent.extractBitsFromReset(this.offset, this.width);
-    }
-
-    /**
-     * @deprecated
-     */
-    public getFormattedValue(format: NumberFormat, includeEnumeration = true): string {
-        return this.formatValue(this.getCurrentValue(), format, includeEnumeration);
-    }
-
-    /**
-     * @deprecated
-     */
-    private formatValue(value: number, format: NumberFormat, includeEnumeration = true): string {
-        if (this.accessType === AccessType.WriteOnly) {
-            return '(Write Only)';
-        }
-
-        let formatted = '';
-
-        switch (format) {
-            case NumberFormat.Decimal:
-                formatted = value.toString();
-                break;
-            case NumberFormat.Binary:
-                formatted = binaryFormat(value, this.width);
-                break;
-            case NumberFormat.Hexadecimal:
-                formatted = hexFormat(value, Math.ceil(this.width / 4), true);
-                break;
-            default:
-                formatted = this.width >= 4 ? hexFormat(value, Math.ceil(this.width / 4), true) : binaryFormat(value, this.width);
-                break;
-        }
-
-        if (includeEnumeration && this.enumeration) {
-            if (this.enumeration[value]) {
-                formatted = `${this.enumeration[value].name} (${formatted})`;
-            } else {
-                formatted = `Unknown Enumeration (${formatted})`;
-            }
-        }
-
-        return formatted;
     }
 
     public getEnumerationValue(value: number): string | undefined {
@@ -344,7 +93,7 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         return [];
     }
 
-    public performUpdate(): Thenable<boolean> {
+    public performUpdate(value?: string): Thenable<boolean> {
         return new Promise((resolve, reject) => {
             if (this.enumeration) {
                 const items: vscode.QuickPickItem[] = [];
@@ -366,7 +115,7 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
                     this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
                 });
             } else {
-                vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() }).then((val) => {
+                vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value }).then((val) => {
                     if (typeof val === 'string') {
                         const numval = parseInteger(val);
                         if (numval === undefined) {
@@ -379,35 +128,9 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         });
     }
 
-    public getCopyValue(): string {
-        const value = this.parent.extractBits(this.offset, this.width);
-        switch (this.getFormat()) {
-            case NumberFormat.Decimal:
-                return value.toString();
-            case NumberFormat.Binary:
-                return binaryFormat(value, this.width);
-            case NumberFormat.Hexadecimal:
-                return hexFormat(value, Math.ceil(this.width / 4), true);
-            default:
-                return this.width >= 4 ? hexFormat(value, Math.ceil(this.width / 4), true) : binaryFormat(value, this.width);
-        }
-    }
-
     public updateData(): Thenable<boolean> {
-        this.prevValue = this.getLabelValue();
         this.previousValue = this.getCurrentValue();
         return Promise.resolve(true);
-    }
-
-    /**
-     * @deprecated
-     */
-    public getFormat(): NumberFormat {
-        if (this.format !== NumberFormat.Auto) {
-            return this.format;
-        } else {
-            return this.parent.getFormat();
-        }
     }
 
     public saveState(path: string): NodeSetting[] {

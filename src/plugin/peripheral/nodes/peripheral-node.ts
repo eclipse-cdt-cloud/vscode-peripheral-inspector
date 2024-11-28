@@ -8,16 +8,13 @@
 import * as vscode from 'vscode';
 import { AddrRange, AddressRangesUtils } from '../../../addrranges';
 import { AccessType, EnumerationMap, PeripheralOptions } from '../../../api-types';
-import { CommandDefinition, NodeSetting } from '../../../common';
-import { CDTTreeItem } from '../../../components/tree/types';
-import { Commands } from '../../../manifest';
+import { NodeSetting } from '../../../common';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralNode } from '../../../common/peripherals';
 import { MemUtils } from '../../../memreadutils';
-import { hexFormat } from '../../../utils';
 import { PeripheralBaseNodeImpl } from './base-node';
 import { PeripheralClusterNodeImpl, PeripheralRegisterOrClusterNodeImpl } from './peripheral-cluster-node';
 import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
-import { PERIPHERAL_ID_SEP, PeripheralNode, PeripheralNodeContextValue } from '../../../common/peripherals';
-import { NumberFormat } from '../../../common/format';
 
 
 export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
@@ -60,96 +57,6 @@ export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
 
     public getPeripheral(): PeripheralBaseNodeImpl {
         return this;
-    }
-
-    /**
-     * @deprecated Webview manages the display state
-     */
-    public getCommands(): CommandDefinition[] {
-        switch (this.getContextValue()) {
-            case 'peripheral':
-                return [Commands.PIN_COMMAND, Commands.FORCE_REFRESH_COMMAND];
-            case 'peripheral.pinned':
-                return [Commands.UNPIN_COMMAND, Commands.FORCE_REFRESH_COMMAND];
-            default:
-                return [];
-        }
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelTitle(): string {
-        return this.name;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelValue(): string {
-        return hexFormat(this.baseAddress);
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabel(): string {
-        return `${this.getLabelTitle()} @ ${this.getLabelValue()}`;
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = this.getLabel();
-        const item = new vscode.TreeItem(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
-        item.id = this.getId();
-        item.contextValue = this.getContextValue();
-        item.tooltip = this.description || undefined;
-        if (this.pinned) {
-            item.iconPath = new vscode.ThemeIcon('pinned');
-        }
-        return item;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getCDTTreeItem(): CDTTreeItem {
-        return CDTTreeItem.create({
-            id: this.getId(),
-            key: this.getId(),
-            label: this.getLabel(),
-            resource: undefined,
-            icon: this.pinned ? 'codicon codicon-pinned' : undefined,
-            expanded: this.expanded,
-            path: this.getId().split(PERIPHERAL_ID_SEP),
-            options: {
-                commands: this.getCommands(),
-                contextValue: this.getContextValue(),
-                tooltip: this.description,
-            },
-            columns: {
-                'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
-                    tooltip: this.description,
-                },
-                'value': {
-                    type: 'string',
-                    label: this.getLabelValue(),
-                    tooltip: this.getLabelValue()
-                }
-            }
-        });
-    }
-
-    /**
-     * @deprecated
-     */
-    public getContextValue(): PeripheralNodeContextValue {
-        return this.pinned ? 'peripheral.pinned' : 'peripheral';
-    }
-
-    public getCopyValue(): string {
-        throw new Error('Method not implemented.');
     }
 
     public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {

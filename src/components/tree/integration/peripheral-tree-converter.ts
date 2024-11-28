@@ -11,7 +11,7 @@ import { formatValue, NumberFormat } from '../../../common/format';
 import { PeripheralClusterNode, PeripheralFieldNode, PeripheralFieldNodeContextValue, PeripheralNode, PeripheralRegisterNode, PeripheralTreeNode } from '../../../common/peripherals';
 import { Commands } from '../../../manifest';
 import { binaryFormat, extractBits, hexFormat } from '../../../utils';
-import { CDTTreeItem, CDTTreeTableColumn } from '../types';
+import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn } from '../types';
 import { TreeResourceConverter, TreeConverterContext, TreeResourceListConverter } from './tree-converter';
 
 
@@ -115,14 +115,24 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         });
     }
 
-    private getCommands(resource: PeripheralRegisterNode): CommandDefinition[] {
+    private getCommands(resource: PeripheralRegisterNode, context: TreeConverterContext<PeripheralTreeNode>): CDTTreeTableActionColumnCommand[] {
         const contextValue = resource.accessType === AccessType.ReadWrite ? 'registerRW' : (resource.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
+
+        const value = this.getValue(resource, context);
+        const copyValue: CDTTreeTableActionColumnCommand = {
+            ...Commands.COPY_VALUE_COMMAND,
+            value,
+        };
+        const updateNode: CDTTreeTableActionColumnCommand = {
+            ...Commands.UPDATE_NODE_COMMAND,
+            value
+        };
 
         switch (contextValue) {
             case 'registerRO':
-                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND];
+                return [copyValue, Commands.FORCE_REFRESH_COMMAND];
             case 'registerRW':
-                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.UPDATE_NODE_COMMAND];
+                return [copyValue, Commands.FORCE_REFRESH_COMMAND, updateNode];
             case 'registerWO':
                 return [];
             default:
@@ -134,10 +144,14 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         return resource.previousValue !== resource.currentValue;
     }
 
+    private getValue(resource: PeripheralRegisterNode, context: TreeConverterContext<PeripheralTreeNode>): string {
+        return this.formatValue(resource, resource.currentValue, PeripheralTreeNode.getFormat(resource.id, context.resourceMap));
+    }
+
     // ==== Rendering ====
 
     private getColumns(resource: PeripheralRegisterNode, context: TreeConverterContext<PeripheralTreeNode>): Record<string, CDTTreeTableColumn> {
-        const value = this.formatValue(resource, resource.currentValue, PeripheralTreeNode.getFormat(resource.id, context.resourceMap));
+        const value = this.getValue(resource, context);
 
         return {
             'title': {
@@ -153,7 +167,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
             },
             'actions': {
                 type: 'action',
-                commands: this.getCommands(resource)
+                commands: this.getCommands(resource, context)
             }
         };
     }
@@ -298,16 +312,26 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return context;
     }
 
-    private getCommands(resource: PeripheralFieldNode): CommandDefinition[] {
+    private getCommands(resource: PeripheralFieldNode, context: TreeConverterContext<PeripheralTreeNode>): CommandDefinition[] {
+        const value = this.getValue(resource, context);
+        const copyValue: CDTTreeTableActionColumnCommand = {
+            ...Commands.COPY_VALUE_COMMAND,
+            value
+        };
+        const updateNode: CDTTreeTableActionColumnCommand = {
+            ...Commands.UPDATE_NODE_COMMAND,
+            value
+        };
+
         switch (this.getContextValue(resource)) {
             case 'field':
-                return [Commands.COPY_VALUE_COMMAND, Commands.UPDATE_NODE_COMMAND,];
+                return [copyValue, updateNode];
             case 'field-res':
                 return [];
             case 'fieldRO':
-                return [Commands.COPY_VALUE_COMMAND];
+                return [copyValue];
             case 'fieldWO':
-                return [Commands.UPDATE_NODE_COMMAND];
+                return [updateNode];
             default:
                 return [];
         }
@@ -317,10 +341,14 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return resource.previousValue !== resource.currentValue;
     }
 
+    private getValue(resource: PeripheralFieldNode, context: TreeConverterContext<PeripheralTreeNode>): string {
+        return this.formatValue(resource, resource.currentValue, PeripheralTreeNode.getFormat(resource.id, context.resourceMap));
+    }
+
     // ==== Rendering ====
 
     private getColumns(resource: PeripheralFieldNode, context: TreeConverterContext<PeripheralTreeNode>): Record<string, CDTTreeTableColumn> {
-        const labelValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNode.getFormat(resource.id, context.resourceMap));
+        const value = this.getValue(resource, context);
 
         return {
             'title': {
@@ -330,13 +358,13 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
             },
             'value': {
                 type: 'string',
-                label: labelValue,
-                highlight: this.hasHighlight(resource) ? [[0, labelValue.length]] : undefined,
-                tooltip: labelValue
+                label: value,
+                highlight: this.hasHighlight(resource) ? [[0, value.length]] : undefined,
+                tooltip: value
             },
             'actions': {
                 type: 'action',
-                commands: this.getCommands(resource)
+                commands: this.getCommands(resource, context)
             }
         };
     }

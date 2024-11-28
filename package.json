@@ -45,7 +45,6 @@
     "jszip": "^3.10.1",
     "node-fetch": "^2.6.7",
     "primeflex": "^3.3.1",
-    "primereact": "^10.8.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
@@ -84,8 +83,8 @@
       "debug": [
         {
           "type": "webview",
-          "id": "peripheral-inspector.peripheral-antd-treetable",
-          "name": "Peripherals AntD Tree-table",
+          "id": "peripheral-inspector.peripheral-treetable",
+          "name": "Peripherals Tree",
           "when": "peripheral-inspector.svd.hasData"
         }
       ]

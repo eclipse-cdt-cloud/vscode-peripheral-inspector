@@ -1,100 +1,45 @@
 /********************************************************************************
- * Copyright (C) 2024 Arm Limited and others.
+ * Copyright (C) 2024 EclipseSource and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-.p-treetable {
-  font-size: 13px;
-  font-family: var(--vscode-font-family);
-  min-width: 10rem;
+/* AntD Table Variables */
+.css-var-r0 {
+  --ant-font-family: var(--vscode-font-family);
+  --ant-color-text: var(--vscode-sideBar-foreground);
+  --ant-color-bg-container: var(--vscode-sideBar-background);
 }
 
-/* Reset all colors */
-.p-treetable * {
-  color: var(--vscode-foreground);
+.ant-table-tbody-virtual-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background) !important;
 }
 
-.p-treetable .p-treetable-thead {
-  display: none;
+.ant-table.ant-table-css-var {
+  --ant-table-row-hover-bg: var(--vscode-list-hoverBackground);
+  --ant-table-border-color: var(--vscode-sideBar-background);
+  --ant-table-cell-font-size: var(--vscode-font-size);
+  --ant-table-cell-padding-block: 0;
+  --ant-table-cell-padding-inline: 4px;
 }
 
-.p-treetable .p-treetable-tbody > tr {
-  background: var(--vscode-background);
-  line-height: 22px;
+.ant-table .ant-table-row .ant-table-cell {
+  display: flex;
 }
 
-.p-treetable .p-treetable-tbody > tr > td {
-  padding: 0;
-  border: 0;
+.ant-table .ant-table-row .ant-table-cell .cell-icon {
+  margin-right: 4px;
+  padding-top: 4px;
+  font-size: var(--vscode-font-size);
 }
 
-.p-treetable .p-treetable-tbody > tr > td > div {
+.ant-table .ant-table-row:hover .tree-actions,
+.ant-table .ant-table-row:focus .tree-actions {
   display: flex;
   align-items: center;
 }
 
-.p-treetable .p-treetable-tbody .p-treetable-toggler {
-  width: 1rem;
-  height: 1rem;
-  color: var(--vscode-foreground);
-  border: 0 none;
-  background: transparent;
-  margin-right: 0.5rem;
-}
-
-.p-treetable .p-treetable-tbody > tr > td .p-treetable-toggler:enabled:hover {
-  color: var(--vscode-foreground);
-  border-color: var(--vscode-background);
-  background: transparent;
-}
-
-.p-treetable .p-treetable-tbody > tr > td .p-treetable-toggler:focus-visible {
-  outline: 0 none;
-  outline-offset: 0;
-}
-
-.p-treetable .p-treetable-tbody > tr:focus-visible {
-  outline: 0.15rem solid var(--vscode-background);
-  outline-offset: -0.15rem;
-}
-
-.p-treetable .p-treetable-tbody > tr.p-highlight {
-  background: var(--vscode-list-inactiveSelectionBackground);
-}
-
-.p-treetable:focus-within .p-treetable-tbody > tr.p-highlight {
-  background: var(--vscode-list-activeSelectionBackground);
-}
-
-.p-treetable.p-treetable-selectable
-  .p-treetable-tbody
-  > tr:not(.p-highlight):hover,
-.p-treetable.p-treetable-hoverable-rows
-  .p-treetable-tbody
-  > tr:not(.p-highlight):hover {
-  background: var(--vscode-list-hoverBackground);
-}
-
-.p-treetable .p-treetable-loading-icon {
-  font-size: 2rem;
-}
-
-.p-treetable .p-treetable-loading-icon.p-icon {
-  width: 2rem;
-  height: 2rem;
-}
-
-.p-treetable .p-treetable-tbody > tr:hover .tree-actions,
-.p-treetable .p-treetable-tbody > tr:focus .tree-actions {
-  display: flex;
-  align-items: center;
-}
-
-.treetable-node {
-  display: flex;
-  width: 100%;
-  overflow: hidden;
-  align-items: center;
+.ant-table .tree-actions {
+  padding-right: 8px;
 }

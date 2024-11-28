@@ -6,38 +6,27 @@
  ********************************************************************************/
 
 import 'primeflex/primeflex.css';
-import 'primereact/resources/primereact.css';
-import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import './tree-view.css';
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HOST_EXTENSION, NotificationType } from 'vscode-messenger-common';
 import { PeripheralNode, PeripheralTreeNode } from '../../common/peripherals';
-import { Commands, NonBlockingCommands } from '../../manifest';
+import { Commands } from '../../manifest';
 import { messenger } from '../webview/messenger';
-import { AntDComponentTreeTable } from './components/ant-treetable';
-import { ComponentTree } from './components/tree';
-import { ComponentTreeTable } from './components/treetable';
-import { PeripheralTreeConverter } from './integration/peripheral-tree';
-import { CDTTreeContext, NotifyOptions } from './tree-context';
+import { AntDComponentTreeTable } from './components/treetable';
+import { PeripheralTreeConverter } from './integration/peripheral-tree-converter';
+import { TreeConverterContext } from './integration/tree-converter';
 import {
-    CDTTreeItem,
-    CDTTreeState,
+    CDTTreeExtensionModel,
+    CDTTreeViewModel,
     CTDTreeMessengerType
 } from './types';
-import { TreeConverterContext } from './integration/tree-converter';
 
-interface CDTTreeViewModel {
-    items: CDTTreeItem<PeripheralTreeNode>[];
-    expandedKeys: string[];
-    pinnedKeys: string[];
-}
 
 interface State {
-    tree: CDTTreeState;
-    model: CDTTreeViewModel;
-    isLoading: boolean;
+    extensionModel: CDTTreeExtensionModel<PeripheralTreeNode>;
+    viewModel: CDTTreeViewModel<PeripheralTreeNode>;
 }
 
 export class CDTTreeView extends React.Component<unknown, State> {
@@ -45,77 +34,59 @@ export class CDTTreeView extends React.Component<unknown, State> {
     public constructor(props: unknown) {
         super(props);
         this.state = {
-            tree: {
-                type: 'tree'
-            },
-            model: {
+            extensionModel: {},
+            viewModel: {
                 items: [],
                 expandedKeys: [],
                 pinnedKeys: []
             },
-            isLoading: false
         };
     }
 
     public async componentDidMount(): Promise<void> {
-        messenger.onNotification(CTDTreeMessengerType.updateState, tree => {
+        messenger.onNotification(CTDTreeMessengerType.updateState, (state: CDTTreeExtensionModel<PeripheralTreeNode>) => {
             this.setState(prev => ({
-                ...prev, tree,
+                ...prev, extensionModel: state,
             }));
-            this.refreshModel(tree.peripherals, {
+            this.refreshModel(state.items, {
                 resourceMap: new Map<string, PeripheralTreeNode>(),
-                expandedKeys: PeripheralTreeNode.extractExpandedKeys(tree.peripherals),
-                pinnedKeys: PeripheralTreeNode.extractPinnedKeys(tree.peripherals)
+                expandedKeys: PeripheralTreeNode.extractExpandedKeys(state.items),
+                pinnedKeys: PeripheralTreeNode.extractPinnedKeys(state.items)
             });
         });
         messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 
-    protected refreshModel(peripherals: PeripheralNode[] | undefined, context: TreeConverterContext<PeripheralTreeNode>): void {
-        const items = new PeripheralTreeConverter().convertList(
-            peripherals ?? this.state.tree.peripherals ?? [],
+    protected refreshModel(items: PeripheralTreeNode[] | undefined, context: TreeConverterContext<PeripheralTreeNode>): void {
+        const convertedItems = new PeripheralTreeConverter().convertList(
+            items ?? this.state.extensionModel.items ?? [],
             context
         );
 
         this.setState(prev => ({
-            ...prev, model: {
+            ...prev, viewModel: {
                 expandedKeys: context.expandedKeys,
                 pinnedKeys: context.pinnedKeys,
-                items,
+                items: convertedItems,
             },
-            isLoading: false
         }));
     }
 
     protected notify<TNotification extends NotificationType<unknown>>(
         notification: TNotification,
-        params: TNotification extends NotificationType<infer TParams> ? TParams : never,
-        options?: NotifyOptions): void {
-        this.setState(prev => ({ ...prev, isLoading: options?.isLoading ?? true }));
+        params: TNotification extends NotificationType<infer TParams> ? TParams : never): void {
         messenger.sendNotification(notification, HOST_EXTENSION, params);
     }
 
-    // Create TreeView flavors
-    protected createTree(): React.ReactNode {
-        return <ComponentTree
-            nodes={this.state.tree.items}
-            selectedNode={this.state.tree.selectedItem}
-            isLoading={this.state.isLoading}
-        />;
+    public render(): React.ReactNode {
+        return <div>
+            {this.createTreeTable()}
+        </div>;
     }
 
     protected createTreeTable(): React.ReactNode {
-        return <ComponentTreeTable
-            nodes={this.state.tree.items}
-            selectedNode={this.state.tree.selectedItem}
-            columnDefinitions={this.state.tree.columnFields}
-            isLoading={this.state.isLoading}
-        />;
-    }
-
-    protected createAntDTreeTable(): React.ReactNode {
         return <AntDComponentTreeTable<PeripheralTreeNode>
-            dataSource={this.state.model.items}
+            dataSource={this.state.viewModel.items}
             dataSourceComparer={(p1, p2) => {
                 if (PeripheralNode.is(p1.resource) && PeripheralNode.is(p2.resource)) {
                     PeripheralNode.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
@@ -123,39 +94,35 @@ export class CDTTreeView extends React.Component<unknown, State> {
 
                 return 0;
             }}
-            columnDefinitions={this.state.tree.columnFields}
-            isLoading={this.state.isLoading}
+            columnDefinitions={this.state.extensionModel.columnFields}
             expansion={{
-                expandedRowKeys: this.state.model.expandedKeys,
+                expandedRowKeys: this.state.viewModel.expandedKeys,
                 onExpand: (expanded, record) => {
-                    this.setState(prev => ({ ...prev, model: { ...prev.model, expandedKeys: updateKeys(this.state.model.expandedKeys, record.id, expanded) } }));
+                    this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, expandedKeys: updateKeys(this.state.viewModel.expandedKeys, record.id, expanded) } }));
                     this.notify(CTDTreeMessengerType.toggleNode,
                         { data: record, context: { resync: false } },
-                        { isLoading: false }
                     );
                 }
             }}
             pin={{
-                pinnedRowKeys: this.state.model.pinnedKeys,
+                pinnedRowKeys: this.state.viewModel.pinnedKeys,
                 onPin: (event, pinned, record) => {
                     this.refreshModel(
                         undefined,
                         {
                             resourceMap: new Map<string, PeripheralTreeNode>(),
-                            expandedKeys: this.state.model.expandedKeys,
-                            pinnedKeys: updateKeys(this.state.model.pinnedKeys, record.id, pinned)
+                            expandedKeys: this.state.viewModel.expandedKeys,
+                            pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned)
                         }
                     );
 
                     if (pinned) {
                         this.notify(CTDTreeMessengerType.executeCommand,
                             { data: { commandId: Commands.UNPIN_COMMAND.commandId, item: record }, context: { resync: false } },
-                            { isLoading: false }
                         );
                     } else {
                         this.notify(CTDTreeMessengerType.executeCommand,
                             { data: { commandId: Commands.PIN_COMMAND.commandId, item: record }, context: { resync: false } },
-                            { isLoading: false }
                         );
                     }
 
@@ -164,39 +131,15 @@ export class CDTTreeView extends React.Component<unknown, State> {
             }}
             action={
                 {
-                    onAction: (event, command, record) => {
-                        const isLoading = !NonBlockingCommands.IDS.includes(command.commandId);
-                        this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, item: record } }, { isLoading });
+                    onAction: (event, command, value, record) => {
                         event.stopPropagation();
+                        this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, item: record, value } });
                     }
                 }
             }
         />;
     }
-
-    public render(): React.ReactNode {
-        const child = (() => {
-            switch (this.state.tree.type) {
-                case 'tree':
-                    return this.createTree();
-                case 'treetable':
-                    return this.createTreeTable();
-                case 'antd-treetable':
-                    return this.createAntDTreeTable();
-            }
-        })();
-
-        return <div data-vscode-context='{"preventDefaultContextMenuItems": true}'>
-            <CDTTreeContext.Provider value={{
-                notify: this.notify.bind(this)
-            }
-            }>
-                {child}
-            </CDTTreeContext.Provider>
-        </div>;
-    }
 }
-
 
 function updateKeys(ids: string[], key: string, add: boolean): string[] {
     if (add) {
@@ -205,7 +148,6 @@ function updateKeys(ids: string[], key: string, add: boolean): string[] {
         return ids.filter(k => k !== key);
     }
 }
-
 
 const container = document.getElementById('root') as Element;
 createRoot(container).render(<CDTTreeView />);

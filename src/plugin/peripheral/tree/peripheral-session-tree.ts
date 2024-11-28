@@ -7,14 +7,13 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
-import { MaybePromise, NodeSetting } from '../../../common';
+import { NodeSetting } from '../../../common';
+import { PeripheralNode } from '../../../common/peripherals';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
 import { readFromUrl } from '../../../utils';
-import { BaseTreeNodeImpl, MessageNode, PeripheralBaseNodeImpl, PeripheralNodeImpl } from '../nodes';
-import { CDTTreeItem } from '../../../components/tree/types';
-import { PeripheralNode } from '../../../common/peripherals';
+import { MessageNode, PeripheralBaseNodeImpl, PeripheralNodeImpl } from '../nodes';
 
 const pathToUri = (path: string): vscode.Uri => {
     try {
@@ -223,20 +222,6 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
 
     public refresh(): void {
         this.fireCb();
-    }
-
-    public getTreeItem(element?: BaseTreeNodeImpl): vscode.TreeItem | Promise<vscode.TreeItem> {
-        return element ? element.getTreeItem() : this.myTreeItem;
-    }
-
-    public getCDTTreeItem(): MaybePromise<CDTTreeItem> {
-        return CDTTreeItem.create({
-            id: this.getId(),
-            key: this.getId(),
-            resource: undefined,
-            label: this.getTitle(),
-            path: [],
-        });
     }
 
     public getChildren(element?: PeripheralBaseNodeImpl): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {

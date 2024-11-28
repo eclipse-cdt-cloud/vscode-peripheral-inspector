@@ -9,15 +9,14 @@ import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, PeripheralRegisterOptions } from '../../../api-types';
 import { NodeSetting } from '../../../common';
-import { PERIPHERAL_ID_SEP, PeripheralRegisterNode, PeripheralRegisterNodeContextValue } from '../../../common/peripherals';
-import { CDTTreeItem } from '../../../components/tree/types';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralRegisterNode } from '../../../common/peripherals';
 import { MemUtils } from '../../../memreadutils';
-import { binaryFormat, createMask, extractBits, hexFormat } from '../../../utils';
+import { createMask, extractBits, hexFormat } from '../../../utils';
 import { ClusterOrRegisterBaseNodeImpl, PeripheralBaseNodeImpl } from './base-node';
 import { PeripheralClusterNodeImpl } from './peripheral-cluster-node';
 import { PeripheralFieldNodeImpl } from './peripheral-field-node';
 import { PeripheralNodeImpl } from './peripheral-node';
-import { NumberFormat } from '../../../common/format';
 
 
 export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
@@ -84,198 +83,6 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         });
     }
 
-
-    /**
-     * @deprecated
-     */
-    public getContextValue(): PeripheralRegisterNodeContextValue {
-        return this.accessType === AccessType.ReadWrite ? 'registerRW' : (this.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelTitle(): string {
-        return `${this.name} @ ${hexFormat(this.offset, 0)}`;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelValue(): string {
-        return this.getFormattedValue(this.getFormat());
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabel(): string {
-        return this.getLabelTitle() + ' ' + this.getLabelValue();
-    }
-
-    /**
-     * @deprecated
-     */
-    public hasHighlights(): boolean {
-        const displayValue = this.getLabelValue();
-
-        return displayValue !== this.prevValue;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelHighlights(): [number, number][] | undefined {
-        const title = this.getLabelTitle();
-        const label = this.getLabel();
-
-        if (this.hasHighlights()) {
-            return [[title.length + 1, label.length]];
-        }
-
-        return undefined;
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const collapseState = this.children && this.children.length > 0
-            ? (this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed)
-            : vscode.TreeItemCollapsibleState.None;
-
-        const labelItem: vscode.TreeItemLabel = {
-            label: this.getLabel(),
-            highlights: this.getLabelHighlights()
-        };
-        const item = new vscode.TreeItem(labelItem, collapseState);
-        item.id = this.getId();
-        item.contextValue = this.getContextValue();
-        item.tooltip = this.generateTooltipMarkdown() || undefined;
-
-        return item;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getCDTTreeItem(): CDTTreeItem {
-        const labelValue = this.getLabelValue();
-        return CDTTreeItem.create({
-            id: this.getId(),
-            key: this.getId(),
-            label: this.getLabel(),
-            expanded: this.expanded,
-            resource: undefined,
-            path: this.getId().split(PERIPHERAL_ID_SEP),
-            options: {
-                commands: this.getCommands(),
-                contextValue: this.getContextValue(),
-                tooltip: this.generateTooltipMarkdown()?.value ?? undefined,
-                highlights: this.getLabelHighlights(),
-            },
-            columns: {
-                'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
-                    tooltip: this.generateTooltipMarkdown()?.value ?? undefined,
-                },
-                'value': {
-                    type: 'string',
-                    label: labelValue,
-                    highlight: this.hasHighlights() ?
-                        [[0, labelValue.length]]
-                        : undefined,
-                    tooltip: labelValue
-                }
-            }
-        });
-    }
-
-    /**
-     * @deprecated
-     */
-    private generateTooltipMarkdown(): vscode.MarkdownString | null {
-        const mds = new vscode.MarkdownString('', true);
-        mds.isTrusted = true;
-
-        const address = `${hexFormat(this.getAddress())}`;
-
-        const formattedValue = this.getFormattedValue(this.getFormat());
-
-        const roLabel = this.accessType === AccessType.ReadOnly ? '(Read Only)' : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-
-        mds.appendMarkdown(`| ${this.name}@${address} | ${roLabel} | *${formattedValue}* |\n`);
-        mds.appendMarkdown('|:---|:---:|---:|\n\n');
-
-        if (this.accessType !== AccessType.WriteOnly) {
-            mds.appendMarkdown(`**Reset Value:** ${this.getFormattedResetValue(this.getFormat())}\n`);
-        }
-
-        mds.appendMarkdown('\n____\n\n');
-        if (this.description) {
-            mds.appendMarkdown(this.description);
-        }
-
-        mds.appendMarkdown('\n_____\n\n');
-
-        // Don't try to display current value table for write only fields
-        if (this.accessType === AccessType.WriteOnly) {
-            return mds;
-        }
-
-        const hex = this.getFormattedValue(NumberFormat.Hexadecimal);
-        const decimal = this.getFormattedValue(NumberFormat.Decimal);
-        const binary = this.getFormattedValue(NumberFormat.Binary);
-
-        mds.appendMarkdown('| Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
-        mds.appendMarkdown('|:---|:---|:---|\n');
-        mds.appendMarkdown(`| ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n\n`);
-
-        const children = this.getChildren();
-        if (children.length === 0) { return mds; }
-
-        mds.appendMarkdown('**Fields**\n\n');
-        mds.appendMarkdown('| Field | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Bit-Range | Value |\n');
-        mds.appendMarkdown('|:---|:---:|:---|:---|\n');
-
-        children.forEach((field) => {
-            mds.appendMarkdown(`| ${field.name} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ${field.getFormattedRange()} | `
-                + `${field.getFormattedValue(field.getFormat(), true)} |\n`);
-        });
-
-        return mds;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getFormattedValue(format: NumberFormat): string {
-        return this.formatValue(this.currentValue, format);
-    }
-
-    /**
-     * @deprecated
-     */
-    public getFormattedResetValue(format: NumberFormat): string {
-        return this.formatValue(this.resetValue, format);
-    }
-
-    /**
-     * @deprecated
-     */
-    private formatValue(value: number, format: NumberFormat): string {
-        if (this.accessType === AccessType.WriteOnly) {
-            return '(Write Only)';
-        }
-
-        switch (format) {
-            case NumberFormat.Decimal:
-                return value.toString();
-            case NumberFormat.Binary:
-                return binaryFormat(value, this.hexLength * 4);
-            default:
-                return hexFormat(value, this.hexLength, true);
-        }
-    }
-
     public extractBitsFromReset(offset: number, width: number): number {
         return extractBits(this.resetValue, offset, width);
     }
@@ -294,30 +101,8 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
     }
 
-    /**
-     * @deprecated
-     */
-    public getFormat(): NumberFormat {
-        if (this.format !== NumberFormat.Auto) {
-            return this.format;
-        } else {
-            return this.parent.getFormat();
-        }
-    }
-
-    public getCopyValue(): string {
-        switch (this.getFormat()) {
-            case NumberFormat.Decimal:
-                return this.currentValue.toString();
-            case NumberFormat.Binary:
-                return binaryFormat(this.currentValue, this.hexLength * 4);
-            default:
-                return hexFormat(this.currentValue, this.hexLength);
-        }
-    }
-
-    public async performUpdate(): Promise<boolean> {
-        const val = await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value: this.getCopyValue() });
+    public async performUpdate(value?: string): Promise<boolean> {
+        const val = await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value });
         if (!val) {
             return false;
         }
@@ -376,7 +161,6 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
                 break;
         }
         this.children.forEach((f) => f.updateData());
-        this.prevValue = this.getLabelValue();
 
         return Promise.resolve(true);
     }

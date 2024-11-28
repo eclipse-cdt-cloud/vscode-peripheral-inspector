@@ -12,8 +12,8 @@ import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SvdResolver } from '../../../svd-resolver';
 import { MessageNode, PeripheralBaseNodeImpl, PeripheralRegisterNodeImpl } from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
-import { PeripheralTreeDataProvider } from './provider/peripheral-tree-data-provider';
 import { TreeNotification, TreeNotificationContext } from '../../../common/notification';
+import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
 
 export class PeripheralDataTracker {
     protected onDidChangeEvent = new vscode.EventEmitter<void>();

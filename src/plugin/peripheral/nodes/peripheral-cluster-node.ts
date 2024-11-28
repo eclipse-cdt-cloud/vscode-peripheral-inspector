@@ -5,17 +5,14 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
 import { NodeSetting } from '../../../common';
-import { CDTTreeItem } from '../../../components/tree/types';
-import { hexFormat } from '../../../utils';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralClusterNode } from '../../../common/peripherals';
 import { ClusterOrRegisterBaseNodeImpl, PeripheralBaseNodeImpl } from './base-node';
 import { PeripheralNodeImpl } from './peripheral-node';
 import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
-import { PERIPHERAL_ID_SEP, PeripheralClusterNode } from '../../../common/peripherals';
-import { NumberFormat } from '../../../common/format';
 
 
 
@@ -53,75 +50,6 @@ export class PeripheralClusterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         });
     }
 
-    /**
-     * @deprecated
-     */
-    public getLabel(): string {
-        return `${this.getLabelTitle()} [${this.getLabelValue()}]`;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelTitle(): string {
-        return this.name;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getLabelValue(): string {
-        return hexFormat(this.offset, 0);
-    }
-
-    /**
-     * @deprecated
-     */
-    public getContextValue(): string {
-        return 'cluster';
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = this.getLabel();
-
-        const item = new vscode.TreeItem(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
-        item.id = this.getId();
-        item.contextValue = this.getContextValue();
-        item.tooltip = this.description || undefined;
-
-        return item;
-    }
-
-    /**
-     * @deprecated
-     */
-    public getCDTTreeItem(): CDTTreeItem {
-        return CDTTreeItem.create({
-            id: this.getId(),
-            key: this.getId(),
-            expanded: this.expanded,
-            label: this.getLabel(),
-            resource: undefined,
-            path: this.getId().split(PERIPHERAL_ID_SEP),
-            options: {
-                commands: this.getCommands(),
-                contextValue: this.getContextValue(),
-                tooltip: this.description,
-            },
-            columns: {
-                'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
-                    tooltip: this.description,
-                },
-                'value': {
-                    type: 'string',
-                    label: this.getLabelValue(),
-                    tooltip: this.getLabelValue()
-                }
-            }
-        });
-    }
     public getChildren(): PeripheralRegisterOrClusterNodeImpl[] {
         return this.children;
     }
@@ -200,10 +128,6 @@ export class PeripheralClusterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
 
     public getPeripheral(): PeripheralBaseNodeImpl {
         return this.parent.getPeripheral();
-    }
-
-    public getCopyValue(): string {
-        throw new Error('Method not implemented.');
     }
 
     public performUpdate(): Thenable<boolean> {

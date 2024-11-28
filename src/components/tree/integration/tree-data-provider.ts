@@ -7,26 +7,12 @@
 
 import * as vscode from 'vscode';
 import { MaybePromise } from '../../../common';
-import { CDTTreeItem, CDTTreeTableColumnDefinition } from '../types';
 import { TreeNotification } from '../../../common/notification';
+import { CDTTreeTableColumnDefinition } from '../types';
 
 export interface CDTTreeDataProvider<TNode, TSerializedNode> {
     onDidChangeTreeData: vscode.Event<TreeNotification<TNode | TNode[] | undefined | null>>;
-
-    /**
-     * @deprecated
-     */
-    getCDTTreeItem(element: TNode): MaybePromise<CDTTreeItem>;
-
-    /**
-     * @deprecated
-     */
-    getCDTTreeRoots(): MaybePromise<CDTTreeItem[]>;
-
-    getChildren(element?: TNode): vscode.ProviderResult<TNode[]>;
-
-    getSelectedItem?(): MaybePromise<CDTTreeItem | undefined>;
-    getColumnDefinitions?(): CDTTreeTableColumnDefinition[];
+    getColumnDefinitions(): CDTTreeTableColumnDefinition[];
 
     getSerializedRoots(): MaybePromise<TSerializedNode[]>;
     getSerializedData(element: TNode): MaybePromise<TSerializedNode>;

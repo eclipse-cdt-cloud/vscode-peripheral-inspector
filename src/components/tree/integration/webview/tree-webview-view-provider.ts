@@ -8,9 +8,9 @@
 import * as vscode from 'vscode';
 import { Messenger } from 'vscode-messenger';
 import { WebviewIdMessageParticipant } from 'vscode-messenger-common';
-import { CDTTreeExecuteCommand, CDTTreeItem, CDTTreeState, CDTTreeViewType, CTDTreeMessengerType } from '../../types';
-import { CDTTreeDataProvider } from '../tree-data-provider';
 import { TreeNotification } from '../../../../common/notification';
+import { CDTTreeExecuteCommand, CDTTreeExtensionModel, CDTTreeItem, CTDTreeMessengerType } from '../../types';
+import { CDTTreeDataProvider } from '../tree-data-provider';
 
 export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.WebviewViewProvider {
 
@@ -20,8 +20,6 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     public readonly onDidExecuteCommand = this.onDidExecuteCommandEvent.event;
     protected onDidClickNodeEvent = new vscode.EventEmitter<TreeNotification<CDTTreeItem>>();
     public readonly onDidClickNode = this.onDidClickNodeEvent.event;
-
-    abstract readonly type: CDTTreeViewType;
 
     protected get extensionUri(): vscode.Uri {
         return this.context.extensionUri;
@@ -126,19 +124,12 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
             return;
         }
 
-        counter++;
-        const label = counter + ' CDTTreeWebviewViewProvider.refresh';
-        console.time(label);
-        const peripherals = await this.dataProvider.getSerializedRoots();
-        console.timeEnd(label);
+        const columnFields = this.dataProvider.getColumnDefinitions();
+        const items = await this.dataProvider.getSerializedRoots();
 
-        const state: CDTTreeState = {
-            peripherals,
-            columnFields: this.dataProvider.getColumnDefinitions?.(),
-            type: this.type
-        };
-        this.messenger.sendNotification(CTDTreeMessengerType.updateState, this.participant, state);
+        this.messenger.sendNotification(CTDTreeMessengerType.updateState, this.participant, {
+            columnFields,
+            items
+        });
     }
 }
-
-let counter = 0;

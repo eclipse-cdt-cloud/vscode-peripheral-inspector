@@ -21,20 +21,20 @@ export class PeripheralCommands {
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         context.subscriptions.push(
-            vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node) => this.peripheralsUpdateNode(node)),
-            vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, (node) => this.peripheralsCopyValue(node)),
+            vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node, value) => this.peripheralsUpdateNode(node, value)),
+            vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, (node, value) => this.peripheralsCopyValue(node, value)),
             vscode.commands.registerCommand(Commands.SET_FORMAT_COMMAND.commandId, (node) => this.peripheralsSetFormat(node)),
             vscode.commands.registerCommand(Commands.FORCE_REFRESH_COMMAND.commandId, (node) => this.peripheralsForceRefresh(node)),
-            vscode.commands.registerCommand(Commands.PIN_COMMAND.commandId, (node, context) => this.peripheralsTogglePin(node, context)),
-            vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, (node, context) => this.peripheralsTogglePin(node, context)),
+            vscode.commands.registerCommand(Commands.PIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
+            vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
             vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND.commandId, () => this.peripheralsForceRefresh()),
             vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND.commandId, () => this.collapseAll()),
         );
     }
 
-    private async peripheralsUpdateNode(node: PeripheralBaseNodeImpl): Promise<void> {
+    private async peripheralsUpdateNode(node: PeripheralBaseNodeImpl, value?: unknown): Promise<void> {
         try {
-            const result = await node.performUpdate();
+            const result = await node.performUpdate(value);
             if (result) {
                 await this.peripheralsForceRefresh();
             } else {
@@ -46,10 +46,9 @@ export class PeripheralCommands {
         }
     }
 
-    private peripheralsCopyValue(node: PeripheralBaseNodeImpl): void {
-        const cv = node.getCopyValue();
-        if (cv) {
-            vscode.env.clipboard.writeText(cv);
+    private peripheralsCopyValue(_node: PeripheralBaseNodeImpl, value?: string): void {
+        if (value) {
+            vscode.env.clipboard.writeText(value);
         }
     }
 

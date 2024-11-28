@@ -17,9 +17,7 @@
   white-space: pre;
 }
 
-.label-highlight,
-.p-tree .label-highlight,
-.p-treetable .label-highlight {
+.label-highlight {
   background-color: var(--vscode-list-filterMatchBackground);
   color: unset;
   outline: 1px dotted var(--vscode-list-filterMatchBorder);
@@ -47,17 +45,4 @@
 
 .tree-actions .codicon:hover {
   background: var(--vscode-toolbar-hoverBackground);
-}
-
-.progress-bar-container {
-  height: 2px;
-}
-
-.p-progressbar {
-  height: 2px;
-  background: var(--vscode-editor-background);
-}
-
-.p-progressbar .p-progressbar-value {
-  background-color: var(--vscode-progressBar-background);
 }

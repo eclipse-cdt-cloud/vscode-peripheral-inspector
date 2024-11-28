@@ -5,13 +5,12 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { Command, DebugSession, TreeItem } from 'vscode';
+import { DebugSession } from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { EnumerationMap } from '../../../api-types';
-import { CommandDefinition, MaybePromise, NodeSetting } from '../../../common';
+import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP, PeripheralBaseNode, PeripheralBaseTreeNode } from '../../../common/peripherals';
-import { CDTTreeItem } from '../../../components/tree/types';
 
 export abstract class BaseTreeNodeImpl {
     get id(): string {
@@ -19,7 +18,7 @@ export abstract class BaseTreeNodeImpl {
     }
 
     /**
-     * @deprecated Webview manages the display state
+     * Whether the node is expanded or not. Depending on the tree view implementation, this may refresh children.
      */
     public expanded: boolean;
 
@@ -34,24 +33,6 @@ export abstract class BaseTreeNodeImpl {
     public abstract getId(): string;
 
     public abstract getChildren(): BaseTreeNodeImpl[] | Promise<BaseTreeNodeImpl[]>;
-    /**
-     * @deprecated Webview manages the display state
-     */
-    public abstract getTreeItem(): TreeItem | Promise<TreeItem>;
-    /**
-     * @deprecated Webview manages the display state
-     */
-    public abstract getCDTTreeItem(): MaybePromise<CDTTreeItem>;
-    /**
-     * @deprecated Webview manages the display state
-     */
-    public getCommand(): Command | undefined {
-        return undefined;
-    }
-    /**
-     * @deprecated Webview manages the display state
-     */
-    public abstract getCopyValue(): string | undefined;
 
     serialize(): PeripheralBaseTreeNode {
         return PeripheralBaseTreeNode.create({
@@ -86,7 +67,7 @@ export abstract class PeripheralBaseNodeImpl extends BaseTreeNodeImpl {
         return this.name ?? this.session?.id ?? 'unknown';
     }
 
-    public abstract performUpdate(): Thenable<boolean>;
+    public abstract performUpdate(args?: unknown): Thenable<boolean>;
     public abstract updateData(): Thenable<boolean>;
 
     public abstract getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]>;
@@ -96,9 +77,6 @@ export abstract class PeripheralBaseNodeImpl extends BaseTreeNodeImpl {
 
     public abstract saveState(path?: string): NodeSetting[];
     public abstract findByPath(path: string[]): PeripheralBaseNodeImpl | undefined;
-    public getCommands(): CommandDefinition[] {
-        return [];
-    }
 
     public async setSession(session: DebugSession): Promise<void> {
         this.session = session;

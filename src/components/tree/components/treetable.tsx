@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2024 Arm Limited and others.
+ * Copyright (C) 2024 EclipseSource and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
@@ -8,172 +8,213 @@
 import './common.css';
 import './treetable.css';
 
-import { Column } from 'primereact/column';
-import { TreeNode } from 'primereact/treenode';
-import { TreeTable, TreeTableEvent } from 'primereact/treetable';
-import { classNames } from 'primereact/utils';
-import React, { useEffect, useState } from 'react';
-import { useCDTTreeContext } from '../tree-context';
-import { CDTTreeItem, CDTTreeTableColumnDefinition, CDTTreeTableExpanderColumn, CDTTreeTableStringColumn, CTDTreeMessengerType, CTDTreeWebviewContext } from '../types';
-import { createActions, createHighlightedText, createIcon, createLabelWithTooltip } from './utils';
-import { ProgressBar } from 'primereact/progressbar';
+import { ConfigProvider, Table, TableColumnsType } from 'antd';
+import { ColumnType, ExpandableConfig } from 'antd/es/table/interface';
+import { default as React, useEffect, useState } from 'react';
+import { CommandDefinition } from '../../../common';
+import { getNestedValue } from '../../../common/utils';
+import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
+import { classNames, createHighlightedText, createLabelWithTooltip } from './utils';
 
-export type ComponentTreeTableProps = {
-    nodes?: CDTTreeItem[];
-    selectedNode?: CDTTreeItem;
+export type ComponentTreeTableProps<T = unknown> = {
     columnDefinitions?: CDTTreeTableColumnDefinition[];
-    isLoading: boolean;
+    dataSource?: CDTTreeItem<T>[];
+    dataSourceComparer?: (a: CDTTreeItem<T>, b: CDTTreeItem<T>) => number;
+    expansion?: {
+        expandedRowKeys?: string[];
+        onExpand?: ExpandableConfig<CDTTreeItem<unknown>>['onExpand'];
+    },
+    pin?: {
+        pinnedRowKeys?: string[];
+        onPin?: (event: React.MouseEvent, pinned: boolean, record: CDTTreeItem<unknown>) => void;
+    }
+    action?: {
+        onAction?: (event: React.MouseEvent, command: CommandDefinition, value: unknown, record: CDTTreeItem<unknown>) => void;
+    }
 };
 
-const PROGRESS_BAR_HIDE_DELAY = 200;
+interface BodyRowProps extends React.HTMLAttributes<HTMLDivElement> {
+    'data-row-key': string;
+}
 
-export const ComponentTreeTable = (props: ComponentTreeTableProps) => {
-    const treeContext = useCDTTreeContext();
-    const [showProgressBar, setShowProgressBar] = useState(false);
+const BodyRow = React.forwardRef<HTMLDivElement, BodyRowProps>((props, ref) => {
+    return (
+        <div
+            ref={ref}
+            {...props}
+            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: props['data-row-key'] })}
+        />
+    );
+});
+
+function useWindowSize() {
+    const [size, setSize] = useState([0, 0]);
+    React.useLayoutEffect(() => {
+        function updateSize() {
+            setSize([window.innerWidth, window.innerHeight]);
+        }
+        window.addEventListener('resize', updateSize);
+        updateSize();
+        return () => window.removeEventListener('resize', updateSize);
+    }, []);
+    return size;
+}
+
+export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) => {
+    const [width, height] = useWindowSize();
+    const [dataSource, setDataSource] = useState<CDTTreeItem[]>(props.dataSource ?? []);
 
     useEffect(() => {
-        if (!props.isLoading) {
-            // Delay hiding the progress bar to allow the animation to complete
-            const timer = setTimeout(() => {
-                setShowProgressBar(false);
-            }, PROGRESS_BAR_HIDE_DELAY);
-            return () => clearTimeout(timer);
-        } else {
-            setShowProgressBar(true);
+        setDataSource((props.dataSource ?? []).sort(props.dataSourceComparer));
+    }, [props.dataSource, props.pin?.pinnedRowKeys]);
+
+    // ==== Renderers ====
+
+    const renderStringColumn = (label: string, _record: CDTTreeItem, columnDef: CDTTreeTableStringColumn) => {
+        let icon: React.ReactNode | undefined;
+
+        if (columnDef.icon) {
+            icon = <i className={classNames('cell-icon', columnDef.icon)}></i>;
         }
-    }, [props.isLoading]);
 
-    // Assemble the treetable
-    if (props.nodes === undefined) {
-        return <div>
-            <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
+        let content = createHighlightedText(label, columnDef.highlight);
+        if (columnDef.tooltip) {
+            content = createLabelWithTooltip(<span>{content}</span>, columnDef.tooltip);
+        }
+
+        return <>
+            {icon}
+            {content}
+        </>;
+    };
+
+    const renderActionColumn = (column: CDTTreeTableActionColumn | undefined, record: CDTTreeItem) => {
+        const actions: React.ReactNode[] = [];
+
+        if (record.pinnable) {
+            if (record.pinned) {
+                actions.push(<i
+                    key={'unpin'}
+                    className={'codicon codicon-pin'}
+                    onClick={(event) => props.pin?.onPin?.(event, false, record)}></i>);
+            } else {
+                actions.push(<i
+                    key={'pin'}
+                    className={'codicon codicon-pinned'}
+                    onClick={(event) => props.pin?.onPin?.(event, true, record)}></i>);
+            }
+        }
+
+        return <div className="tree-actions">
+            {...actions}
+            {column?.commands?.map(command => <i
+                key={command.commandId}
+                className={`codicon codicon-${command.icon}`}
+                onClick={(event) => props.action?.onAction?.(event, command, command.value, record)}></i>)}
         </div>;
-    }
+    };
 
-    if (!props.nodes?.length) {
+
+    // ==== Columns ====
+
+    const createColumns = (columnDefinitions: CDTTreeTableColumnDefinition[]): TableColumnsType<CDTTreeItem> => {
+        function stringColumn(def: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem> {
+            return {
+                title: def.field,
+                dataIndex: ['columns', def.field, 'label'],
+                width: 0,
+                render: (label, record) => renderStringColumn(label, record, getNestedValue<CDTTreeTableStringColumn>(record, ['columns', def.field]))
+            };
+        }
+
+        function actionColumn(def: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem> {
+            return {
+                title: def.field,
+                dataIndex: ['columns', def.field],
+                width: 64,
+                render: renderActionColumn
+            };
+        }
+
+        return [
+            ...(columnDefinitions?.map(c => {
+                if (c.type === 'string') {
+                    return stringColumn(c);
+                } else if (c.type === 'action') {
+                    return actionColumn(c);
+                }
+
+                return {
+                    title: c.field,
+                    dataIndex: ['columns', c.field, 'label'],
+                    width: 200
+                };
+            }) ?? [])
+        ];
+    };
+
+    const [columns, setColumns] = useState<TableColumnsType<CDTTreeItem>>(createColumns(props.columnDefinitions ?? []));
+    useEffect(() => {
+        setColumns(createColumns(props.columnDefinitions ?? []));
+    }, [props.columnDefinitions]);
+
+    // ==== Return ====
+    if (dataSource.length === 0) {
         return <div>No children provided</div>;
     }
 
-
-    // Event handler
-    const onToggle = (event: TreeTableEvent) => {
-        if (event.node.leaf) {
-            // Cannot expand leaf || already expanded
-            return;
-        }
-        treeContext.notify(CTDTreeMessengerType.toggleNode, { data: event.node as any });
-    };
-
-    const onClick = (event: TreeTableEvent) => {
-        treeContext.notify(CTDTreeMessengerType.clickNode, { data: event.node as any });
-    };
-
-    // Sub Components
-    const template = (node: TreeNode, field: string) => {
-        CDTTreeItem.assert(node);
-
-        const column = node.columns?.[field];
-
-        if (column?.type === 'expander') {
-            return expanderTemplate(node, column);
-        } else if (column?.type === 'string') {
-            return stringTemplate(node, column);
-        }
-
-        return <span>No columns provided for field {field}</span>;
-    };
-
-    const expanderTemplate = (node: TreeNode, column: CDTTreeTableExpanderColumn) => {
-        CDTTreeItem.assert(node);
-
-        return <div style={{ paddingLeft: `${((node.path?.length ?? 1)) * 8}px` }}
-        >
-            <div className='treetable-node' >
-                <div
-                    className={
-                        classNames('tree-toggler-container', 'codicon', {
-                            'codicon-chevron-down': node.expanded,
-                            'codicon-chevron-right': !node.expanded && !node.leaf,
-                        })
-                    }>
-                </div>
-                {createIcon(node)}
-                {createLabelWithTooltip(<span>{column.label}</span>, column.tooltip)}
-            </div>
-        </div>;
-    };
-
-    const stringTemplate = (node: CDTTreeItem, column: CDTTreeTableStringColumn) => {
-        const text = createHighlightedText(column.label, column.highlight);
-
-        return <div
-            {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: node.id })}
-        >
-            {createLabelWithTooltip(text, column.tooltip)}
-        </div>;
-    };
-
-    const togglerTemplate = () => {
-        return <div></div>;
-    };
-
-    const actionsTemplate = (node: TreeNode) => {
-        return <div className='flex align-items-center justify-content-end'>
-            {createActions(treeContext, node)}
-        </div>;
-    };
-
-    const expandedState = getExpandedState(props.nodes);
-    const selectedKey = props.selectedNode ? props.selectedNode.key as string : undefined;
-
     return <div>
-        <div className='progress-bar-container'>
-            {showProgressBar &&
-                <ProgressBar mode="indeterminate" className='sticky top-0'></ProgressBar>
-            }
-        </div>
-        <TreeTable
-            value={props.nodes}
-            selectionKeys={selectedKey}
-            expandedKeys={expandedState}
-            tableStyle={{ minWidth: '10rem' }}
-            selectionMode='single'
-            togglerTemplate={togglerTemplate}
-            onToggle={(_event) => {
-                // This function is required to be a NO OP
-                // Otherwise expanding doesn't work
+        <ConfigProvider
+            theme={{
+                cssVar: true,
+                hashed: false
             }}
-            onExpand={event => onToggle(event)}
-            onCollapse={event => onToggle(event)}
-            onRowClick={event => onClick(event)}
         >
-            {props.columnDefinitions?.map(c => {
-                return <Column key={`${c.field}_column`} field={c.field} body={(node) => template(node, c.field)} expander={c.expander} />;
-            })}
-            <Column field="actions" style={{ width: '64px' }} body={actionsTemplate} />
-        </TreeTable>
+            <Table<CDTTreeItem>
+                columns={columns}
+                dataSource={dataSource}
+                components={{ body: { row: BodyRow } }}
+                virtual
+                scroll={{ x: width, y: height - 2 }}
+                showHeader={false}
+                pagination={false}
+                onRow={(record) => {
+                    return {
+                        onClick: () => {
+                            props.expansion?.onExpand?.(!props.expansion?.expandedRowKeys?.includes(record.id), record);
+                        }
+                    };
+                }}
+                expandable={{
+                    expandIcon: ({ expanded, onExpand, record, expandable }) => {
+                        if (!expandable) {
+                            return;
+                        }
+
+                        return expanded ? (
+                            <div
+                                className={
+                                    classNames('tree-toggler-container', 'codicon', 'codicon-chevron-down')
+                                }
+                                onClick={e => onExpand(record, e)}
+                            >
+                            </div>
+                        ) : (
+                            <div
+                                className={
+                                    classNames('tree-toggler-container', 'codicon', 'codicon-chevron-right')
+                                }
+                                onClick={e => onExpand(record, e)}
+                            >
+                            </div>);
+                    },
+                    showExpandColumn: true,
+                    expandedRowKeys: props.expansion?.expandedRowKeys,
+                    onExpand: (expanded, record) => {
+                        props.expansion?.onExpand?.(expanded, record);
+                    }
+                }}
+            />
+        </ConfigProvider>
     </div>;
 };
-
-function getExpandedState(nodes?: CDTTreeItem[]): Record<string, boolean> {
-    if (nodes === undefined) {
-        return {};
-    }
-
-    const expandedKeys: Record<string, boolean> = {};
-
-    function traverse(node: CDTTreeItem): void {
-        if (node.expanded) {
-            expandedKeys[node.key ?? 'unknown'] = true;
-        }
-        for (const child of node.children ?? []) {
-            traverse(child);
-        }
-    }
-
-    for (const node of nodes) {
-        traverse(node);
-    }
-
-    return expandedKeys;
-}

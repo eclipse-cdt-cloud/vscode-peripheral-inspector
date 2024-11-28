@@ -6,11 +6,10 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralBaseNodeImpl } from './base-node';
 import { AddrRange } from '../../../addrranges';
 import { NodeSetting } from '../../../common';
 import { CDTTreeItem } from '../../../components/tree/types';
-import { PERIPHERAL_ID_SEP } from '../../../common/peripherals';
+import { PeripheralBaseNodeImpl } from './base-node';
 
 export class MessageNode extends PeripheralBaseNodeImpl {
 
@@ -39,7 +38,6 @@ export class MessageNode extends PeripheralBaseNodeImpl {
             id: this.getId(),
             key: this.getId(),
             resource: undefined,
-            path: this.getId().split(PERIPHERAL_ID_SEP),
         });
     }
 

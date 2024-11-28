@@ -7,16 +7,13 @@
 
 import * as vscode from 'vscode';
 import * as manifest from '../../../manifest';
-import { CDTTreeViewType } from '../../../components/tree/types';
 import { PeripheralBaseNodeImpl } from '../nodes';
 import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
 import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
 import { PeripheralBaseNode } from '../../../common/peripherals';
 
-export class PeripheralsTreeWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNodeImpl> {
-    readonly type: CDTTreeViewType = 'tree';
-
-    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-tree`;
+export class PeripheralsTreeTableWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNodeImpl> {
+    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-treetable`;
 
     public constructor(
         protected dataProvider: CDTTreeDataProvider<PeripheralBaseNodeImpl, PeripheralBaseNode>,
@@ -27,30 +24,7 @@ export class PeripheralsTreeWebView extends CDTTreeWebviewViewProvider<Periphera
 
     async activate(context: vscode.ExtensionContext): Promise<void> {
         context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(PeripheralsTreeWebView.viewType, this)
-        );
-    }
-}
-
-export class PeripheralsTreeTableWebView extends PeripheralsTreeWebView {
-    readonly type: CDTTreeViewType = 'treetable';
-    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-treetable`;
-
-    async activate(context: vscode.ExtensionContext): Promise<void> {
-        context.subscriptions.push(
             vscode.window.registerWebviewViewProvider(PeripheralsTreeTableWebView.viewType, this)
-        );
-    }
-}
-
-
-export class PeripheralsAntDTreeTableWebView extends PeripheralsTreeWebView {
-    readonly type: CDTTreeViewType = 'antd-treetable';
-    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-antd-treetable`;
-
-    async activate(context: vscode.ExtensionContext): Promise<void> {
-        context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(PeripheralsAntDTreeTableWebView.viewType, this)
         );
     }
 }

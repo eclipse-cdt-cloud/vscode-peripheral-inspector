@@ -64,7 +64,3 @@ export namespace Commands {
         title: 'Collapse All'
     } as const;
 }
-
-export namespace NonBlockingCommands {
-    export const IDS = [Commands.COPY_VALUE_COMMAND.commandId];
-}
