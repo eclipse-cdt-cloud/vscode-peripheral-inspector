@@ -6,13 +6,22 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
+import * as xmlWriter from 'xmlbuilder2';
 import { DebugTracker } from '../../../debug-tracker';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SvdResolver } from '../../../svd-resolver';
-import { MessageNode, PeripheralBaseNode, PeripheralRegisterNode } from '../nodes';
+import {
+    MessageNode,
+    PeripheralBaseNode,
+    PeripheralClusterNode,
+    PeripheralFieldNode,
+    PeripheralNode,
+    PeripheralRegisterNode,
+} from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
 import { PeripheralTreeDataProvider } from './provider/peripheral-tree-data-provider';
+import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 
 export class PeripheralDataTracker {
     protected onDidChangeEvent = new vscode.EventEmitter<PeripheralBaseNode | void>();
@@ -90,6 +99,103 @@ export class PeripheralDataTracker {
         if (emit) {
             this.onDidExpandEvent.fire(node);
         }
+    }
+
+    private async writeModuleToXml(
+        node: PeripheralBaseNode,
+        xmlBuilder: XMLBuilder,
+    ): Promise<void> {
+        if (node instanceof PeripheralNode || node instanceof PeripheralClusterNode) {
+            const moduleElement = xmlBuilder.ele('module');
+            moduleElement.att('name', node.getName());
+            if (node instanceof PeripheralClusterNode) {
+                moduleElement.att('offset', node.getLabelValue());
+            } else {
+                moduleElement.att('address', node.getLabelValue());
+            }
+
+            const childNodes = await this.getChildren(node);
+            await Promise.all(
+                childNodes.map((c: PeripheralBaseNode) =>
+                    this.writeModuleToXml(c, moduleElement),
+                ),
+            );
+        } else if (node instanceof PeripheralRegisterNode) {
+            await this.writeRegisterToXml(node, xmlBuilder);
+        }
+    }
+
+    private async writeRegisterToXml(
+        node: PeripheralRegisterNode,
+        parentElement: XMLBuilder,
+    ): Promise<void> {
+        const registerElement = parentElement.ele('register');
+        registerElement.att('name', node.getName());
+        registerElement.att('offset', node.getOffset());
+        registerElement.att('size', node.getSize());
+        registerElement.att('value', node.getLabelValue());
+        registerElement.att('format', node.getFormatAsString());
+        registerElement.att('access', node.getContextValue());
+
+        const childNodes = await this.getChildren(node);
+        await Promise.all(
+            childNodes.map((c: PeripheralBaseNode) => {
+                if (c instanceof PeripheralFieldNode) {
+                    return this.writeFieldToXml(c, registerElement);
+                }
+                return this.writeRegisterToXml(
+                    c as PeripheralRegisterNode,
+                    registerElement,
+                );
+            }),
+        );
+    }
+
+    private async writeFieldToXml(
+        node: PeripheralFieldNode,
+        parentElement: XMLBuilder,
+    ): Promise<void> {
+        const fieldElement = parentElement.ele('bitfield');
+        fieldElement.att('name', node.getName());
+        fieldElement.att('bitrange', node.getBitrange());
+        fieldElement.att('value', node.getLabelValue());
+    }
+
+    public async exportNodeToXml(
+        node: PeripheralBaseNode,
+        filePath: vscode.Uri,
+    ): Promise<void> {
+        const xmlBuilder = xmlWriter
+            .create({ version: '1.0', encoding: 'UTF-8' })
+            .ele('moduletable');
+        await this.writeModuleToXml(node, xmlBuilder);
+
+        const xmlContent = this.finalizeXml(xmlBuilder);
+        await this.writeToFile(filePath, xmlContent);
+    }
+
+    public async exportAllNodesToXml(filePath: vscode.Uri): Promise<void> {
+        const xmlBuilder = xmlWriter
+            .create({ version: '1.0', encoding: 'UTF-8' })
+            .ele('moduletable');
+        const children = (await this.getChildren()) ?? [];
+
+        await Promise.all(
+            children.map((c) => this.writeModuleToXml(c, xmlBuilder)),
+        );
+
+        const xmlContent = this.finalizeXml(xmlBuilder);
+        await this.writeToFile(filePath, xmlContent);
+    }
+
+    private finalizeXml(xmlBuilder: XMLBuilder): Uint8Array {
+        const xmlString = xmlBuilder.end({ prettyPrint: true, allowEmptyTags: true });
+        return new TextEncoder().encode(xmlString);
+    }
+
+    private async writeToFile(filePath: vscode.Uri, content: Uint8Array): Promise<void> {
+        await vscode.workspace.fs.writeFile(filePath, content);
+        this.refresh();
     }
 
     public collapseNode(node: PeripheralBaseNode, emit = true): void {

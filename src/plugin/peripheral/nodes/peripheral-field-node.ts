@@ -71,6 +71,16 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
+    public getName(): string {
+        return this.name;
+    }
+
+    public getBitrange(): string {
+        const rangestart = this.offset;
+        const rangeend = this.offset + this.width - 1;
+        return `[${rangeend}:${rangestart}]`;
+    }
+
     public getLabelTitle(): string {
         const rangestart = this.offset;
         const rangeend = this.offset + this.width - 1;
