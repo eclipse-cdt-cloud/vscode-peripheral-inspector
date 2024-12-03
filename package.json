@@ -53,7 +53,8 @@
     "vscode-messenger": "^0.4.5",
     "vscode-messenger-common": "^0.4.5",
     "vscode-messenger-webview": "^0.4.5",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "xmlbuilder2": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^12.20.0",
@@ -98,6 +99,11 @@
         "icon": "$(edit)"
       },
       {
+        "command": "peripheral-inspector.svd.exportNode",
+        "title": "Export Register",
+        "icon": "$(desktop-download)"
+      },
+      {
         "command": "peripheral-inspector.svd.copyValue",
         "title": "Copy Value",
         "icon": "$(files)"
@@ -131,6 +137,11 @@
         "command": "peripheral-inspector.svd.collapseAll",
         "title": "Collapse All",
         "icon": "$(collapse-all)"
+      },
+      {
+        "command": "peripheral-inspector.svd.exportAll",
+        "title": "Export All",
+        "icon": "$(desktop-download)"
       }
     ],
     "menus": {
@@ -141,6 +152,10 @@
         },
         {
           "command": "peripheral-inspector.svd.copyValue",
+          "when": "false"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
           "when": "false"
         },
         {
@@ -182,6 +197,26 @@
           "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/"
         },
         {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == cluster"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == register"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/"
+        },
+        {
           "command": "peripheral-inspector.svd.pin",
           "when": "view == peripheral-inspector.svd && viewItem == peripheral"
         },
@@ -199,6 +234,102 @@
         {
           "command": "peripheral-inspector.svd.collapseAll",
           "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
+          "group": "navigation"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportAll",
+          "when": "view == peripheral-inspector.peripheral-tree && debugState == stopped",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "peripheral-inspector.svd.updateNode",
+          "when": "view == peripheral-inspector.svd && viewItem == field",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.updateNode",
+          "when": "view == peripheral-inspector.svd && viewItem == fieldWO",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.updateNode",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == field",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == fieldRO",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.copyValue",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == cluster"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.exportNode",
+          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == register",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.forceRefresh",
+          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.pin",
+          "when": "view == peripheral-inspector.svd && viewItem == peripheral",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.unpin",
+          "when": "view == peripheral-inspector.svd && viewItem == peripheral.pinned",
+          "group": "inline"
+        },
+        {
+          "command": "peripheral-inspector.svd.setFormat",
+          "when": "view == peripheral-inspector.svd",
           "group": "navigation"
         }
       ],

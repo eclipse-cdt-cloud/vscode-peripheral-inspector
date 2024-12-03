@@ -29,6 +29,11 @@ export namespace Commands {
         icon: 'edit',
         title: 'Update Value'
     } as const;
+    export const EXPORT_NODE_COMMAND: CommandDefinition = {
+        commandId: `${PACKAGE_NAME}.svd.exportNode`,
+        icon: 'desktop-download',
+        title: 'Export Register'
+    } as const;
     export const COPY_VALUE_COMMAND: CommandDefinition = {
         commandId: `${PACKAGE_NAME}.svd.copyValue`,
         icon: 'files',
@@ -63,6 +68,11 @@ export namespace Commands {
         commandId: `${PACKAGE_NAME}.svd.collapseAll`,
         icon: 'collapse-all',
         title: 'Collapse All'
+    } as const;
+    export const EXPORT_ALL_COMMAND: CommandDefinition = {
+        commandId: `${PACKAGE_NAME}.svd.exportAll`,
+        icon: 'desktop-download',
+        title: 'Export All'
     } as const;
 }
 
