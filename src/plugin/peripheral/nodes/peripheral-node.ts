@@ -65,12 +65,16 @@ export class PeripheralNode extends PeripheralBaseNode {
     public getCommands(): CommandDefinition[] {
         switch (this.getContextValue()) {
             case 'peripheral':
-                return [Commands.PIN_COMMAND, Commands.FORCE_REFRESH_COMMAND];
+                return [Commands.PIN_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.EXPORT_NODE_COMMAND];
             case 'peripheral.pinned':
-                return [Commands.UNPIN_COMMAND, Commands.FORCE_REFRESH_COMMAND];
+                return [Commands.UNPIN_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.EXPORT_NODE_COMMAND];
             default:
                 return [];
         }
+    }
+
+    public getName(): string {
+        return this.name;
     }
 
     public getLabelTitle(): string {

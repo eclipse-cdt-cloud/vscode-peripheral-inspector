@@ -86,9 +86,9 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     public getCommands(): CommandDefinition[] {
         switch (this.getContextValue()) {
             case 'registerRO':
-                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND];
+                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.EXPORT_NODE_COMMAND];
             case 'registerRW':
-                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.UPDATE_NODE_COMMAND];
+                return [Commands.COPY_VALUE_COMMAND, Commands.FORCE_REFRESH_COMMAND, Commands.UPDATE_NODE_COMMAND, Commands.EXPORT_NODE_COMMAND];
             case 'registerWO':
                 return [];
             default:
@@ -98,6 +98,18 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
 
     public getContextValue(): PeripheralRegisterNodeContextValue {
         return this.accessType === AccessType.ReadWrite ? 'registerRW' : (this.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
+    }
+
+    public getName(): string {
+        return this.name;
+    }
+
+    public getSize(): string {
+        return this.size.toString();
+    }
+
+    public getOffset(): string {
+        return `${hexFormat(this.offset, 0)}`;
     }
 
     public getLabelTitle(): string {
@@ -276,6 +288,23 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
             return this.format;
         } else {
             return this.parent.getFormat();
+        }
+    }
+
+    public getFormatAsString(): string {
+        const format = this.getFormat();
+
+        switch (format) {
+            case NumberFormat.Auto:
+                return 'Auto';
+            case NumberFormat.Hexadecimal:
+                return 'H';
+            case NumberFormat.Decimal:
+                return 'D';
+            case NumberFormat.Binary:
+                return 'B';
+            default:
+                return 'N/A';
         }
     }
 

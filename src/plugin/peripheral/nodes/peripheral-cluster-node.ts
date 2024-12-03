@@ -11,9 +11,10 @@ import { PeripheralRegisterNode } from './peripheral-register-node';
 import { PeripheralNode } from './peripheral-node';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
-import { NumberFormat, NodeSetting } from '../../../common';
+import { NumberFormat, NodeSetting, CommandDefinition } from '../../../common';
 import { hexFormat } from '../../../utils';
 import { CDTTreeItem } from '../../../components/tree/types';
+import { Commands } from '../../../manifest';
 
 
 
@@ -55,12 +56,20 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         return `${this.getLabelTitle()} [${this.getLabelValue()}]`;
     }
 
+    public getName(): string {
+        return this.name;
+    }
+
     public getLabelTitle(): string {
         return this.name;
     }
 
     public getLabelValue(): string {
         return hexFormat(this.offset, 0);
+    }
+
+    public getCommands(): CommandDefinition[] {
+        return [Commands.EXPORT_NODE_COMMAND];
     }
 
     public getContextValue(): string {
