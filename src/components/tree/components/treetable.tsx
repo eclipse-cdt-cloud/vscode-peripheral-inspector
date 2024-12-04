@@ -14,8 +14,11 @@ import { default as React, useCallback, useEffect, useLayoutEffect, useMemo, use
 import { CommandDefinition } from '../../../common';
 import { getNestedValue } from '../../../common/utils';
 import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
-import { classNames, createHighlightedText, createLabelWithTooltip } from './utils';
+import { allKeys, classNames, createHighlightedText, createLabelWithTooltip, filterTree } from './utils';
 import { debounce } from 'throttle-debounce';
+import { SearchOverlay } from './search-overlay';
+import { TreeNavigator } from './treetable-navigator';
+import { ExpandIcon } from './expand-icon';
 
 /**
  * Component to render a tree table.
@@ -106,69 +109,163 @@ function useWindowSize() {
 
 export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) => {
     const { width, height } = useWindowSize();
-    const [dataSource, setDataSource] = useState<CDTTreeItem[]>(props.dataSource ?? []);
+    const [globalSearchText, setGlobalSearchText] = useState<string | undefined>();
+    const globalSearchRef = React.useRef<SearchOverlay>(null);
+    const autoSelectRowRef = React.useRef<boolean>(false);
 
     const ref = React.useRef<HTMLDivElement | null>(null);
+    const tblRef: Parameters<typeof Table>[0]['ref'] = React.useRef(null);
 
-    const pinnedRowKeys = useMemo(() => {
-        return props.pin?.pinnedRowKeys ?? [];
-    }, [props.pin?.pinnedRowKeys]);
+    // ==== Data ====
 
-    useEffect(() => {
-        setDataSource((props.dataSource ?? []).sort(props.dataSourceComparer));
-    }, [props.dataSource, props.pin?.pinnedRowKeys]);
+    const filteredData = useMemo(() => {
+        let data = props.dataSource ?? [];
+        if (globalSearchText) {
+            data = filterTree(data, globalSearchText);
+        }
+        if (props.dataSourceComparer) {
+            data = [...data].sort(props.dataSourceComparer);
+        }
+        return data;
+    }, [props.dataSource, props.dataSourceComparer, globalSearchText]);
+
+    // ==== Search ====
+
+    const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            e.stopPropagation();
+            globalSearchRef.current?.show();
+        }
+    }, []);
+
+    const onSearchShow = useCallback(() => setGlobalSearchText(globalSearchRef.current?.value()), []);
+    const onSearchHide = useCallback(() => {
+        setGlobalSearchText(undefined);
+        autoSelectRowRef.current = true;
+    }, [autoSelectRowRef]);
+    const onSearchChange = useMemo(() => debounce(300, (text: string) => setGlobalSearchText(text)), []);
+
+    // ==== Selection ====
+
+    const [selection, setSelection] = useState<CDTTreeItem>();
+
+    const selectRow = useCallback((record: CDTTreeItem) => {
+        // Single select only
+        if (selection?.key !== record.key) {
+            setSelection(record);
+        }
+    }, [selection]);
 
     // ==== Expansion ====
 
     const expandedRowKeys = useMemo(() => {
-        return props.expansion?.expandedRowKeys ?? [];
-    }, [props.expansion?.expandedRowKeys]);
-
-
-    const expandIcon = useCallback(
-        ({ expanded, onExpand, record, expandable }: RenderExpandIconProps<CDTTreeItem>) => {
-            if (!expandable) {
-                // simulate spacing to the left that we gain through expand icon so that leaf items look correctly intended
-                return <span className='leaf-item-spacer' />;
+        if (globalSearchText) {
+            // on search expand all nodes as they match the search
+            return allKeys(filteredData);
+        }
+        // otherwise use the expandedRowKeys from the props but ensure that the selected element is also expanded
+        const expanded = props.expansion?.expandedRowKeys ?? [];
+        if (autoSelectRowRef.current && selection) {
+            let selectionParent = selection.parent;
+            while (selectionParent) {
+                expanded.push(selectionParent.key);
+                selectionParent = selectionParent.parent;
             }
+        }
+        return expanded;
+    }, [filteredData, globalSearchText, props.expansion?.expandedRowKeys, selection, autoSelectRowRef.current]);
 
-            const doExpand = (event: React.MouseEvent<HTMLElement>) => {
-                event.stopPropagation();
-                onExpand(record, event);
-            };
-
-            const iconClass = expanded ? 'codicon-chevron-down' : 'codicon-chevron-right';
-            return (
-                <div
-                    className={classNames('tree-toggler-container', 'codicon', iconClass)}
-                    onClick={doExpand}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={expanded ? 'Collapse row' : 'Expand row'}
-                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') doExpand(event as unknown as React.MouseEvent<HTMLElement>); }}
-                ></div>
-            );
-        },
-        []
-    );
 
     const handleExpand = useCallback(
         (expanded: boolean, record: CDTTreeItem) => {
             props.expansion?.onExpand?.(expanded, record);
         },
-        [props.expansion]
+        [props.expansion?.onExpand]
     );
 
-    // ==== Selection ====
+    // ==== Index ====
 
-    const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+    const dataSourceIndex = useMemo(() => {
+        const rowIndex = new Map<string, number>();
+        const keyIndex = new Map<string, CDTTreeItem>();
 
-    const selectRow = useCallback((record: CDTTreeItem) => {
-        // Single select only
-        if (selectedRowKeys.indexOf(record.key) != 0) {
-            setSelectedRowKeys([record.key]);
+        let currentIndex = 0;
+
+        const traverse = (nodes: CDTTreeItem[]) => {
+            nodes.forEach(node => {
+                rowIndex.set(node.id, currentIndex++);
+                keyIndex.set(node.key, node);
+
+                if (node.children && node.children.length > 0 && expandedRowKeys.includes(node.id)) {
+                    traverse(node.children);
+                }
+            });
+        };
+
+        traverse(filteredData ?? []);
+        return {
+            rowIndex,
+            keyIndex
+        };
+    }, [filteredData, expandedRowKeys]);
+
+    // ==== Navigation ====
+
+    const navigator = React.useMemo(() => new TreeNavigator({
+        ref,
+        rowIndex: dataSourceIndex.rowIndex,
+        expandedRowKeys,
+        expand: handleExpand,
+        select: selectRow
+    }), [ref, dataSourceIndex.rowIndex, expandedRowKeys, handleExpand, selectRow]);
+
+    const onTableKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+        const selectedKey = selection?.key;
+        if (!selectedKey) {
+            return;
         }
-    }, [selectedRowKeys]);
+
+        const record = dataSourceIndex.keyIndex.get(selectedKey);
+        if (!record) {
+            return;
+        }
+
+        switch (event.key) {
+            case 'ArrowDown': {
+                navigator.next(record);
+                break;
+            }
+            case 'ArrowUp': {
+                navigator.previous(record);
+                break;
+            }
+            case 'ArrowLeft': {
+                navigator.collapse(record);
+                break;
+            }
+            case 'ArrowRight': {
+                navigator.expand(record);
+                break;
+            }
+            case 'Enter': {
+                navigator.toggle(record);
+                break;
+            }
+            case ' ': {
+                navigator.toggle(record);
+                break;
+            }
+            case 'PageUp': {
+                navigator.previousPage();
+                break;
+            }
+            case 'PageDown': {
+                navigator.nextPage();
+                break;
+            }
+        }
+    }, [selection, dataSourceIndex]);
 
     // ==== Renderers ====
 
@@ -275,53 +372,33 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
 
     // ==== Handlers ====
 
-    const dataSourceIndex = useMemo(() => {
-        const rowIndex = new Map<string, number>();
-        const keyIndex = new Map<string, CDTTreeItem>();
-
-        let currentIndex = 0;
-
-        const traverse = (nodes: CDTTreeItem[]) => {
-            nodes.forEach(node => {
-                rowIndex.set(node.id, currentIndex++);
-                keyIndex.set(node.key, node);
-
-                if (node.children && node.children.length > 0 && expandedRowKeys.includes(node.id)) {
-                    traverse(node.children);
-                }
-            });
-        };
-
-        traverse(dataSource ?? []);
-        return {
-            rowIndex,
-            keyIndex
-        };
-    }, [dataSource, expandedRowKeys, pinnedRowKeys]);
-
+    // Ensure that even if we lose the active element through scrolling or other means, we can still navigate by restoring the focus
     useEffect(() => {
         if (!ref.current) {
             return;
         }
 
-        // The selected row may be removed from the DOM
-        // We need to focus the table in this case
         const observer = new MutationObserver(() => {
+            if (document.activeElement === globalSearchRef.current?.input()) {
+                // do not steal focus from the search input
+                return;
+            }
             const selectedRow = document.querySelector<HTMLElement>('.ant-table-row-selected');
-            // Focus the table if the selected row is not in the DOM
             if (!selectedRow) {
+                // Selected row was removed from the DOM, focus on the table
                 ref.current?.focus();
             } else if (selectedRow !== document.activeElement) {
-                // Focus the selected row if it is in the DOM and not focused
+                // Selected row is still in the DOM, but not focused
                 selectedRow?.focus();
             }
         });
 
-        observer.observe(ref.current as Node, {
-            childList: true,
-            subtree: true
-        });
+        observer.observe(ref.current, { childList: true, subtree: true });
+        return () => observer.disconnect();
+    }, [ref.current]);
 
+    // Abort scrolling when mouse drag was finished (e.g., left mouse button is no longer pressed) outside the iframe
+    useEffect(() => {
         const abortScroll = (event: MouseEvent) => {
             if (!(event.buttons & 1)) {
                 // left button is no longer pressed...
@@ -333,25 +410,20 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
             }
         };
         document.addEventListener('mouseenter', abortScroll);
+        return () => document.removeEventListener('mouseenter', abortScroll);
+    }, []);
 
-        return () => {
-            document.removeEventListener('mouseenter', abortScroll);
-            observer.disconnect();
-        };
-    }, [ref, selectedRowKeys]);
+    // Scroll to selected row if autoSelectRowRef is set
+    useEffect(() => {
+        if (autoSelectRowRef.current && selection) {
+            tblRef.current?.scrollTo({ key: selection.key });
+            autoSelectRowRef.current = false;
+        }
+    }, [autoSelectRowRef.current]);
 
-    const navigator = React.useMemo(() => new TreeNavigator({
-        ref,
-        rowIndex: dataSourceIndex.rowIndex,
-        expandedRowKeys,
-        selectedRowKeys,
-        expand: handleExpand,
-        select: selectRow
-    }), [ref, dataSourceIndex, expandedRowKeys, selectedRowKeys, handleExpand, selectRow]);
-
-    const handleRowClick = useCallback(
+    const onRowClick = useCallback(
         (record: CDTTreeItem, event: React.MouseEvent<HTMLElement>) => {
-            const isExpanded = props.expansion?.expandedRowKeys?.includes(record.id);
+            const isExpanded = expandedRowKeys?.includes(record.id);
             handleExpand(!isExpanded, record);
             selectRow(record);
 
@@ -362,7 +434,8 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
 
     // ==== Return ====
 
-    return <div>
+    return <div onKeyDown={onKeyDown}>
+        <SearchOverlay key={'search'} ref={globalSearchRef} onHide={onSearchHide} onShow={onSearchShow} onChange={onSearchChange} />
         <ConfigProvider
             theme={{
                 cssVar: true,
@@ -373,67 +446,23 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
             <div ref={ref}
                 tabIndex={-1}
                 style={{ outline: 'none' }}
-                onKeyDown={(event) => {
-                    const selectedKey = selectedRowKeys[0];
-                    if (!selectedKey) {
-                        return;
-                    }
-
-                    const record = dataSourceIndex.keyIndex.get(selectedKey);
-                    if (!record) {
-                        return;
-                    }
-
-                    switch (event.key) {
-                        case 'ArrowDown': {
-                            navigator.next(record);
-                            break;
-                        }
-                        case 'ArrowUp': {
-                            navigator.previous(record);
-                            break;
-                        }
-                        case 'ArrowLeft': {
-                            navigator.collapse(record);
-                            break;
-                        }
-                        case 'ArrowRight': {
-                            navigator.expand(record);
-                            break;
-                        }
-                        case 'Enter': {
-                            navigator.toggle(record);
-                            break;
-                        }
-                        case ' ': {
-                            navigator.toggle(record);
-                            break;
-                        }
-                        case 'PageUp': {
-                            navigator.previousPage();
-                            break;
-                        }
-                        case 'PageDown': {
-                            navigator.nextPage();
-                            break;
-                        }
-                    }
-                }}
+                onKeyDown={onTableKeyDown}
             >
                 <Table<CDTTreeItem>
+                    ref={tblRef}
                     columns={columns}
-                    dataSource={dataSource}
+                    dataSource={filteredData}
                     components={{ body: { row: BodyRow } }}
                     virtual
                     scroll={{ x: width, y: height - 2 }}
                     showHeader={false}
                     pagination={false}
-                    rowClassName={(record) => classNames({ 'ant-table-row-selected': selectedRowKeys.includes(record.key) })}
+                    rowClassName={(record) => classNames({ 'ant-table-row-selected': record.key === selection?.key })}
                     onRow={(record) => ({
-                        onClick: (event) => handleRowClick(record, event),
+                        onClick: (event) => onRowClick(record, event),
                     })}
                     expandable={{
-                        expandIcon: expandIcon,
+                        expandIcon: props => <ExpandIcon {...props} />,
                         showExpandColumn: true,
                         expandedRowKeys: expandedRowKeys,
                         onExpand: handleExpand
@@ -443,180 +472,3 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
         </ConfigProvider>
     </div>;
 };
-
-interface RenderExpandIconProps<RecordType> {
-    prefixCls: string;
-    expanded: boolean;
-    record: RecordType;
-    expandable: boolean;
-    onExpand: TriggerEventHandler<RecordType>;
-}
-
-export type TriggerEventHandler<RecordType> = (record: RecordType, event: React.MouseEvent<HTMLElement>) => void;
-
-interface TreeNavigatorProps {
-    ref: React.RefObject<HTMLDivElement>;
-    rowIndex: Map<string, number>;
-    expandedRowKeys: string[];
-    selectedRowKeys: string[];
-    expand: (expanded: boolean, record: CDTTreeItem) => void;
-    select: (record: CDTTreeItem) => void;
-}
-
-/**
- * TreeNavigator is a helper class to navigate
- * through a tree table.
- */
-class TreeNavigator {
-    constructor(
-        private readonly props: TreeNavigatorProps
-    ) {
-    }
-
-    next(node: CDTTreeItem) {
-        if (node.children && node.children.length > 0 && this.props.expandedRowKeys.includes(node.id)) {
-            // Go deeper
-            this.select(node.children[0]);
-        } else {
-            let nextNode = this.getNext(node);
-            if (nextNode) {
-                this.select(nextNode);
-            } else {
-                // Go to parent sibling recursively
-                nextNode = this.getParentNext(node.parent);
-                if (nextNode) {
-                    this.select(nextNode);
-                }
-            }
-        }
-    }
-
-    nextPage() {
-        this.scrollRelative(this.visibleDomElementCount);
-    }
-
-    private getSiblings(node: CDTTreeItem): CDTTreeItem[] {
-        return node.parent?.children ?? [];
-    }
-
-    private getNext(node: CDTTreeItem): CDTTreeItem | undefined {
-        const siblings = this.getSiblings(node);
-        const index = siblings.indexOf(node);
-        return siblings[index + 1];
-    }
-
-    private getParentNext(node: CDTTreeItem | undefined): CDTTreeItem | undefined {
-        if (!node) return undefined;
-        const nextSibling = this.getNext(node);
-        if (nextSibling) {
-            return nextSibling;
-        } else {
-            return this.getParentNext(node.parent);
-        }
-    }
-
-    previous(node: CDTTreeItem) {
-        let prevNode = this.getPrevious(node);
-        if (prevNode) {
-            // Go deeper to the last child if the previous node has children and is expanded
-            while (prevNode.children && prevNode.children.length > 0 && this.props.expandedRowKeys.includes(prevNode.id)) {
-                prevNode = prevNode.children[prevNode.children.length - 1];
-            }
-            this.select(prevNode);
-        } else {
-            const parent = node.parent;
-            // Go to parent if no previous sibling
-            if (parent && !CDTTreeItem.isRoot(parent)) {
-                this.select(parent);
-            }
-        }
-    }
-
-    previousPage() {
-        this.scrollRelative(-(this.visibleDomElementCount - 1));
-    }
-
-    private getPrevious(node: CDTTreeItem): CDTTreeItem | undefined {
-        const siblings = this.getSiblings(node);
-        const index = siblings.indexOf(node);
-        return siblings[index - 1];
-    }
-
-    toggle(node: CDTTreeItem) {
-        if (this.props.expandedRowKeys.includes(node.id)) {
-            this.collapse(node);
-        } else {
-            this.expand(node);
-        }
-    }
-
-    expand(node: CDTTreeItem) {
-        if (node.children && node.children.length > 0) {
-            if (this.props.expandedRowKeys.includes(node.id)) {
-                this.next(node);
-            } else {
-                this.props.expand(true, node);
-            }
-        }
-    }
-
-    collapse(node: CDTTreeItem) {
-        if (node.children && node.children.length > 0 && this.props.expandedRowKeys.includes(node.id)) {
-            this.props.expand(false, node);
-        } else if (node.parent && !CDTTreeItem.isRoot(node.parent)) {
-            this.select(node.parent, 'absolute');
-        }
-    }
-
-    private select(node: CDTTreeItem, scrollMode: 'relative' | 'absolute' = 'absolute') {
-        // Virtual scrolling may have hidden the node
-        if (!this.isDomVisible(node)) {
-            if (scrollMode === 'absolute') {
-                this.scrollAbsolute(node);
-                this.props.select(node);
-            } else {
-                this.scrollRelative(-(this.visibleDomElementCount / 2));
-            }
-
-            this.props.select(node);
-            // Allow the DOM to update before focusing
-            setTimeout(() => this.getDomElement(node)?.focus(), 100);
-        } else {
-            this.props.select(node);
-            this.getDomElement(node)?.focus();
-        }
-
-        this.getDomElement(node)?.addEventListener;
-    }
-
-    // ==== DOM ====
-
-    private scrollRelative(count = this.visibleDomElementCount) {
-        const rowHeight = this.props.ref.current?.querySelector<HTMLDivElement>('.ant-table-row')?.clientHeight ?? 22;
-        const body = this.props.ref.current?.querySelector<HTMLDivElement>('.ant-table-tbody-virtual-holder');
-        if (body) {
-            body.scrollTop = Math.max(body.scrollTop + count * rowHeight, 0);
-        }
-    }
-
-    private scrollAbsolute(node: CDTTreeItem) {
-        const rowHeight = this.props.ref.current?.querySelector<HTMLDivElement>('.ant-table-row')?.clientHeight ?? 22;
-        const body = this.props.ref.current?.querySelector<HTMLDivElement>('.ant-table-tbody-virtual-holder');
-        if (body) {
-            const index = this.props.rowIndex.get(node.id) ?? 1;
-            body.scrollTop = Math.max(index * rowHeight, 0);
-        }
-    }
-
-    private getDomElement(record: CDTTreeItem) {
-        return this.props.ref.current?.querySelector<HTMLDivElement>(`[data-row-key="${record.key}"]`);
-    }
-
-    private isDomVisible(record: CDTTreeItem) {
-        return !!this.getDomElement(record);
-    }
-
-    private get visibleDomElementCount() {
-        return this.props.ref.current?.querySelectorAll<HTMLDivElement>('.ant-table-row').length ?? 1;
-    }
-}

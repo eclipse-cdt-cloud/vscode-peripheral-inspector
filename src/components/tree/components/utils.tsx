@@ -8,6 +8,7 @@ import React from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';
+import { CDTTreeItem, CDTTreeTableStringColumn } from '../types';
 
 export function classNames(...classes: (string | Record<string, boolean>)[]): string {
     return classes.filter(c => c !== undefined).map(c => {
@@ -67,4 +68,53 @@ export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: strin
             <Markdown className="markdown" remarkPlugins={[remarkGfm]}>{tooltip}</Markdown>
         </TooltipContent>
     </Tooltip>;
+}
+
+
+/**
+ * Recursively filters the tree to include only items that match the search text
+ * and their ancestor hierarchy.
+ */
+export function filterTree<T>(
+    items: CDTTreeItem<T>[],
+    searchText: string
+): CDTTreeItem<T>[] {
+    const filtered: CDTTreeItem<T>[] = [];
+
+    items.forEach(item => {
+        const children = item.children ? filterTree(item.children, searchText) : [];
+
+        // Check if the current item matches the search
+        const matches = Object.values(item.columns ?? {})
+            .filter(column => column.type === 'string')
+            .some(column =>
+                ((column as CDTTreeTableStringColumn).label || '').toLowerCase().includes(searchText.toLowerCase())
+            );
+
+        if (matches || children.length > 0) {
+            filtered.push({
+                ...item,
+                // Only include children that match or have matching descendants
+                children: children.length > 0 ? children : undefined,
+                // Optionally, expand the parent if a child matches
+                expanded: children.length > 0 || item.expanded,
+            });
+        }
+    });
+    return filtered;
+}
+
+export function allKeys<T>(items: CDTTreeItem<T>[]): string[] {
+    const keys: string[] = [];
+    const stack = [...items];
+    while (stack.length) {
+        const current = stack.pop();
+        if (current) {
+            keys.push(current.key);
+            if (current.children) {
+                stack.push(...current.children);
+            }
+        }
+    }
+    return keys;
 }
