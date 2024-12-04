@@ -70,20 +70,18 @@ export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: strin
     </Tooltip>;
 }
 
-
 /**
- * Recursively filters the tree to include only items that match the search text
- * and their ancestor hierarchy.
+ * Recursively filters the tree to include items that match the search text
+ * and their ancestor hierarchy. If children are not to be filtered, all children
+ * of a matched item are included. Elements that match the search text are marked.
  */
 export function filterTree<T>(
     items: CDTTreeItem<T>[],
-    searchText: string
+    searchText: string,
+    options: { filterChildren?: boolean } = { filterChildren: false }
 ): CDTTreeItem<T>[] {
-    const filtered: CDTTreeItem<T>[] = [];
-
+    const matching: CDTTreeItem<T>[] = [];
     items.forEach(item => {
-        const children = item.children ? filterTree(item.children, searchText) : [];
-
         // Check if the current item matches the search
         const matches = Object.values(item.columns ?? {})
             .filter(column => column.type === 'string')
@@ -91,30 +89,93 @@ export function filterTree<T>(
                 ((column as CDTTreeTableStringColumn).label || '').toLowerCase().includes(searchText.toLowerCase())
             );
 
-        if (matches || children.length > 0) {
-            filtered.push({
+        if (matches) {
+            // item matches: show all or only matching children
+            const children = options.filterChildren
+                ? item.children ? filterTree(item.children, searchText, options) : []
+                : item.children ?? [];
+            matching.push({
                 ...item,
-                // Only include children that match or have matching descendants
                 children: children.length > 0 ? children : undefined,
-                // Optionally, expand the parent if a child matches
-                expanded: children.length > 0 || item.expanded,
+                matching: true,
             });
-        }
-    });
-    return filtered;
-}
-
-export function allKeys<T>(items: CDTTreeItem<T>[]): string[] {
-    const keys: string[] = [];
-    const stack = [...items];
-    while (stack.length) {
-        const current = stack.pop();
-        if (current) {
-            keys.push(current.key);
-            if (current.children) {
-                stack.push(...current.children);
+        } else if (item.children) {
+            // item does not match: check if a child matches as we need to show the item as ancestor in that case
+            const matchingChildren = filterTree(item.children, searchText, options);
+            if (matchingChildren.length > 0) {
+                matching.push({
+                    ...item,
+                    children: matchingChildren,
+                    matching: false
+                });
             }
         }
+    });
+    return matching;
+}
+
+/**
+ * Options for traversing the tree.
+ */
+export interface TraverseOptions<T, U> {
+    /**
+     * A predicate function to determine if an item should be included.
+     * If omitted, all items are included.
+     */
+    predicate?: (item: CDTTreeItem<T>) => boolean;
+
+    /**
+     * A mapping function to transform items.
+     * If omitted, items are returned as-is.
+     */
+    mapper?: (item: CDTTreeItem<T>) => U;
+}
+
+/**
+ * Recursively traverses the tree, optionally filtering and mapping items.
+ *
+ * @param items - The root items of the tree.
+ * @param options - Optional traversal options including predicate and mapFn.
+ * @returns An array of items that satisfy the predicate and are optionally mapped.
+ */
+export function traverseTree<T, U = CDTTreeItem<T>>(
+    items: CDTTreeItem<T>[],
+    options?: TraverseOptions<T, U>
+): U[] {
+    const result: U[] = [];
+
+    const { predicate, mapper } = options || {};
+
+    for (const item of items) {
+        // Determine if the current item satisfies the predicate
+        const shouldInclude = predicate ? predicate(item) : true;
+
+        if (shouldInclude) {
+            // Apply the mapping function if provided, else return the item as-is
+            const mappedItem = mapper ? mapper(item) : (item as unknown as U);
+            result.push(mappedItem);
+        }
+
+        if (item.children && item.children.length > 0) {
+            // Recursively traverse the children
+            const childResults = traverseTree(item.children, options);
+
+            // If mapping is applied, childResults are already mapped
+            // Push all child results into the main result array
+            result.push(...childResults);
+        }
     }
-    return keys;
+    return result;
+}
+
+export function getAncestors<T>(
+    item: CDTTreeItem<T>
+): CDTTreeItem<unknown>[] {
+    const ancestors: CDTTreeItem<unknown>[] = [];
+    let current: CDTTreeItem<unknown> | undefined = item.parent;
+    while (current) {
+        ancestors.push(current);
+        current = current.parent as unknown as CDTTreeItem<T>;
+    }
+    return ancestors;
 }

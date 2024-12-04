@@ -36,6 +36,10 @@ export interface CDTTreeItem<T = unknown> {
      * Whether this item is expanded. Undefined means that the item is not expanded.
      */
     expanded?: boolean;
+    /**
+     * Whether this item is matched by the current filter. Undefined means that the item is not matched.
+     */
+    matching?: boolean;
 }
 
 export namespace CDTTreeItem {

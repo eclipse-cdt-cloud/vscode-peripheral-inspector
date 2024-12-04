@@ -14,7 +14,7 @@ import { default as React, useCallback, useEffect, useLayoutEffect, useMemo, use
 import { CommandDefinition } from '../../../common';
 import { getNestedValue } from '../../../common/utils';
 import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
-import { allKeys, classNames, createHighlightedText, createLabelWithTooltip, filterTree } from './utils';
+import { classNames, createHighlightedText, createLabelWithTooltip, filterTree, getAncestors, traverseTree } from './utils';
 import { debounce } from 'throttle-debounce';
 import { SearchOverlay } from './search-overlay';
 import { TreeNavigator } from './treetable-navigator';
@@ -160,20 +160,18 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
     // ==== Expansion ====
 
     const expandedRowKeys = useMemo(() => {
+        const expanded = new Set(props.expansion?.expandedRowKeys ?? []);
         if (globalSearchText) {
-            // on search expand all nodes as they match the search
-            return allKeys(filteredData);
-        }
-        // otherwise use the expandedRowKeys from the props but ensure that the selected element is also expanded
-        const expanded = props.expansion?.expandedRowKeys ?? [];
-        if (autoSelectRowRef.current && selection) {
-            let selectionParent = selection.parent;
-            while (selectionParent) {
-                expanded.push(selectionParent.key);
-                selectionParent = selectionParent.parent;
+            // on search expand all nodes that match the search
+            const matchingExpansion = traverseTree(filteredData, { predicate: item => item.matching ?? false, mapper: getAncestors });
+            matchingExpansion.forEach(ancestorHierarchy => ancestorHierarchy.forEach(ancestor => expanded.add(ancestor.key)));
+        } else {
+            // otherwise use the expandedRowKeys from the props but ensure that the selected element is also expanded
+            if (autoSelectRowRef.current && selection) {
+                getAncestors(selection).forEach(ancestor => expanded.add(ancestor.key));
             }
         }
-        return expanded;
+        return Array.from(expanded);
     }, [filteredData, globalSearchText, props.expansion?.expandedRowKeys, selection, autoSelectRowRef.current]);
 
 
@@ -457,7 +455,7 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
                     scroll={{ x: width, y: height - 2 }}
                     showHeader={false}
                     pagination={false}
-                    rowClassName={(record) => classNames({ 'ant-table-row-selected': record.key === selection?.key })}
+                    rowClassName={(record) => classNames({ 'ant-table-row-selected': record.key === selection?.key, 'ant-table-row-matched': record.matching ?? false })}
                     onRow={(record) => ({
                         onClick: (event) => onRowClick(record, event),
                     })}
