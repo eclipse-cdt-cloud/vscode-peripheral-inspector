@@ -36,9 +36,8 @@ export class PeripheralCommands {
         try {
             const result = await node.performUpdate(value);
             if (result) {
-                await this.peripheralsForceRefresh();
-            } else {
-                this.dataTracker.refresh();
+                // Update the tree view
+                this.dataTracker.fireOnDidChange();
             }
 
         } catch (error) {
@@ -75,7 +74,7 @@ export class PeripheralCommands {
         }
 
         node.format = result.value;
-        this.dataTracker.refresh();
+        this.dataTracker.fireOnDidChange();
     }
 
     private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {
@@ -85,7 +84,7 @@ export class PeripheralCommands {
                 await p.updateData();
             }
 
-            this.dataTracker.refresh();
+            this.dataTracker.fireOnDidChange();
         } else {
             await this.dataTracker.updateData();
         }

@@ -117,6 +117,41 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
         return props.expansion?.expandedRowKeys;
     }, [props.expansion?.expandedRowKeys]);
 
+
+    const expandIcon = useCallback(
+        ({ expanded, onExpand, record, expandable }: RenderExpandIconProps<CDTTreeItem>) => {
+            if (!expandable) {
+                // simulate spacing to the left that we gain through expand icon so that leaf items look correctly intended
+                return <span className='leaf-item-spacer' />;
+            }
+
+            const doExpand = (event: React.MouseEvent<HTMLElement>) => {
+                event.stopPropagation();
+                onExpand(record, event);
+            };
+
+            const iconClass = expanded ? 'codicon-chevron-down' : 'codicon-chevron-right';
+            return (
+                <div
+                    className={classNames('tree-toggler-container', 'codicon', iconClass)}
+                    onClick={doExpand}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={expanded ? 'Collapse row' : 'Expand row'}
+                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') doExpand(event as unknown as React.MouseEvent<HTMLElement>); }}
+                ></div>
+            );
+        },
+        []
+    );
+
+    const handleExpand = useCallback(
+        (expanded: boolean, record: CDTTreeItem) => {
+            props.expansion?.onExpand?.(expanded, record);
+        },
+        [props.expansion]
+    );
+
     // ==== Renderers ====
 
     const renderStringColumn = useCallback(
@@ -221,41 +256,12 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
 
     // ==== Handlers ====
 
-    const handleExpand = useCallback(
-        (expanded: boolean, record: CDTTreeItem) => {
-            props.expansion?.onExpand?.(expanded, record);
-        },
-        [props.expansion]
-    );
-
     const handleRowClick = useCallback(
         (record: CDTTreeItem) => () => {
             const isExpanded = props.expansion?.expandedRowKeys?.includes(record.id);
             props.expansion?.onExpand?.(!isExpanded, record);
         },
         [props.expansion]
-    );
-
-    const expandIcon = useCallback(
-        ({ expanded, onExpand, record, expandable }: RenderExpandIconProps<CDTTreeItem>) => {
-            if (!expandable) {
-                // simulate spacing to the left that we gain through expand icon so that leaf items look correctly intended
-                return <span className='leaf-item-spacer' />;
-            }
-
-            const iconClass = expanded ? 'codicon-chevron-down' : 'codicon-chevron-right';
-            return (
-                <div
-                    className={classNames('tree-toggler-container', 'codicon', iconClass)}
-                    onClick={(e) => onExpand(record, e)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={expanded ? 'Collapse row' : 'Expand row'}
-                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') onExpand(record, event as unknown as React.MouseEvent<HTMLElement>); }}
-                ></div>
-            );
-        },
-        []
     );
 
     // ==== Return ====

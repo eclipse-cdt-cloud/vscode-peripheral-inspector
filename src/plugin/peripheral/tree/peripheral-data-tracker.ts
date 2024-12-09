@@ -115,7 +115,7 @@ export class PeripheralDataTracker {
             const children = await tree.getChildren();
             children.forEach(c => this.collapseNode(c, false));
         }
-        this.refresh();
+        this.fireOnDidChange();
     }
 
     public toggleNode(
@@ -152,12 +152,12 @@ export class PeripheralDataTracker {
     public async updateData(): Promise<void> {
         const trees = this.sessionPeripherals.values();
         for (const tree of trees) {
+            // The tree will trigger a refresh on it's own
             await tree.updateData();
         }
-        this.refresh();
     }
 
-    public refresh(): void {
+    public fireOnDidChange(): void {
         this.onDidChangeEvent.fire();
     }
 
@@ -170,7 +170,7 @@ export class PeripheralDataTracker {
         }
 
         if (this.sessionPeripherals.get(session.id)) {
-            this.refresh();
+            this.fireOnDidChange();
             vscode.debug.activeDebugConsole.appendLine(`Internal Error: Session ${session.name} id=${session.id} already in the tree view?`);
             return;
         }
@@ -180,7 +180,7 @@ export class PeripheralDataTracker {
             state = this.sessionPeripherals.size === 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
         }
         const peripheralTree = new PeripheralTreeForSession(session, this.api, state, () => {
-            this.refresh();
+            this.fireOnDidChange();
         });
 
         this.sessionPeripherals.set(session.id, peripheralTree);
@@ -195,7 +195,7 @@ export class PeripheralDataTracker {
         } catch (e) {
             vscode.debug.activeDebugConsole.appendLine(`Internal Error: Unexpected rejection of promise ${e}`);
         } finally {
-            this.refresh();
+            this.fireOnDidChange();
         }
 
         vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
@@ -211,7 +211,7 @@ export class PeripheralDataTracker {
             this.oldState.set(session.name, regs.myTreeItem.collapsibleState);
             this.sessionPeripherals.delete(session.id);
             regs.sessionTerminated(this.context);
-            this.refresh();
+            this.fireOnDidChange();
         }
 
         vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);

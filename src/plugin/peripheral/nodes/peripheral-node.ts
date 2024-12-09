@@ -101,7 +101,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         try {
             const errors = await this.readMemory();
             for (const error of errors) {
-                const str = `Failed to update peripheral ${this.name}: ${error}`;
+                const str = `Failed to read peripheral ${this.name}: ${error}`;
                 if (vscode.debug.activeDebugConsole) {
                     vscode.debug.activeDebugConsole.appendLine(str);
                 }
@@ -109,7 +109,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         } catch (e) {
             /* This should never happen */
             const msg = (e as Error).message || 'unknown error';
-            const str = `Failed to update peripheral ${this.name}: ${msg}`;
+            const str = `Failed to read peripheral ${this.name}: ${msg}`;
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(str);
             }

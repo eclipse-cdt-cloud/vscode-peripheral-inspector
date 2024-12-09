@@ -30,6 +30,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private enumerationMap: any;
     private previousValue?: number;
+    private currentValue?: number;
 
     constructor(public parent: PeripheralRegisterNode, protected options: FieldOptions) {
         super(parent);
@@ -110,7 +111,6 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
                     if (val === undefined) {
                         return false;
                     }
-
                     const numval = this.enumerationMap[val.label];
                     this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
                 });
@@ -129,7 +129,8 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     }
 
     public updateData(): Thenable<boolean> {
-        this.previousValue = this.getCurrentValue();
+        this.previousValue = this.currentValue;
+        this.currentValue = this.getCurrentValue();
         return Promise.resolve(true);
     }
 

@@ -33,7 +33,6 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     private hexRegex: RegExp;
     private binaryRegex: RegExp;
     private currentValue: number;
-    private prevValue = '';
     private previousValue?: number;
 
     constructor(public parent: PeripheralNode | PeripheralClusterNode, protected options: PeripheralRegisterOptions) {
