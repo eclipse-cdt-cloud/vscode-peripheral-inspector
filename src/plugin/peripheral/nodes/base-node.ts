@@ -10,9 +10,9 @@ import { AddrRange } from '../../../addrranges';
 import { EnumerationMap } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
-import { ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP, PeripheralBaseNode, PeripheralBaseTreeNode } from '../../../common/peripherals';
+import { ClusterOrRegisterBaseNodeDTO, PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO, PeripheralBaseTreeNodeDTO } from '../../../common/peripheral-dto';
 
-export abstract class BaseTreeNodeImpl {
+export abstract class BaseTreeNode {
     get id(): string {
         return this.getId();
     }
@@ -22,20 +22,20 @@ export abstract class BaseTreeNodeImpl {
      */
     public expanded: boolean;
 
-    constructor(protected readonly parent?: BaseTreeNodeImpl) {
+    constructor(protected readonly parent?: BaseTreeNode) {
         this.expanded = false;
     }
 
-    public getParent(): BaseTreeNodeImpl | undefined {
+    public getParent(): BaseTreeNode | undefined {
         return this.parent;
     }
 
     public abstract getId(): string;
 
-    public abstract getChildren(): BaseTreeNodeImpl[] | Promise<BaseTreeNodeImpl[]>;
+    public abstract getChildren(): BaseTreeNode[] | Promise<BaseTreeNode[]>;
 
-    serialize(): PeripheralBaseTreeNode {
-        return PeripheralBaseTreeNode.create({
+    serialize(): PeripheralBaseTreeNodeDTO {
+        return PeripheralBaseTreeNodeDTO.create({
             id: this.id,
             parentId: this.parent?.id,
             expanded: this.expanded,
@@ -43,13 +43,13 @@ export abstract class BaseTreeNodeImpl {
     }
 }
 
-export abstract class PeripheralBaseNodeImpl extends BaseTreeNodeImpl {
+export abstract class PeripheralBaseNode extends BaseTreeNode {
     public format: NumberFormat;
     public pinned: boolean;
     public readonly name: string | undefined;
     public session: DebugSession | undefined;
 
-    constructor(public readonly parent?: PeripheralBaseNodeImpl) {
+    constructor(public readonly parent?: PeripheralBaseNode) {
         super(parent);
         this.format = NumberFormat.Auto;
         this.pinned = false;
@@ -70,13 +70,13 @@ export abstract class PeripheralBaseNodeImpl extends BaseTreeNodeImpl {
     public abstract performUpdate(args?: unknown): Thenable<boolean>;
     public abstract updateData(): Thenable<boolean>;
 
-    public abstract getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]>;
-    public abstract getPeripheral(): PeripheralBaseNodeImpl | undefined;
+    public abstract getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]>;
+    public abstract getPeripheral(): PeripheralBaseNode | undefined;
 
     public abstract collectRanges(ary: AddrRange[]): void;      // Append addr range(s) to array
 
     public abstract saveState(path?: string): NodeSetting[];
-    public abstract findByPath(path: string[]): PeripheralBaseNodeImpl | undefined;
+    public abstract findByPath(path: string[]): PeripheralBaseNode | undefined;
 
     public async setSession(session: DebugSession): Promise<void> {
         this.session = session;
@@ -86,8 +86,8 @@ export abstract class PeripheralBaseNodeImpl extends BaseTreeNodeImpl {
         }
     }
 
-    serialize(): PeripheralBaseNode {
-        return PeripheralBaseNode.create({
+    serialize(): PeripheralBaseNodeDTO {
+        return PeripheralBaseNodeDTO.create({
             ...super.serialize(),
             id: this.getId(),
             format: this.format,
@@ -97,12 +97,12 @@ export abstract class PeripheralBaseNodeImpl extends BaseTreeNodeImpl {
     }
 }
 
-export abstract class ClusterOrRegisterBaseNodeImpl extends PeripheralBaseNodeImpl {
+export abstract class ClusterOrRegisterBaseNode extends PeripheralBaseNode {
     public readonly offset: number | undefined;
     public abstract resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }): void;
 
-    serialize(): ClusterOrRegisterBaseNode {
-        return ClusterOrRegisterBaseNode.create({
+    serialize(): ClusterOrRegisterBaseNodeDTO {
+        return ClusterOrRegisterBaseNodeDTO.create({
             ...super.serialize(),
             offset: this.offset,
         });

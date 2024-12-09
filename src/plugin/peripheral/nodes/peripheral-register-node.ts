@@ -10,17 +10,17 @@ import { AddrRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, PeripheralRegisterOptions } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
-import { PeripheralRegisterNode } from '../../../common/peripherals';
+import { PeripheralRegisterNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
 import { createMask, extractBits, hexFormat } from '../../../utils';
-import { ClusterOrRegisterBaseNodeImpl, PeripheralBaseNodeImpl } from './base-node';
-import { PeripheralClusterNodeImpl } from './peripheral-cluster-node';
-import { PeripheralFieldNodeImpl } from './peripheral-field-node';
-import { PeripheralNodeImpl } from './peripheral-node';
+import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './base-node';
+import { PeripheralClusterNode } from './peripheral-cluster-node';
+import { PeripheralFieldNode } from './peripheral-field-node';
+import { PeripheralNode } from './peripheral-node';
 
 
-export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
-    public children: PeripheralFieldNodeImpl[];
+export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
+    public children: PeripheralFieldNode[];
     public readonly name: string;
     public readonly description?: string;
     public readonly offset: number;
@@ -36,7 +36,7 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
     private prevValue = '';
     private previousValue?: number;
 
-    constructor(public parent: PeripheralNodeImpl | PeripheralClusterNodeImpl, protected options: PeripheralRegisterOptions) {
+    constructor(public parent: PeripheralNode | PeripheralClusterNode, protected options: PeripheralRegisterOptions) {
         super(parent);
 
         this.name = options.name;
@@ -57,7 +57,7 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
 
         options.fields?.forEach((fieldOptions) => {
             // PeripheralFieldNode constructor already adding the reference as child to parent object (PeripheralRegisterNode object)
-            new PeripheralFieldNodeImpl(this, fieldOptions);
+            new PeripheralFieldNode(this, fieldOptions);
         });
     }
 
@@ -87,16 +87,16 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         return extractBits(this.resetValue, offset, width);
     }
 
-    public getChildren(): PeripheralFieldNodeImpl[] {
+    public getChildren(): PeripheralFieldNode[] {
         return this.children || [];
     }
 
-    public setChildren(children: PeripheralFieldNodeImpl[]): void {
+    public setChildren(children: PeripheralFieldNode[]): void {
         this.children = children.slice(0, children.length);
         this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
     }
 
-    public addChild(child: PeripheralFieldNodeImpl): void {
+    public addChild(child: PeripheralFieldNode): void {
         this.children.push(child);
         this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
     }
@@ -179,7 +179,7 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         return results;
     }
 
-    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
+    public findByPath(path: string[]): PeripheralBaseNode | undefined {
         if (path.length === 0) {
             return this;
         } else if (path.length === 1) {
@@ -190,7 +190,7 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         }
     }
 
-    public getPeripheral(): PeripheralBaseNodeImpl {
+    public getPeripheral(): PeripheralBaseNode {
         return this.parent.getPeripheral();
     }
 
@@ -205,8 +205,8 @@ export class PeripheralRegisterNodeImpl extends ClusterOrRegisterBaseNodeImpl {
         }
     }
 
-    serialize(): PeripheralRegisterNode {
-        return PeripheralRegisterNode.create({
+    serialize(): PeripheralRegisterNodeDTO {
+        return PeripheralRegisterNodeDTO.create({
             ...super.serialize(),
             ...this.options,
             previousValue: this.previousValue,

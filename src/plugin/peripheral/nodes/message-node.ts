@@ -9,9 +9,9 @@ import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { NodeSetting } from '../../../common';
 import { CDTTreeItem } from '../../../components/tree/types';
-import { PeripheralBaseNodeImpl } from './base-node';
+import { PeripheralBaseNode } from './base-node';
 
-export class MessageNode extends PeripheralBaseNodeImpl {
+export class MessageNode extends PeripheralBaseNode {
 
     constructor(public message: string, public tooltip?: string | vscode.MarkdownString) {
         super();
@@ -21,7 +21,7 @@ export class MessageNode extends PeripheralBaseNodeImpl {
         return 'message';
     }
 
-    public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
+    public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         return [];
     }
 
@@ -57,7 +57,7 @@ export class MessageNode extends PeripheralBaseNodeImpl {
         return Promise.resolve(false);
     }
 
-    public getPeripheral(): PeripheralBaseNodeImpl | undefined {
+    public getPeripheral(): PeripheralBaseNode | undefined {
         return undefined;
     }
 
@@ -69,7 +69,7 @@ export class MessageNode extends PeripheralBaseNodeImpl {
         return [];
     }
 
-    public findByPath(_path: string[]): PeripheralBaseNodeImpl | undefined {
+    public findByPath(_path: string[]): PeripheralBaseNode | undefined {
         return undefined;
     }
 }

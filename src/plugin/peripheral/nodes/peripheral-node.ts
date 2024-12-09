@@ -10,15 +10,15 @@ import { AddrRange, AddressRangesUtils } from '../../../addrranges';
 import { AccessType, EnumerationMap, PeripheralOptions } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
-import { PeripheralNode } from '../../../common/peripherals';
+import { PeripheralNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
-import { PeripheralBaseNodeImpl } from './base-node';
-import { PeripheralClusterNodeImpl, PeripheralRegisterOrClusterNodeImpl } from './peripheral-cluster-node';
-import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
+import { PeripheralBaseNode } from './base-node';
+import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
+import { PeripheralRegisterNode } from './peripheral-register-node';
 
 
-export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
-    public children: Array<PeripheralRegisterNodeImpl | PeripheralClusterNodeImpl>;
+export class PeripheralNode extends PeripheralBaseNode {
+    public children: Array<PeripheralRegisterNode | PeripheralClusterNode>;
     public readonly name: string;
     public readonly baseAddress: number;
     public readonly description: string;
@@ -46,29 +46,29 @@ export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
 
         options.clusters?.forEach((clusterOptions) => {
             // PeripheralClusterNode constructor already adding the reference as child to parent object (PeripheralNode object)
-            new PeripheralClusterNodeImpl(this, clusterOptions);
+            new PeripheralClusterNode(this, clusterOptions);
         });
 
         options.registers?.forEach((registerOptions) => {
             // PeripheralRegisterNode constructor already adding the reference as child to parent object (PeripheralNode object)
-            new PeripheralRegisterNodeImpl(this, registerOptions);
+            new PeripheralRegisterNode(this, registerOptions);
         });
     }
 
-    public getPeripheral(): PeripheralBaseNodeImpl {
+    public getPeripheral(): PeripheralBaseNode {
         return this;
     }
 
-    public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
+    public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         return this.children;
     }
 
-    public setChildren(children: Array<PeripheralRegisterNodeImpl | PeripheralClusterNodeImpl>): void {
+    public setChildren(children: Array<PeripheralRegisterNode | PeripheralClusterNode>): void {
         this.children = children;
         this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
     }
 
-    public addChild(child: PeripheralRegisterOrClusterNodeImpl): void {
+    public addChild(child: PeripheralRegisterOrClusterNode): void {
         this.children.push(child);
         this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
     }
@@ -173,7 +173,7 @@ export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
         this.addrRanges = AddressRangesUtils.splitIntoChunks(ranges, maxBytes, this.name, this.totalLength);
     }
 
-    public getPeripheralNode(): PeripheralNodeImpl {
+    public getPeripheralNode(): PeripheralNode {
         return this;
     }
 
@@ -200,7 +200,7 @@ export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
         return results;
     }
 
-    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
+    public findByPath(path: string[]): PeripheralBaseNode | undefined {
         if (path.length === 0) {
             return this;
         } else {
@@ -223,8 +223,8 @@ export class PeripheralNodeImpl extends PeripheralBaseNodeImpl {
         }
     }
 
-    serialize(): PeripheralNode {
-        return PeripheralNode.create({
+    serialize(): PeripheralNodeDTO {
+        return PeripheralNodeDTO.create({
             ...super.serialize(),
             ...this.options,
             groupName: this.groupName,

@@ -29,3 +29,6 @@ export function getNestedValue<T>(
 export function hasProperty<TKey extends object>(object: object, ...keys: (keyof TKey)[]): object is TKey {
     return keys.every(key => key in object);
 }
+
+export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
+export type MaybePromise<T> = T | Promise<T>

@@ -10,14 +10,14 @@ import { AddrRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
-import { PeripheralFieldNode } from '../../../common/peripherals';
+import { PeripheralFieldNodeDTO } from '../../../common/peripheral-dto';
 import { parseInteger } from '../../../utils';
-import { PeripheralBaseNodeImpl } from './base-node';
-import { PeripheralRegisterNodeImpl } from './peripheral-register-node';
+import { PeripheralBaseNode } from './base-node';
+import { PeripheralRegisterNode } from './peripheral-register-node';
 
 
 
-export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
+export class PeripheralFieldNode extends PeripheralBaseNode {
     public session: vscode.DebugSession | undefined;
     public readonly name: string;
     public readonly description: string;
@@ -31,7 +31,7 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
     private enumerationMap: any;
     private previousValue?: number;
 
-    constructor(public parent: PeripheralRegisterNodeImpl, protected options: FieldOptions) {
+    constructor(public parent: PeripheralRegisterNode, protected options: FieldOptions) {
         super(parent);
 
         this.name = options.name;
@@ -89,7 +89,7 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         }
     }
 
-    public getChildren(): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
+    public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         return [];
     }
 
@@ -141,7 +141,7 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         }
     }
 
-    public findByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
+    public findByPath(path: string[]): PeripheralBaseNode | undefined {
         if (path.length === 0) {
             return this;
         } else {
@@ -149,7 +149,7 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         }
     }
 
-    public getPeripheral(): PeripheralBaseNodeImpl {
+    public getPeripheral(): PeripheralBaseNode {
         return this.parent.getPeripheral();
     }
 
@@ -169,8 +169,8 @@ export class PeripheralFieldNodeImpl extends PeripheralBaseNodeImpl {
         }
     }
 
-    serialize(): PeripheralFieldNode {
-        return PeripheralFieldNode.create({
+    serialize(): PeripheralFieldNodeDTO {
+        return PeripheralFieldNodeDTO.create({
             ...super.serialize(),
             ...this.options,
             parentAddress: this.parent.getAddress(),

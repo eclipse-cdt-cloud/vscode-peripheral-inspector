@@ -11,7 +11,7 @@ import './tree-view.css';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HOST_EXTENSION, NotificationType } from 'vscode-messenger-common';
-import { PeripheralNode, PeripheralTreeNode } from '../../common/peripherals';
+import { PeripheralNodeDTO, PeripheralTreeNodeDTOs } from '../../common/peripheral-dto';
 import { Commands } from '../../manifest';
 import { messenger } from '../webview/messenger';
 import { AntDComponentTreeTable } from './components/treetable';
@@ -22,11 +22,12 @@ import {
     CDTTreeViewModel,
     CTDTreeMessengerType
 } from './types';
+import { PeripheralNodeSort } from '../../common';
 
 
 interface State {
-    extensionModel: CDTTreeExtensionModel<PeripheralTreeNode>;
-    viewModel: CDTTreeViewModel<PeripheralTreeNode>;
+    extensionModel: CDTTreeExtensionModel<PeripheralTreeNodeDTOs>;
+    viewModel: CDTTreeViewModel<PeripheralTreeNodeDTOs>;
 }
 
 export class CDTTreeView extends React.Component<unknown, State> {
@@ -44,20 +45,20 @@ export class CDTTreeView extends React.Component<unknown, State> {
     }
 
     public async componentDidMount(): Promise<void> {
-        messenger.onNotification(CTDTreeMessengerType.updateState, (state: CDTTreeExtensionModel<PeripheralTreeNode>) => {
+        messenger.onNotification(CTDTreeMessengerType.updateState, (state: CDTTreeExtensionModel<PeripheralTreeNodeDTOs>) => {
             this.setState(prev => ({
                 ...prev, extensionModel: state,
             }));
             this.refreshModel(state.items, {
-                resourceMap: new Map<string, PeripheralTreeNode>(),
-                expandedKeys: PeripheralTreeNode.extractExpandedKeys(state.items),
-                pinnedKeys: PeripheralTreeNode.extractPinnedKeys(state.items)
+                resourceMap: new Map<string, PeripheralTreeNodeDTOs>(),
+                expandedKeys: PeripheralTreeNodeDTOs.extractExpandedKeys(state.items),
+                pinnedKeys: PeripheralTreeNodeDTOs.extractPinnedKeys(state.items)
             });
         });
         messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 
-    protected refreshModel(items: PeripheralTreeNode[] | undefined, context: TreeConverterContext<PeripheralTreeNode>): void {
+    protected refreshModel(items: PeripheralTreeNodeDTOs[] | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): void {
         const convertedItems = new PeripheralTreeConverter().convertList(
             items ?? this.state.extensionModel.items ?? [],
             context
@@ -85,11 +86,11 @@ export class CDTTreeView extends React.Component<unknown, State> {
     }
 
     protected createTreeTable(): React.ReactNode {
-        return <AntDComponentTreeTable<PeripheralTreeNode>
+        return <AntDComponentTreeTable<PeripheralTreeNodeDTOs>
             dataSource={this.state.viewModel.items}
             dataSourceComparer={(p1, p2) => {
-                if (PeripheralNode.is(p1.resource) && PeripheralNode.is(p2.resource)) {
-                    return PeripheralNode.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
+                if (PeripheralNodeDTO.is(p1.resource) && PeripheralNodeDTO.is(p2.resource)) {
+                    return PeripheralNodeSort.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
                 }
 
                 return 0;
@@ -110,7 +111,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
                     this.refreshModel(
                         undefined,
                         {
-                            resourceMap: new Map<string, PeripheralTreeNode>(),
+                            resourceMap: new Map<string, PeripheralTreeNodeDTOs>(),
                             expandedKeys: this.state.viewModel.expandedKeys,
                             pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned)
                         }

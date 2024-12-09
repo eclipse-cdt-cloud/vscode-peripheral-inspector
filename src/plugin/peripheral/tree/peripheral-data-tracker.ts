@@ -10,7 +10,7 @@ import { DebugTracker } from '../../../debug-tracker';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SvdResolver } from '../../../svd-resolver';
-import { MessageNode, PeripheralBaseNodeImpl, PeripheralRegisterNodeImpl } from '../nodes';
+import { MessageNode, PeripheralBaseNode, PeripheralRegisterNode } from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
 import { TreeNotification, TreeNotificationContext } from '../../../common/notification';
 import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
@@ -18,17 +18,17 @@ import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
 export class PeripheralDataTracker {
     protected onDidChangeEvent = new vscode.EventEmitter<void>();
     public readonly onDidChange = this.onDidChangeEvent.event;
-    protected onDidPeripheralChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNodeImpl>>();
+    protected onDidPeripheralChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
     public readonly onDidPeripheralChange = this.onDidPeripheralChangeEvent.event;
-    protected onDidSelectionChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNodeImpl | undefined>>();
+    protected onDidSelectionChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode | undefined>>();
     public readonly onDidSelectionChange = this.onDidSelectionChangeEvent.event;
-    protected onDidExpandEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNodeImpl>>();
+    protected onDidExpandEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
     public readonly onDidExpand = this.onDidExpandEvent.event;
-    protected onDidCollapseEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNodeImpl>>();
+    protected onDidCollapseEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
     public readonly onDidCollapse = this.onDidCollapseEvent.event;
 
     protected sessionPeripherals = new Map<string, PeripheralTreeForSession>();
-    protected selectedNode?: PeripheralBaseNodeImpl;
+    protected selectedNode?: PeripheralBaseNode;
     protected oldState = new Map<string, vscode.TreeItemCollapsibleState>();
 
     getSessionPeripherals(): Map<string, PeripheralTreeForSession> {
@@ -41,7 +41,7 @@ export class PeripheralDataTracker {
         tracker.onDidStopDebug(session => this.onDebugStopped(session));
     }
 
-    public async selectNode(node?: PeripheralBaseNodeImpl): Promise<void> {
+    public async selectNode(node?: PeripheralBaseNode): Promise<void> {
         this.selectedNode = node;
         const children = await node?.getChildren();
         if (node && children && children.length > 0) {
@@ -51,11 +51,11 @@ export class PeripheralDataTracker {
         }
     }
 
-    public getSelectedNode(): PeripheralBaseNodeImpl | undefined {
+    public getSelectedNode(): PeripheralBaseNode | undefined {
         return this.selectedNode;
     }
 
-    public getChildren(element?: PeripheralBaseNodeImpl): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
+    public getChildren(element?: PeripheralBaseNode): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         const values = Array.from(this.sessionPeripherals.values());
         if (element) {
             return element.getChildren();
@@ -69,7 +69,7 @@ export class PeripheralDataTracker {
     }
 
     public togglePin(
-        node: PeripheralBaseNodeImpl,
+        node: PeripheralBaseNode,
         context?: TreeNotificationContext): void {
         const session = vscode.debug.activeDebugSession;
         if (session) {
@@ -82,11 +82,11 @@ export class PeripheralDataTracker {
     }
 
     public expandNode(
-        node: PeripheralBaseNodeImpl,
+        node: PeripheralBaseNode,
         emit = true,
         context?: TreeNotificationContext): void {
         node.expanded = true;
-        const isReg = node instanceof PeripheralRegisterNodeImpl;
+        const isReg = node instanceof PeripheralRegisterNode;
         if (!isReg) {
             // If we are at a register level, parent already expanded, no update/refresh needed
             const p = node.getPeripheral();
@@ -101,7 +101,7 @@ export class PeripheralDataTracker {
     }
 
     public collapseNode(
-        node: PeripheralBaseNodeImpl,
+        node: PeripheralBaseNode,
         emit = true,
         context?: TreeNotificationContext): void {
         node.expanded = false;
@@ -119,7 +119,7 @@ export class PeripheralDataTracker {
     }
 
     public toggleNode(
-        node: PeripheralBaseNodeImpl,
+        node: PeripheralBaseNode,
         emit = true,
         context?: TreeNotificationContext): void {
         if (node.expanded) {
@@ -129,7 +129,7 @@ export class PeripheralDataTracker {
         }
     }
 
-    public findNodeByPath(path: string[]): PeripheralBaseNodeImpl | undefined {
+    public findNodeByPath(path: string[]): PeripheralBaseNode | undefined {
         const trees = this.sessionPeripherals.values();
         for (const tree of trees) {
             const node = tree.findNodeByPath(path.join('.'));
@@ -139,7 +139,7 @@ export class PeripheralDataTracker {
         }
     }
 
-    public getNodeByPath(path: string[]): PeripheralBaseNodeImpl {
+    public getNodeByPath(path: string[]): PeripheralBaseNode {
         const node = this.findNodeByPath(path);
         if (node === undefined) {
             throw new Error(`No node found with path ${path}`);

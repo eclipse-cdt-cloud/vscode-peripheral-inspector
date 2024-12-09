@@ -7,12 +7,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { parseInteger, parseDimIndex } from './utils';
 import { parseStringPromise } from 'xml2js';
 import { AccessType, EnumerationMap } from './api-types';
+import { PeripheralNodeSort } from './common';
 import { EnumeratedValue } from './enumerated-value';
-import { PeripheralNodeImpl, PeripheralRegisterNodeImpl, PeripheralFieldNodeImpl, PeripheralClusterNodeImpl, PeripheralOrClusterNodeImpl } from './plugin/peripheral/nodes';
-import { PeripheralNode } from './common/peripherals';
+import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
+import { parseDimIndex, parseInteger } from './utils';
 
 
 const accessTypeFromString = (type: string): AccessType => {
@@ -58,7 +58,7 @@ export class SVDParser {
     constructor() { }
 
     public async parseSVD(
-        data: string, gapThreshold: number): Promise<PeripheralNodeImpl[]> {
+        data: string, gapThreshold: number): Promise<PeripheralNode[]> {
         const svdData: SvdData = await parseStringPromise(data);
         this.gapThreshold = gapThreshold;
         this.enumTypeValuesMap = {};
@@ -99,7 +99,7 @@ export class SVDParser {
             peripherials.push(this.parsePeripheral(peripheralMap[key], defaultOptions));
         }
 
-        peripherials.sort(PeripheralNode.compare);
+        peripherials.sort(PeripheralNodeSort.compare);
 
         for (const p of peripherials) {
             p.resolveDeferedEnums(this.enumTypeValuesMap); // This can throw an exception
@@ -113,8 +113,8 @@ export class SVDParser {
         return input.replace(/\r/g, '').replace(/\n\s*/g, ' ');
     }
 
-    private parseFields(fieldInfo: any[], parent: PeripheralRegisterNodeImpl): PeripheralFieldNodeImpl[] {
-        const fields: PeripheralFieldNodeImpl[] = [];
+    private parseFields(fieldInfo: any[], parent: PeripheralRegisterNode): PeripheralFieldNode[] {
+        const fields: PeripheralFieldNode[] = [];
 
         if (fieldInfo == null) {
             return fields;
@@ -233,20 +233,20 @@ export class SVDParser {
 
                     for (let i = 0; i < count; i++) {
                         const name = namebase.replace('%s', index[i]);
-                        fields.push(new PeripheralFieldNodeImpl(parent, { ...baseOptions, name: name, offset: offset + (increment * i) }));
+                        fields.push(new PeripheralFieldNode(parent, { ...baseOptions, name: name, offset: offset + (increment * i) }));
                     }
                 }
             } else {
-                fields.push(new PeripheralFieldNodeImpl(parent, { ...baseOptions }));
+                fields.push(new PeripheralFieldNode(parent, { ...baseOptions }));
             }
         });
 
         return fields;
     }
 
-    private parseRegisters(regInfoOrig: any[], parent: PeripheralNodeImpl | PeripheralClusterNodeImpl): PeripheralRegisterNodeImpl[] {
+    private parseRegisters(regInfoOrig: any[], parent: PeripheralNode | PeripheralClusterNode): PeripheralRegisterNode[] {
         const regInfo = [...regInfoOrig];      // Make a shallow copy,. we will work on this
-        const registers: PeripheralRegisterNodeImpl[] = [];
+        const registers: PeripheralRegisterNode[] = [];
 
         const localRegisterMap: { [key: string]: any } = {};
         for (const r of regInfo) {
@@ -320,7 +320,7 @@ export class SVDParser {
                     const name = namebase.replace('%s', index[i]);
                     const description = descbase.replace('%s', index[i]);
 
-                    const register = new PeripheralRegisterNodeImpl(parent, {
+                    const register = new PeripheralRegisterNode(parent, {
                         ...baseOptions,
                         name: name,
                         description: description,
@@ -333,7 +333,7 @@ export class SVDParser {
                 }
             } else {
                 const description = this.cleanupDescription(r.description ? r.description[0] : '');
-                const register = new PeripheralRegisterNodeImpl(parent, {
+                const register = new PeripheralRegisterNode(parent, {
                     ...baseOptions,
                     name: r.name[0],
                     description: description,
@@ -359,8 +359,8 @@ export class SVDParser {
         return registers;
     }
 
-    private parseClusters(clusterInfo: any, parent: PeripheralOrClusterNodeImpl): PeripheralClusterNodeImpl[] {
-        const clusters: PeripheralClusterNodeImpl[] = [];
+    private parseClusters(clusterInfo: any, parent: PeripheralOrClusterNode): PeripheralClusterNode[] {
+        const clusters: PeripheralClusterNode[] = [];
 
         if (!clusterInfo) { return []; }
 
@@ -402,7 +402,7 @@ export class SVDParser {
                 for (let i = 0; i < count; i++) {
                     const name = namebase.replace('%s', index[i]);
                     const description = descbase.replace('%s', index[i]);
-                    const cluster = new PeripheralClusterNodeImpl(parent, {
+                    const cluster = new PeripheralClusterNode(parent, {
                         ...baseOptions,
                         name: name,
                         description: description,
@@ -418,7 +418,7 @@ export class SVDParser {
                 }
             } else {
                 const description = this.cleanupDescription(c.description ? c.description[0] : '');
-                const cluster = new PeripheralClusterNodeImpl(parent, {
+                const cluster = new PeripheralClusterNode(parent, {
                     ...baseOptions,
                     name: c.name[0],
                     description: description,
@@ -438,7 +438,7 @@ export class SVDParser {
         return clusters;
     }
 
-    private parsePeripheral(p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralNodeImpl {
+    private parsePeripheral(p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralNode {
         let totalLength = 0;
         if (p.addressBlock) {
             for (const ab of p.addressBlock) {
@@ -462,7 +462,7 @@ export class SVDParser {
         if (p.resetValue) { options.resetValue = parseInteger(p.resetValue[0]); }
         if (p.groupName) { options.groupName = p.groupName[0]; }
 
-        const peripheral = new PeripheralNodeImpl(this.gapThreshold, options);
+        const peripheral = new PeripheralNode(this.gapThreshold, options);
 
         if (p.registers) {
             if (p.registers[0].register) {

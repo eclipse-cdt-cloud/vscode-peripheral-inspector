@@ -7,16 +7,16 @@
 
 import * as vscode from 'vscode';
 import * as manifest from '../../../manifest';
-import { PeripheralBaseNodeImpl } from '../nodes';
+import { PeripheralBaseNode } from '../nodes';
 import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
 import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
-import { PeripheralBaseNode } from '../../../common/peripherals';
+import { PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 
-export class PeripheralsTreeTableWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNodeImpl> {
+export class PeripheralsTreeTableWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNode> {
     public static viewType = `${manifest.PACKAGE_NAME}.peripheral-treetable`;
 
     public constructor(
-        protected dataProvider: CDTTreeDataProvider<PeripheralBaseNodeImpl, PeripheralBaseNode>,
+        protected dataProvider: CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO>,
         protected context: vscode.ExtensionContext,
     ) {
         super(dataProvider, context);

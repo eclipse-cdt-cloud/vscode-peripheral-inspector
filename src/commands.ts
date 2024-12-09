@@ -8,10 +8,10 @@
 import * as vscode from 'vscode';
 import { NumberFormat } from './common/format';
 import { TreeNotificationContext } from './common/notification';
-import { PERIPHERAL_ID_SEP } from './common/peripherals';
+import { PERIPHERAL_ID_SEP } from './common/peripheral-dto';
 import { CTDTreeWebviewContext } from './components/tree/types';
 import { Commands } from './manifest';
-import { PeripheralBaseNodeImpl } from './plugin/peripheral/nodes';
+import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
 
 export class PeripheralCommands {
@@ -32,7 +32,7 @@ export class PeripheralCommands {
         );
     }
 
-    private async peripheralsUpdateNode(node: PeripheralBaseNodeImpl, value?: unknown): Promise<void> {
+    private async peripheralsUpdateNode(node: PeripheralBaseNode, value?: unknown): Promise<void> {
         try {
             const result = await node.performUpdate(value);
             if (result) {
@@ -46,7 +46,7 @@ export class PeripheralCommands {
         }
     }
 
-    private peripheralsCopyValue(_node: PeripheralBaseNodeImpl, value?: string): void {
+    private peripheralsCopyValue(_node: PeripheralBaseNode, value?: string): void {
         if (value) {
             vscode.env.clipboard.writeText(value);
         }
@@ -56,7 +56,7 @@ export class PeripheralCommands {
         this.dataTracker.collapseAll();
     }
 
-    private async peripheralsSetFormat(context: PeripheralBaseNodeImpl | CTDTreeWebviewContext): Promise<void> {
+    private async peripheralsSetFormat(context: PeripheralBaseNode | CTDTreeWebviewContext): Promise<void> {
         const result = await vscode.window.showQuickPick([
             { label: 'Auto', description: 'Automatically choose format (Inherits from parent)', value: NumberFormat.Auto },
             { label: 'Hex', description: 'Format value in hexadecimal', value: NumberFormat.Hexadecimal },
@@ -67,7 +67,7 @@ export class PeripheralCommands {
             return;
         }
 
-        let node: PeripheralBaseNodeImpl;
+        let node: PeripheralBaseNode;
         if (CTDTreeWebviewContext.is(context)) {
             node = this.dataTracker.getNodeByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP));
         } else {
@@ -78,7 +78,7 @@ export class PeripheralCommands {
         this.dataTracker.refresh();
     }
 
-    private async peripheralsForceRefresh(node?: PeripheralBaseNodeImpl): Promise<void> {
+    private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {
         if (node) {
             const p = node.getPeripheral();
             if (p) {
@@ -91,7 +91,7 @@ export class PeripheralCommands {
         }
     }
 
-    private peripheralsTogglePin(node: PeripheralBaseNodeImpl, context?: TreeNotificationContext): void {
+    private peripheralsTogglePin(node: PeripheralBaseNode, context?: TreeNotificationContext): void {
         this.dataTracker.togglePin(node, context);
     }
 }

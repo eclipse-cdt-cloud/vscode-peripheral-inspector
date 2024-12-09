@@ -8,17 +8,17 @@
 import * as vscode from 'vscode';
 import * as manifest from '../../../manifest';
 import { TreeNotification } from '../../../common/notification';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNode } from '../../../common/peripherals';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
 import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
 import { CDTTreeItem, CDTTreeTableColumnDefinition } from '../../../components/tree/types';
-import { PeripheralBaseNodeImpl } from '../nodes';
+import { PeripheralBaseNode } from '../nodes';
 import { PeripheralDataTracker } from './peripheral-data-tracker';
 
-export class PeripheralTreeDataProvider implements CDTTreeDataProvider<PeripheralBaseNodeImpl, PeripheralBaseNode> {
+export class PeripheralTreeDataProvider implements CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO> {
     public static viewName = `${manifest.PACKAGE_NAME}.svd`;
 
-    protected onDidChangeTreeDataEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNodeImpl | PeripheralBaseNodeImpl[] | undefined>>();
+    protected onDidChangeTreeDataEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode | PeripheralBaseNode[] | undefined>>();
     readonly onDidChangeTreeData = this.onDidChangeTreeDataEvent.event;
 
     constructor(protected readonly dataTracker: PeripheralDataTracker, protected context: vscode.ExtensionContext) {
@@ -43,7 +43,7 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         });
     }
 
-    async activate(webview: CDTTreeWebviewViewProvider<PeripheralBaseNodeImpl>): Promise<void> {
+    async activate(webview: CDTTreeWebviewViewProvider<PeripheralBaseNode>): Promise<void> {
         this.context.subscriptions.push(
             webview.onDidClickNode(async (event) => {
                 const node = this.getNodeByItem(event.data);
@@ -67,13 +67,13 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
             { type: 'action', field: 'actions' }];
     }
 
-    async getSerializedRoots(): Promise<PeripheralBaseNode[]> {
+    async getSerializedRoots(): Promise<PeripheralBaseNodeDTO[]> {
         const children = await this.getChildren() ?? [];
 
         return Promise.all(children.map(c => this.getSerializedData(c)));
     }
 
-    async getSerializedData(element: PeripheralBaseNodeImpl, refreshCache = false): Promise<PeripheralBaseNode> {
+    async getSerializedData(element: PeripheralBaseNode, refreshCache = false): Promise<PeripheralBaseNodeDTO> {
         const item = await element.serialize();
 
         const children = await this.getChildren(element);
@@ -84,15 +84,15 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         return item;
     }
 
-    getChildren(element?: PeripheralBaseNodeImpl): vscode.ProviderResult<PeripheralBaseNodeImpl[]> {
+    getChildren(element?: PeripheralBaseNode): vscode.ProviderResult<PeripheralBaseNode[]> {
         return this.dataTracker.getChildren(element);
     }
 
-    protected findNodeByItem(item: CDTTreeItem): PeripheralBaseNodeImpl | undefined {
+    protected findNodeByItem(item: CDTTreeItem): PeripheralBaseNode | undefined {
         return this.dataTracker.findNodeByPath(item.id.split(PERIPHERAL_ID_SEP));
     }
 
-    protected getNodeByItem(item: CDTTreeItem): PeripheralBaseNodeImpl {
+    protected getNodeByItem(item: CDTTreeItem): PeripheralBaseNode {
         const node = this.findNodeByItem(item);
         if (node === undefined) {
             throw new Error(`Node not found for ${JSON.stringify(item)}`);

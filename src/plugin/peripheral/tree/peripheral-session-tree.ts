@@ -7,13 +7,12 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
-import { NodeSetting } from '../../../common';
-import { PeripheralNode } from '../../../common/peripherals';
+import { NodeSetting, PeripheralNodeSort } from '../../../common';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
 import { readFromUrl } from '../../../utils';
-import { MessageNode, PeripheralBaseNodeImpl, PeripheralNodeImpl } from '../nodes';
+import { MessageNode, PeripheralBaseNode, PeripheralNode } from '../nodes';
 
 const pathToUri = (path: string): vscode.Uri => {
     try {
@@ -26,13 +25,13 @@ const pathToUri = (path: string): vscode.Uri => {
 interface CachedSVDFile {
     svdUri: vscode.Uri;
     mtime: number;
-    peripherials: PeripheralNodeImpl[]
+    peripherials: PeripheralNode[]
 }
 
-export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
+export class PeripheralTreeForSession extends PeripheralBaseNode {
     private static svdCache: { [path: string]: CachedSVDFile } = {};
     public myTreeItem: vscode.TreeItem;
-    private peripherials: PeripheralNodeImpl[] = [];
+    private peripherials: PeripheralNode[] = [];
     private loaded = false;
     private errMessage = 'No SVD file loaded';
 
@@ -87,7 +86,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
         return state;
     }
 
-    private static async addToCache(uri: vscode.Uri, peripherals: PeripheralNodeImpl[]) {
+    private static async addToCache(uri: vscode.Uri, peripherals: PeripheralNode[]) {
         try {
             const stat = await vscode.workspace.fs.stat(uri);
             if (stat && stat.mtime) {
@@ -104,7 +103,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
         }
     }
 
-    private static async getFromCache(uri: vscode.Uri): Promise<PeripheralNodeImpl[] | undefined> {
+    private static async getFromCache(uri: vscode.Uri): Promise<PeripheralNode[] | undefined> {
         try {
             const cached = PeripheralTreeForSession.svdCache[uri.toString()];
             if (cached) {
@@ -123,7 +122,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
     private async createPeripherals(svdPath: string, gapThreshold: number): Promise<void> {
         this.errMessage = `Loading ${svdPath} ...`;
         let fileUri: vscode.Uri | undefined = undefined;
-        let peripherials: PeripheralNodeImpl[] | undefined;
+        let peripherials: PeripheralNode[] | undefined;
         try {
             let contents: ArrayBuffer | undefined;
 
@@ -151,8 +150,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
             if (provider) {
                 const enumTypeValuesMap = {};
                 const poptions = await provider.getPeripherals(data, { gapThreshold });
-                peripherials = poptions.map((options) => new PeripheralNodeImpl(gapThreshold, options));
-                peripherials.sort(PeripheralNode.compare);
+                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options));
+                peripherials.sort(PeripheralNodeSort.compare);
 
                 for (const p of peripherials) {
                     p.resolveDeferedEnums(enumTypeValuesMap); // This can throw an exception
@@ -200,7 +199,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
         return Promise.resolve(true);
     }
 
-    public getPeripheral(): PeripheralBaseNodeImpl {
+    public getPeripheral(): PeripheralBaseNode {
         throw new Error('Method not implemented.');
     }
 
@@ -208,11 +207,11 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
         throw new Error('Method not implemented.');
     }
 
-    public findByPath(_path: string[]): PeripheralBaseNodeImpl | undefined {
+    public findByPath(_path: string[]): PeripheralBaseNode | undefined {
         throw new Error('Method not implemented.');     // Shouldn't be called
     }
 
-    public findNodeByPath(path: string): PeripheralBaseNodeImpl | undefined {
+    public findNodeByPath(path: string): PeripheralBaseNode | undefined {
         const pathParts = path.split('.');
         const peripheral = this.peripherials.find((p) => p.name === pathParts[0]);
         if (!peripheral) { return undefined; }
@@ -224,7 +223,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
         this.fireCb();
     }
 
-    public getChildren(element?: PeripheralBaseNodeImpl): PeripheralBaseNodeImpl[] | Promise<PeripheralBaseNodeImpl[]> {
+    public getChildren(element?: PeripheralBaseNode): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         if (this.loaded) {
             return element ? element.getChildren() : this.peripherials;
         } else if (!this.loaded) {
@@ -263,7 +262,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
                     }
                 }
             });
-            this.peripherials.sort(PeripheralNode.compare);
+            this.peripherials.sort(PeripheralNodeSort.compare);
             this.fireCb();
         } catch (e) {
             this.errMessage = `Unable to parse definition file ${svdPath}: ${(e as Error).message}`;
@@ -280,8 +279,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNodeImpl {
         this.saveSvdState(state, context);
     }
 
-    public togglePinPeripheral(node: PeripheralBaseNodeImpl): void {
+    public togglePinPeripheral(node: PeripheralBaseNode): void {
         node.pinned = !node.pinned;
-        this.peripherials.sort(PeripheralNode.compare);
+        this.peripherials.sort(PeripheralNodeSort.compare);
     }
 }
