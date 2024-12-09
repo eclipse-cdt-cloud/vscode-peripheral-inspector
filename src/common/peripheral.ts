@@ -5,10 +5,8 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-export * from './format';
-export * from './notification';
-export * from './peripheral';
-export * from './peripheral-sort';
-export * from './peripheral-dto';
-export * from './utils';
-export * from './vscode';
+/**
+ * Those peripheral names will be ignored in the peripheral tree.
+ * They will not be resolved from the SVD file.
+ */
+export const IGNORE_PERIPHERAL_NAMES = ['AXBS0', 'CAU3'];

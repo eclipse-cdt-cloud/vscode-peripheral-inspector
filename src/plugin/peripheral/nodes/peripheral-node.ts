@@ -121,7 +121,8 @@ export class PeripheralNode extends PeripheralBaseNode {
             return true;
         } catch (e) {
             /* This should never happen */
-            const str = `Internal error: Failed to update peripheral ${this.name} after memory reads`;
+            const msg = (e as Error).message || 'unknown error';
+            const str = `Internal error: Failed to update peripheral ${this.name} after memory reads: ${msg}`;
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(str);
             }

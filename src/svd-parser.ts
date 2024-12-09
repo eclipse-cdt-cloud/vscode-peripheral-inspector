@@ -9,7 +9,7 @@
 
 import { parseStringPromise } from 'xml2js';
 import { AccessType, EnumerationMap } from './api-types';
-import { PeripheralNodeSort } from './common';
+import { IGNORE_PERIPHERAL_NAMES, PeripheralNodeSort } from './common';
 import { EnumeratedValue } from './enumerated-value';
 import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
 import { parseDimIndex, parseInteger } from './utils';
@@ -83,7 +83,9 @@ export class SVDParser {
 
         svdData.device.peripherals[0].peripheral.forEach((element) => {
             const name = element.name[0];
-            peripheralMap[name] = element;
+            if (!IGNORE_PERIPHERAL_NAMES.includes(name)) {
+                peripheralMap[name] = element;
+            }
         });
 
         for (const key in peripheralMap) {

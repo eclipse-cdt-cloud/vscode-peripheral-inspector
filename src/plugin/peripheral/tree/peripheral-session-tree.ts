@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
-import { NodeSetting, PeripheralNodeSort } from '../../../common';
+import { IGNORE_PERIPHERAL_NAMES, NodeSetting, PeripheralNodeSort } from '../../../common';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
@@ -149,7 +149,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             const provider = this.api.getPeripheralsProvider(svdPath);
             if (provider) {
                 const enumTypeValuesMap = {};
-                const poptions = await provider.getPeripherals(data, { gapThreshold });
+                const poptions = (await provider.getPeripherals(data, { gapThreshold })).filter(p => !IGNORE_PERIPHERAL_NAMES.includes(p.name));
                 peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options));
                 peripherials.sort(PeripheralNodeSort.compare);
 
