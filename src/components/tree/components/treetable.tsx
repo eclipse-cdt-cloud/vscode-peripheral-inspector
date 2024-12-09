@@ -10,12 +10,12 @@ import './treetable.css';
 
 import { ConfigProvider, Table, TableColumnsType } from 'antd';
 import { ColumnType, ExpandableConfig } from 'antd/es/table/interface';
-import { default as React, useEffect, useState } from 'react';
+import { default as React, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { CommandDefinition } from '../../../common';
 import { getNestedValue } from '../../../common/utils';
 import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
 import { classNames, createHighlightedText, createLabelWithTooltip } from './utils';
-
+import { debounce } from 'throttle-debounce';
 /**
  * Component to render a tree table.
  */
@@ -56,7 +56,7 @@ export type ComponentTreeTableProps<T = unknown> = {
         /**
          * Callback to be called when a row is pinned or unpinned.
          */
-        onPin?: (event: React.MouseEvent, pinned: boolean, record: CDTTreeItem<unknown>) => void;
+        onPin?: (event: React.UIEvent, pinned: boolean, record: CDTTreeItem<unknown>) => void;
     }
     /**
      * Configuration for the actions of the tree table.
@@ -65,7 +65,7 @@ export type ComponentTreeTableProps<T = unknown> = {
         /**
          * Callback to be called when an action is triggered.
          */
-        onAction?: (event: React.MouseEvent, command: CommandDefinition, value: unknown, record: CDTTreeItem<unknown>) => void;
+        onAction?: (event: React.UIEvent, command: CommandDefinition, value: unknown, record: CDTTreeItem<unknown>) => void;
     }
 };
 
@@ -78,6 +78,8 @@ const BodyRow = React.forwardRef<HTMLDivElement, BodyRowProps>((props, ref) => {
     return (
         <div
             ref={ref}
+            tabIndex={0}
+            key={props['data-row-key']}
             {...props}
             {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: props['data-row-key'] })}
         />
@@ -85,72 +87,97 @@ const BodyRow = React.forwardRef<HTMLDivElement, BodyRowProps>((props, ref) => {
 });
 
 function useWindowSize() {
-    const [size, setSize] = useState([0, 0]);
-    React.useLayoutEffect(() => {
-        function updateSize() {
-            setSize([window.innerWidth, window.innerHeight]);
-        }
+    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+    useLayoutEffect(() => {
+        const updateSize = debounce(100, () => {
+            setSize({ width: window.innerWidth, height: window.innerHeight });
+        });
+
         window.addEventListener('resize', updateSize);
-        updateSize();
-        return () => window.removeEventListener('resize', updateSize);
+        return () => {
+            window.removeEventListener('resize', updateSize);
+            updateSize.cancel();
+        };
     }, []);
+
     return size;
 }
 
 export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) => {
-    const [width, height] = useWindowSize();
+    const { width, height } = useWindowSize();
     const [dataSource, setDataSource] = useState<CDTTreeItem[]>(props.dataSource ?? []);
 
     useEffect(() => {
         setDataSource((props.dataSource ?? []).sort(props.dataSourceComparer));
     }, [props.dataSource, props.pin?.pinnedRowKeys]);
 
+    // ==== Expansion ====
+
+    const expandedRowKeys = useMemo(() => {
+        return props.expansion?.expandedRowKeys;
+    }, [props.expansion?.expandedRowKeys]);
+
     // ==== Renderers ====
 
-    const renderStringColumn = (label: string, _record: CDTTreeItem, columnDef: CDTTreeTableStringColumn) => {
-        let icon: React.ReactNode | undefined;
+    const renderStringColumn = useCallback(
+        (label: string, item: CDTTreeItem<unknown>, columnDef: CDTTreeTableStringColumn) => {
+            const icon = columnDef.icon ? <i className={classNames('cell-icon', columnDef.icon)}></i> : null;
+            let content = createHighlightedText(label, columnDef.highlight);
 
-        if (columnDef.icon) {
-            icon = <i className={classNames('cell-icon', columnDef.icon)}></i>;
-        }
-
-        let content = createHighlightedText(label, columnDef.highlight);
-        if (columnDef.tooltip) {
-            content = createLabelWithTooltip(<span>{content}</span>, columnDef.tooltip);
-        }
-
-        return <>
-            {icon}
-            {content}
-        </>;
-    };
-
-    const renderActionColumn = (column: CDTTreeTableActionColumn | undefined, record: CDTTreeItem) => {
-        const actions: React.ReactNode[] = [];
-
-        if (record.pinned !== undefined) {
-            if (record.pinned) {
-                actions.push(<i
-                    key={'unpin'}
-                    className={'codicon codicon-pin'}
-                    onClick={(event) => props.pin?.onPin?.(event, false, record)}></i>);
-            } else {
-                actions.push(<i
-                    key={'pin'}
-                    className={'codicon codicon-pinned'}
-                    onClick={(event) => props.pin?.onPin?.(event, true, record)}></i>);
+            if (columnDef.tooltip) {
+                content = createLabelWithTooltip(<span>{content}</span>, columnDef.tooltip);
             }
-        }
 
-        return <div className="tree-actions">
-            {...actions}
-            {column?.commands?.map(command => <i
-                key={command.commandId}
-                className={`codicon codicon-${command.icon}`}
-                onClick={(event) => props.action?.onAction?.(event, command, command.value, record)}></i>)}
-        </div>;
-    };
+            return (
+                <div tabIndex={0}>
+                    {icon}
+                    {content}
+                </div>
+            );
+        },
+        []
+    );
 
+    const renderActionColumn = useCallback(
+        (column: CDTTreeTableActionColumn | undefined, record: CDTTreeItem<unknown>) => {
+            const actions: React.ReactNode[] = [];
+
+            if (record.pinned !== undefined) {
+                actions.push(
+                    <i
+                        key={record.pinned ? 'unpin' : 'pin'}
+                        title={record.pinned ? 'Unpin row' : 'Pin row'}
+                        className={`codicon ${record.pinned ? 'codicon-pin' : 'codicon-pinned'}`}
+                        onClick={(event) => props.pin?.onPin?.(event, !record.pinned, record)}
+                        aria-label={record.pinned ? 'Unpin row' : 'Pin row'}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => { if (event.key === 'Enter') props.pin?.onPin?.(event, !record.pinned, record); }}
+                    ></i>
+                );
+            }
+
+            if (column?.commands) {
+                column.commands.forEach((command) => {
+                    actions.push(
+                        <i
+                            key={command.commandId}
+                            title={command.title}
+                            className={`codicon codicon-${command.icon}`}
+                            onClick={(event) => props.action?.onAction?.(event, command, command.value, record)}
+                            aria-label={command.title}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(event) => { if (event.key === 'Enter') props.action?.onAction?.(event, command, command.value, record); }}
+                        ></i>
+                    );
+                });
+            }
+
+            return <div className={'tree-actions'}>{actions}</div>;
+        },
+        [props.pin, props.action]
+    );
 
     // ==== Columns ====
 
@@ -190,15 +217,48 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
         ];
     };
 
-    const [columns, setColumns] = useState<TableColumnsType<CDTTreeItem>>(createColumns(props.columnDefinitions ?? []));
-    useEffect(() => {
-        setColumns(createColumns(props.columnDefinitions ?? []));
-    }, [props.columnDefinitions]);
+    const columns = useMemo(() => createColumns(props.columnDefinitions ?? []), [props.columnDefinitions]);
+
+    // ==== Handlers ====
+
+    const handleExpand = useCallback(
+        (expanded: boolean, record: CDTTreeItem) => {
+            props.expansion?.onExpand?.(expanded, record);
+        },
+        [props.expansion]
+    );
+
+    const handleRowClick = useCallback(
+        (record: CDTTreeItem) => () => {
+            const isExpanded = props.expansion?.expandedRowKeys?.includes(record.id);
+            props.expansion?.onExpand?.(!isExpanded, record);
+        },
+        [props.expansion]
+    );
+
+    const expandIcon = useCallback(
+        ({ expanded, onExpand, record, expandable }: RenderExpandIconProps<CDTTreeItem>) => {
+            if (!expandable) {
+                // simulate spacing to the left that we gain through expand icon so that leaf items look correctly intended
+                return <span className='leaf-item-spacer' />;
+            }
+
+            const iconClass = expanded ? 'codicon-chevron-down' : 'codicon-chevron-right';
+            return (
+                <div
+                    className={classNames('tree-toggler-container', 'codicon', iconClass)}
+                    onClick={(e) => onExpand(record, e)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={expanded ? 'Collapse row' : 'Expand row'}
+                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') onExpand(record, event as unknown as React.MouseEvent<HTMLElement>); }}
+                ></div>
+            );
+        },
+        []
+    );
 
     // ==== Return ====
-    if (dataSource.length === 0) {
-        return <div>No children provided</div>;
-    }
 
     return <div>
         <ConfigProvider
@@ -206,6 +266,7 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
                 cssVar: true,
                 hashed: false
             }}
+            renderEmpty={() => <div className={'empty-message'}>No data available.</div>}
         >
             <Table<CDTTreeItem>
                 columns={columns}
@@ -215,43 +276,26 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
                 scroll={{ x: width, y: height - 2 }}
                 showHeader={false}
                 pagination={false}
-                onRow={(record) => {
-                    return {
-                        onClick: () => {
-                            props.expansion?.onExpand?.(!props.expansion?.expandedRowKeys?.includes(record.id), record);
-                        }
-                    };
-                }}
+                onRow={(record) => ({
+                    onClick: handleRowClick(record)
+                })}
                 expandable={{
-                    expandIcon: ({ expanded, onExpand, record, expandable }) => {
-                        if (!expandable) {
-                            return;
-                        }
-
-                        return expanded ? (
-                            <div
-                                className={
-                                    classNames('tree-toggler-container', 'codicon', 'codicon-chevron-down')
-                                }
-                                onClick={e => onExpand(record, e)}
-                            >
-                            </div>
-                        ) : (
-                            <div
-                                className={
-                                    classNames('tree-toggler-container', 'codicon', 'codicon-chevron-right')
-                                }
-                                onClick={e => onExpand(record, e)}
-                            >
-                            </div>);
-                    },
+                    expandIcon: expandIcon,
                     showExpandColumn: true,
-                    expandedRowKeys: props.expansion?.expandedRowKeys,
-                    onExpand: (expanded, record) => {
-                        props.expansion?.onExpand?.(expanded, record);
-                    }
+                    expandedRowKeys: expandedRowKeys,
+                    onExpand: handleExpand
                 }}
             />
         </ConfigProvider>
     </div>;
 };
+
+interface RenderExpandIconProps<RecordType> {
+    prefixCls: string;
+    expanded: boolean;
+    record: RecordType;
+    expandable: boolean;
+    onExpand: TriggerEventHandler<RecordType>;
+}
+
+export type TriggerEventHandler<RecordType> = (record: RecordType, event: React.MouseEvent<HTMLElement>) => void;

@@ -43,3 +43,22 @@
 .ant-table .tree-actions {
   padding-right: 8px;
 }
+
+.ant-table .tree-actions > i {
+  cursor: pointer;
+}
+
+.ant-table .leaf-item-spacer {
+  display: inline-block;
+  width: 16px;
+}
+
+.ant-table-empty .empty-message {
+  display: inline-block;
+  padding-top: 4em;
+  color: var(--vscode-editor-foreground);
+}
+
+.ant-table-empty .ant-table-body {
+  overflow: hidden !important;
+}
