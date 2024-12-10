@@ -6,7 +6,7 @@
  ********************************************************************************/
 
 import { NotificationType } from 'vscode-messenger-common';
-import { CommandDefinition, VscodeContext } from '../../common';
+import { CommandDefinition, VSCodeContext } from '../../common';
 import { TreeNotification } from '../../common/notification';
 
 // ==== Items ====
@@ -134,13 +134,8 @@ export namespace CTDTreeWebviewContext {
         return 'cdtTreeItemId' in context;
     }
 
-    export function create(context: CTDTreeWebviewContext): VscodeContext {
-        return {
-            'data-vscode-context': JSON.stringify({
-                ...context,
-                preventDefaultContextMenuItems: true
-            })
-        };
+    export function create(context: CTDTreeWebviewContext): VSCodeContext {
+        return VSCodeContext.create(context);
     }
 }
 

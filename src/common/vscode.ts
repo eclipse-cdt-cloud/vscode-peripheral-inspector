@@ -1,13 +1,24 @@
 /********************************************************************************
- * Copyright (C) 2024 EclipseSource and others.
+ * Copyright (C) 2023-2024 Marcel Ball, Arm Limited and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
+
 import { NumberFormat } from './format';
 
-export interface VscodeContext {
+export interface VSCodeContext {
     'data-vscode-context': string;
+}
+
+export namespace VSCodeContext {
+    export function create(context: object): VSCodeContext {
+        return {
+            'data-vscode-context': JSON.stringify({
+                ...context,
+            })
+        };
+    }
 }
 
 export interface NodeSetting {

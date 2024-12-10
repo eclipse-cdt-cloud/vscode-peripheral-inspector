@@ -34,6 +34,10 @@
   font-size: var(--vscode-font-size);
 }
 
+.ant-table .ant-table-row .ant-table-cell .tree-cell {
+  display: flex;
+}
+
 .ant-table .ant-table-row:hover .tree-actions,
 .ant-table .ant-table-row:focus .tree-actions {
   display: flex;

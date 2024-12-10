@@ -7,7 +7,6 @@
 
 export * from './format';
 export * from './notification';
-export * from './peripheral';
 export * from './peripheral-sort';
 export * from './peripheral-dto';
 export * from './utils';

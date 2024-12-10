@@ -15,6 +15,7 @@ export const DEFAULT_DEVICE = 'deviceName';
 export const CONFIG_PROCESSOR = 'processorConfig';
 export const DEFAULT_PROCESSOR = 'processorName';
 export const CONFIG_ADDRGAP = 'svdAddrGapThreshold';
+export const IGNORE_PERIPHERALS = 'ignorePeripherals';
 export const DEFAULT_ADDRGAP = 16;
 export const CONFIG_ASSET_PATH = 'packAssetUrl';
 export const DEFAULT_ASSET_PATH = 'https://pack-content.cmsis.io';
@@ -63,4 +64,17 @@ export namespace Commands {
         icon: 'collapse-all',
         title: 'Collapse All'
     } as const;
+}
+
+export namespace IgnorePeripherals {
+    export function isEqual(a: string[], b: string[]): boolean {
+        return a.length === b.length && a.every((v, i) => v === b[i]);
+    }
+
+    /**
+     * Case insensitive check if element is in ignore list
+     */
+    export function includes(ignore: string[], element: string): boolean {
+        return ignore.some((v) => v.toLowerCase() === element.toLowerCase());
+    }
 }

@@ -86,59 +86,60 @@ export class CDTTreeView extends React.Component<unknown, State> {
     }
 
     protected createTreeTable(): React.ReactNode {
-        return <AntDComponentTreeTable<PeripheralTreeNodeDTOs>
-            dataSource={this.state.viewModel.items}
-            dataSourceComparer={(p1, p2) => {
-                if (PeripheralNodeDTO.is(p1.resource) && PeripheralNodeDTO.is(p2.resource)) {
-                    return PeripheralNodeSort.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
-                }
+        return <div data-vscode-context='{"preventDefaultContextMenuItems": true}'>
+            <AntDComponentTreeTable<PeripheralTreeNodeDTOs>
+                dataSource={this.state.viewModel.items}
+                dataSourceComparer={(p1, p2) => {
+                    if (PeripheralNodeDTO.is(p1.resource) && PeripheralNodeDTO.is(p2.resource)) {
+                        return PeripheralNodeSort.compare({ ...p1.resource, pinned: p1.pinned }, { ...p2.resource, pinned: p2.pinned });
+                    }
 
-                return 0;
-            }}
-            columnDefinitions={this.state.extensionModel.columnFields}
-            expansion={{
-                expandedRowKeys: this.state.viewModel.expandedKeys,
-                onExpand: (expanded, record) => {
-                    this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, expandedKeys: updateKeys(this.state.viewModel.expandedKeys, record.id, expanded) } }));
-                    this.notify(CTDTreeMessengerType.toggleNode,
-                        { data: record, context: { resync: false } },
-                    );
-                }
-            }}
-            pin={{
-                pinnedRowKeys: this.state.viewModel.pinnedKeys,
-                onPin: (event, pinned, record) => {
-                    this.refreshModel(
-                        undefined,
-                        {
-                            resourceMap: new Map<string, PeripheralTreeNodeDTOs>(),
-                            expandedKeys: this.state.viewModel.expandedKeys,
-                            pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned)
+                    return 0;
+                }}
+                columnDefinitions={this.state.extensionModel.columnFields}
+                expansion={{
+                    expandedRowKeys: this.state.viewModel.expandedKeys,
+                    onExpand: (expanded, record) => {
+                        this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, expandedKeys: updateKeys(this.state.viewModel.expandedKeys, record.id, expanded) } }));
+                        this.notify(CTDTreeMessengerType.toggleNode,
+                            { data: record, context: { resync: false } },
+                        );
+                    }
+                }}
+                pin={{
+                    pinnedRowKeys: this.state.viewModel.pinnedKeys,
+                    onPin: (event, pinned, record) => {
+                        this.refreshModel(
+                            undefined,
+                            {
+                                resourceMap: new Map<string, PeripheralTreeNodeDTOs>(),
+                                expandedKeys: this.state.viewModel.expandedKeys,
+                                pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned)
+                            }
+                        );
+
+                        if (pinned) {
+                            this.notify(CTDTreeMessengerType.executeCommand,
+                                { data: { commandId: Commands.UNPIN_COMMAND.commandId, item: record }, context: { resync: false } },
+                            );
+                        } else {
+                            this.notify(CTDTreeMessengerType.executeCommand,
+                                { data: { commandId: Commands.PIN_COMMAND.commandId, item: record }, context: { resync: false } },
+                            );
                         }
-                    );
 
-                    if (pinned) {
-                        this.notify(CTDTreeMessengerType.executeCommand,
-                            { data: { commandId: Commands.UNPIN_COMMAND.commandId, item: record }, context: { resync: false } },
-                        );
-                    } else {
-                        this.notify(CTDTreeMessengerType.executeCommand,
-                            { data: { commandId: Commands.PIN_COMMAND.commandId, item: record }, context: { resync: false } },
-                        );
-                    }
-
-                    event.stopPropagation();
-                }
-            }}
-            action={
-                {
-                    onAction: (event, command, value, record) => {
                         event.stopPropagation();
-                        this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, item: record, value } });
+                    }
+                }}
+                action={
+                    {
+                        onAction: (event, command, value, record) => {
+                            event.stopPropagation();
+                            this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, item: record, value } });
+                        }
                     }
                 }
-            }
-        />;
+            /></div>;
     }
 }
 

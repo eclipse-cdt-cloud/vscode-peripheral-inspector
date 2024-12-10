@@ -164,7 +164,7 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
             }
 
             return (
-                <div tabIndex={0}>
+                <div className='tree-cell ant-table-cell-ellipsis' tabIndex={0}>
                     {icon}
                     {content}
                 </div>
@@ -222,6 +222,7 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
                 title: def.field,
                 dataIndex: ['columns', def.field, 'label'],
                 width: 0,
+                ellipsis: true,
                 render: (label, record) => renderStringColumn(label, record, getNestedValue<CDTTreeTableStringColumn>(record, ['columns', def.field]))
             };
         }

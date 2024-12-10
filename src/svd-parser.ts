@@ -9,11 +9,12 @@
 
 import { parseStringPromise } from 'xml2js';
 import { AccessType, EnumerationMap } from './api-types';
-import { IGNORE_PERIPHERAL_NAMES, PeripheralNodeSort } from './common';
+import { PeripheralNodeSort } from './common';
 import { EnumeratedValue } from './enumerated-value';
 import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
 import { parseDimIndex, parseInteger } from './utils';
-
+import * as vscode from 'vscode';
+import * as manifest from './manifest';
 
 const accessTypeFromString = (type: string): AccessType => {
     switch (type) {
@@ -58,7 +59,7 @@ export class SVDParser {
     constructor() { }
 
     public async parseSVD(
-        data: string, gapThreshold: number): Promise<PeripheralNode[]> {
+        data: string, gapThreshold: number, ignorePeripherals: string[]): Promise<PeripheralNode[]> {
         const svdData: SvdData = await parseStringPromise(data);
         this.gapThreshold = gapThreshold;
         this.enumTypeValuesMap = {};
@@ -83,7 +84,7 @@ export class SVDParser {
 
         svdData.device.peripherals[0].peripheral.forEach((element) => {
             const name = element.name[0];
-            if (!IGNORE_PERIPHERAL_NAMES.includes(name)) {
+            if (!manifest.IgnorePeripherals.includes(ignorePeripherals, name)) {
                 peripheralMap[name] = element;
             }
         });
