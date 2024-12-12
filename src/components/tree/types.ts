@@ -18,7 +18,7 @@ export interface CDTTreeItem<T = unknown> {
     __type: 'CDTTreeItem'
     id: string;
     key: string;
-    parentId?: string;
+    parent?: CDTTreeItem<unknown>;
     children?: CDTTreeItem<T>[];
     /**
      * The resource that this tree item represents. This can be any type of object.
@@ -45,8 +45,20 @@ export namespace CDTTreeItem {
             ...options
         };
     }
-}
 
+    export function createRoot(): CDTTreeItem<unknown> {
+        return create<unknown>({
+            id: 'root',
+            key: 'root',
+            resource: undefined,
+            children: []
+        });
+    }
+
+    export function isRoot(item: CDTTreeItem): boolean {
+        return item.id === 'root';
+    }
+}
 
 // ==== Columns ====
 
@@ -141,7 +153,7 @@ export namespace CTDTreeWebviewContext {
 
 export interface CDTTreeExecuteCommand {
     commandId: string;
-    item: CDTTreeItem;
+    itemId: string;
     value?: unknown;
 }
 
@@ -150,6 +162,6 @@ export namespace CTDTreeMessengerType {
     export const ready: NotificationType<void> = { method: 'ready' };
 
     export const executeCommand: NotificationType<TreeNotification<CDTTreeExecuteCommand>> = { method: 'executeCommand' };
-    export const toggleNode: NotificationType<TreeNotification<CDTTreeItem>> = { method: 'toggleNode' };
-    export const clickNode: NotificationType<TreeNotification<CDTTreeItem>> = { method: 'clickNode' };
+    export const toggleNode: NotificationType<TreeNotification<string>> = { method: 'toggleNode' };
+    export const clickNode: NotificationType<TreeNotification<string>> = { method: 'clickNode' };
 }

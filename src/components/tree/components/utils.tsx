@@ -9,8 +9,14 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';
 
-export function classNames(...classes: string[]): string {
-    return classes.filter(c => c !== undefined).join(' ');
+export function classNames(...classes: (string | Record<string, boolean>)[]): string {
+    return classes.filter(c => c !== undefined).map(c => {
+        if (typeof c === 'string') {
+            return c;
+        }
+
+        return Object.entries(c).filter(([, value]) => value).map(([key]) => key);
+    }).join(' ');
 }
 
 export function createHighlightedText(label?: string, highlights?: [number, number][]): React.JSX.Element {

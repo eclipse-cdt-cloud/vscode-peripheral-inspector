@@ -12,10 +12,10 @@ import { PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeCo
 import { Commands } from '../../../manifest';
 import { binaryFormat, extractBits, hexFormat } from '../../../utils';
 import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn } from '../types';
-import { TreeResourceConverter, TreeConverterContext, TreeResourceListConverter } from './tree-converter';
+import { TreeResourceConverter, TreeConverterContext } from './tree-converter';
 
 
-export class PeripheralTreeConverter implements TreeResourceListConverter<PeripheralTreeNodeDTOs> {
+export class PeripheralTreeConverter implements TreeResourceConverter<PeripheralTreeNodeDTOs> {
 
     protected converters: TreeResourceConverter<PeripheralTreeNodeDTOs>[] = [
         new PeripheralNodeConverter(),
@@ -27,16 +27,6 @@ export class PeripheralTreeConverter implements TreeResourceListConverter<Periph
         return this.converters.some(c => c.canHandle(resource));
     }
 
-    convertList(resources: PeripheralTreeNodeDTOs[], context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralTreeNodeDTOs>[] {
-        const items: CDTTreeItem<PeripheralTreeNodeDTOs>[] = [];
-
-        for (const resource of resources) {
-            items.push(this.convert(resource, context));
-        }
-
-        return items;
-    }
-
     convert(resource: PeripheralTreeNodeDTOs, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralTreeNodeDTOs> {
         const converter = this.converters.find(c => c.canHandle(resource));
         if (converter) {
@@ -44,7 +34,15 @@ export class PeripheralTreeConverter implements TreeResourceListConverter<Periph
             const item = converter.convert(resource, context);
 
             if (resource.children) {
-                const items = this.convertList(resource.children, context);
+                const items: CDTTreeItem<PeripheralTreeNodeDTOs>[] = [];
+
+                for (const child of resource.children) {
+                    items.push(this.convert(child, {
+                        ...context,
+                        parent: item
+                    }));
+                }
+
                 item.children = items;
             }
 
@@ -65,7 +63,7 @@ export class PeripheralNodeConverter implements TreeResourceConverter<Peripheral
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
-            parentId: resource.parentId,
+            parent: context.parent,
             resource,
             expanded: context.expandedKeys.includes(resource.id),
             pinned: context.pinnedKeys.includes(resource.id),
@@ -107,7 +105,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
-            parentId: resource.parentId,
+            parent: context.parent,
             resource,
             expanded: context.expandedKeys.includes(resource.id),
             columns: this.getColumns(resource, context),
@@ -249,7 +247,7 @@ export class PeripheralClusterNodeConverter {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
-            parentId: resource.parentId,
+            parent: context.parent,
             resource,
             expanded: context.expandedKeys.includes(resource.id),
             columns: this.getColumns(resource, context),
@@ -286,7 +284,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
-            parentId: resource.parentId,
+            parent: context.parent,
             resource,
             columns: this.getColumns(resource, context),
         });

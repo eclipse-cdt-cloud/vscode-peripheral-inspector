@@ -13,6 +13,7 @@ import { CDTTreeItem } from '../types';
  * It will be propagated to all TreeResourceConverters.
  */
 export interface TreeConverterContext<TResource = unknown> {
+    parent?: CDTTreeItem<unknown>,
     /**
      * The expanded keys of the tree. This is used to determine if a node should be expanded or not.
      */
@@ -36,11 +37,4 @@ export interface TreeResourceConverter<TResource = unknown, TContextResource = T
     canHandle(resource: TResource): boolean;
 
     convert(resource: TResource, context: TreeConverterContext<TContextResource>): CDTTreeItem<TResource>;
-}
-
-/**
- * A TreeResourceListConverter is responsible for converting a list of resources into a list of CDTTreeItems.
- */
-export interface TreeResourceListConverter<TResource = unknown, TContextResource = TResource> extends TreeResourceConverter<TResource, TContextResource> {
-    convertList(resource: TResource[], context: TreeConverterContext<TContextResource>): CDTTreeItem<TResource>[];
 }

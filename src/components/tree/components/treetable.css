@@ -17,6 +17,10 @@
 }
 
 .ant-table.ant-table-css-var {
+  --ant-table-row-selected-bg: var(--vscode-list-inactiveSelectionBackground);
+  --ant-table-row-selected-hover-bg: var(
+    --vscode-list-inactiveSelectionBackground
+  );
   --ant-table-row-hover-bg: var(--vscode-list-hoverBackground);
   --ant-table-border-color: var(--vscode-sideBar-background);
   --ant-table-cell-font-size: var(--vscode-font-size);
@@ -24,8 +28,31 @@
   --ant-table-cell-padding-inline: 4px;
 }
 
+.ant-table:focus-within {
+  --ant-table-row-selected-bg: var(--vscode-list-activeSelectionBackground);
+  --ant-table-row-selected-hover-bg: var(
+    --vscode-list-activeSelectionBackground
+  );
+}
+
+.ant-table .ant-table-row {
+  border: 1px solid transparent;
+  outline: none;
+  height: 22px;
+  cursor: pointer;
+}
+
+.ant-table:focus-within .ant-table-row.ant-table-row-selected {
+  border-color: var(
+    --vscode-list-focusAndSelectionOutline,
+    var(--vscode-contrastActiveBorder, var(--vscode-list-focusOutline))
+  );
+}
+
 .ant-table .ant-table-row .ant-table-cell {
   display: flex;
+  transition: none;
+  border-bottom: none;
 }
 
 .ant-table .ant-table-row .ant-table-cell .cell-icon {

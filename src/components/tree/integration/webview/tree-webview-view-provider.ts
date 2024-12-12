@@ -9,16 +9,16 @@ import * as vscode from 'vscode';
 import { Messenger } from 'vscode-messenger';
 import { WebviewIdMessageParticipant } from 'vscode-messenger-common';
 import { TreeNotification } from '../../../../common/notification';
-import { CDTTreeExecuteCommand, CDTTreeItem, CTDTreeMessengerType } from '../../types';
+import { CDTTreeExecuteCommand, CTDTreeMessengerType } from '../../types';
 import { CDTTreeDataProvider } from '../tree-data-provider';
 
 export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.WebviewViewProvider {
 
-    protected onDidToggleNodeEvent = new vscode.EventEmitter<TreeNotification<CDTTreeItem>>();
+    protected onDidToggleNodeEvent = new vscode.EventEmitter<TreeNotification<string>>();
     public readonly onDidToggleNode = this.onDidToggleNodeEvent.event;
     protected onDidExecuteCommandEvent = new vscode.EventEmitter<TreeNotification<CDTTreeExecuteCommand>>();
     public readonly onDidExecuteCommand = this.onDidExecuteCommandEvent.event;
-    protected onDidClickNodeEvent = new vscode.EventEmitter<TreeNotification<CDTTreeItem>>();
+    protected onDidClickNodeEvent = new vscode.EventEmitter<TreeNotification<string>>();
     public readonly onDidClickNode = this.onDidClickNodeEvent.event;
 
     protected get extensionUri(): vscode.Uri {

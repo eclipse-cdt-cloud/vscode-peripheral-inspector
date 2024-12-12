@@ -13,7 +13,6 @@ import { PeripheralNodeSort } from './common';
 import { EnumeratedValue } from './enumerated-value';
 import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
 import { parseDimIndex, parseInteger } from './utils';
-import * as vscode from 'vscode';
 import * as manifest from './manifest';
 
 const accessTypeFromString = (type: string): AccessType => {

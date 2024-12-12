@@ -19,6 +19,7 @@ import { PeripheralTreeConverter } from './integration/peripheral-tree-converter
 import { TreeConverterContext } from './integration/tree-converter';
 import {
     CDTTreeExtensionModel,
+    CDTTreeItem,
     CDTTreeViewModel,
     CTDTreeMessengerType
 } from './types';
@@ -59,10 +60,16 @@ export class CDTTreeView extends React.Component<unknown, State> {
     }
 
     protected refreshModel(items: PeripheralTreeNodeDTOs[] | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): void {
-        const convertedItems = new PeripheralTreeConverter().convertList(
-            items ?? this.state.extensionModel.items ?? [],
-            context
-        );
+        const converter = new PeripheralTreeConverter();
+        const toConvert = items ?? this.state.extensionModel.items ?? [];
+        const parent = CDTTreeItem.createRoot();
+        const convertedItems = toConvert.map(c => converter.convert(c,
+            {
+                ...context,
+                parent
+            }
+        ));
+        parent.children = convertedItems;
 
         this.setState(prev => ({
             ...prev, viewModel: {
@@ -102,7 +109,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
                     onExpand: (expanded, record) => {
                         this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, expandedKeys: updateKeys(this.state.viewModel.expandedKeys, record.id, expanded) } }));
                         this.notify(CTDTreeMessengerType.toggleNode,
-                            { data: record, context: { resync: false } },
+                            { data: record.id, context: { resync: false } },
                         );
                     }
                 }}
@@ -120,11 +127,11 @@ export class CDTTreeView extends React.Component<unknown, State> {
 
                         if (pinned) {
                             this.notify(CTDTreeMessengerType.executeCommand,
-                                { data: { commandId: Commands.UNPIN_COMMAND.commandId, item: record }, context: { resync: false } },
+                                { data: { commandId: Commands.UNPIN_COMMAND.commandId, itemId: record.id }, context: { resync: false } },
                             );
                         } else {
                             this.notify(CTDTreeMessengerType.executeCommand,
-                                { data: { commandId: Commands.PIN_COMMAND.commandId, item: record }, context: { resync: false } },
+                                { data: { commandId: Commands.PIN_COMMAND.commandId, itemId: record.id }, context: { resync: false } },
                             );
                         }
 
@@ -135,7 +142,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
                     {
                         onAction: (event, command, value, record) => {
                             event.stopPropagation();
-                            this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, item: record, value } });
+                            this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, itemId: record.id, value } });
                         }
                     }
                 }

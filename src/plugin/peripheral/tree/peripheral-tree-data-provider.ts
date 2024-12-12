@@ -6,12 +6,12 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import * as manifest from '../../../manifest';
 import { TreeNotification } from '../../../common/notification';
 import { PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
 import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
-import { CDTTreeItem, CDTTreeTableColumnDefinition } from '../../../components/tree/types';
+import { CDTTreeTableColumnDefinition } from '../../../components/tree/types';
+import * as manifest from '../../../manifest';
 import { PeripheralBaseNode } from '../nodes';
 import { PeripheralDataTracker } from './peripheral-data-tracker';
 
@@ -46,15 +46,15 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
     async activate(webview: CDTTreeWebviewViewProvider<PeripheralBaseNode>): Promise<void> {
         this.context.subscriptions.push(
             webview.onDidClickNode(async (event) => {
-                const node = this.getNodeByItem(event.data);
+                const node = this.getNodeByItemId(event.data);
                 await this.dataTracker.selectNode(node);
             }),
             webview.onDidExecuteCommand(async (event) => {
-                const node = this.getNodeByItem(event.data.item);
+                const node = this.getNodeByItemId(event.data.itemId);
                 vscode.commands.executeCommand(event.data.commandId, node, event.data.value, event.context);
             }),
             webview.onDidToggleNode((event) => {
-                const node = this.getNodeByItem(event.data);
+                const node = this.getNodeByItemId(event.data);
                 this.dataTracker.toggleNode(node, true, event.context);
             })
         );
@@ -88,14 +88,14 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         return this.dataTracker.getChildren(element);
     }
 
-    protected findNodeByItem(item: CDTTreeItem): PeripheralBaseNode | undefined {
-        return this.dataTracker.findNodeByPath(item.id.split(PERIPHERAL_ID_SEP));
+    protected findNodeByItemId(itemId: string): PeripheralBaseNode | undefined {
+        return this.dataTracker.findNodeByPath(itemId.split(PERIPHERAL_ID_SEP));
     }
 
-    protected getNodeByItem(item: CDTTreeItem): PeripheralBaseNode {
-        const node = this.findNodeByItem(item);
+    protected getNodeByItemId(itemId: string): PeripheralBaseNode {
+        const node = this.findNodeByItemId(itemId);
         if (node === undefined) {
-            throw new Error(`Node not found for ${JSON.stringify(item)}`);
+            throw new Error(`Node not found for ${JSON.stringify(itemId)}`);
         }
 
         return node;
