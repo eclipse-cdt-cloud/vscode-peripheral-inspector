@@ -324,6 +324,7 @@
     "onStartupFinished"
   ],
   "extensionKind": [
+    "workspace",
     "ui"
   ]
 }
