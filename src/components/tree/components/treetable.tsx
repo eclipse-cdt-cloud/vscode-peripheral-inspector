@@ -16,6 +16,7 @@ import { getNestedValue } from '../../../common/utils';
 import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
 import { classNames, createHighlightedText, createLabelWithTooltip } from './utils';
 import { debounce } from 'throttle-debounce';
+
 /**
  * Component to render a tree table.
  */
@@ -321,7 +322,17 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
             subtree: true
         });
 
+        const abortScrollOnLeave = () => {
+            const elements = document.getElementsByClassName('ant-table-tbody-virtual-scrollbar-thumb-moving');
+            if (elements.length > 0) {
+                // simulate mouse up to stop scrolling
+                window.dispatchEvent(new MouseEvent('mouseup'));
+            }
+        };
+        document.addEventListener('mouseleave', abortScrollOnLeave);
+
         return () => {
+            document.removeEventListener('mouseleave', abortScrollOnLeave);
             observer.disconnect();
         };
     }, [ref, selectedRowKeys]);
