@@ -8,19 +8,18 @@
 import * as vscode from 'vscode';
 import { Messenger } from 'vscode-messenger';
 import { WebviewIdMessageParticipant } from 'vscode-messenger-common';
-import { CDTTreeExecuteCommand, CDTTreeItem, CDTTreeState, CDTTreeViewType, CTDTreeMessengerType } from '../../types';
+import { TreeNotification } from '../../../../common/notification';
+import { CDTTreeExecuteCommand, CTDTreeMessengerType } from '../../types';
 import { CDTTreeDataProvider } from '../tree-data-provider';
 
 export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.WebviewViewProvider {
 
-    protected onDidToggleNodeEvent = new vscode.EventEmitter<CDTTreeItem>();
+    protected onDidToggleNodeEvent = new vscode.EventEmitter<TreeNotification<string>>();
     public readonly onDidToggleNode = this.onDidToggleNodeEvent.event;
-    protected onDidExecuteCommandEvent = new vscode.EventEmitter<CDTTreeExecuteCommand>();
+    protected onDidExecuteCommandEvent = new vscode.EventEmitter<TreeNotification<CDTTreeExecuteCommand>>();
     public readonly onDidExecuteCommand = this.onDidExecuteCommandEvent.event;
-    protected onDidClickNodeEvent = new vscode.EventEmitter<CDTTreeItem>();
+    protected onDidClickNodeEvent = new vscode.EventEmitter<TreeNotification<string>>();
     public readonly onDidClickNode = this.onDidClickNodeEvent.event;
-
-    abstract readonly type: CDTTreeViewType;
 
     protected get extensionUri(): vscode.Uri {
         return this.context.extensionUri;
@@ -30,7 +29,7 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     protected participant: WebviewIdMessageParticipant | undefined;
 
     public constructor(
-        protected readonly dataProvider: CDTTreeDataProvider<TNode>,
+        protected readonly dataProvider: CDTTreeDataProvider<TNode, unknown>,
         protected readonly context: vscode.ExtensionContext,
         protected readonly messenger = new Messenger({ ignoreHiddenViews: false, debugLog: true })
     ) {
@@ -38,11 +37,11 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     }
 
     protected init(): void {
-        this.dataProvider.onDidChangeTreeData?.(async () => this.onDidChangeTreeData());
-    }
-
-    protected async onDidChangeTreeData(): Promise<void> {
-        await this.refresh();
+        this.dataProvider.onDidChangeTreeData?.(async (event) => {
+            if (event.context?.resync !== false) {
+                this.refresh();
+            }
+        });
     }
 
     public async resolveWebviewView(webviewView: vscode.WebviewView, _context: vscode.WebviewViewResolveContext,
@@ -84,7 +83,7 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
 
         return `
             <!DOCTYPE html>
-            <html lang='en'>
+            <html lang='en' style="height: 100%">
                 <head>
                     <meta charset='UTF-8'>
                     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
@@ -92,7 +91,7 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
                     <link href="${codiconsUri}" rel="stylesheet" />
                     <script type='module' src='${mainUri}'></script>
                 </head>
-                <body>
+                <body style="height: 100%">
                     <div id='root'></div>
                 </body>
             </html>
@@ -100,13 +99,17 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     }
 
     protected setWebviewMessageListener(webview: vscode.WebviewView): void {
-        this.participant = this.messenger.registerWebviewView(webview);
+        const participant = this.participant = this.messenger.registerWebviewView(webview);
+
+        if (this.participant === undefined) {
+            return;
+        }
 
         const disposables = [
-            this.messenger.onNotification(CTDTreeMessengerType.ready, () => this.onReady(), { sender: this.participant }),
-            this.messenger.onNotification(CTDTreeMessengerType.executeCommand, (command) => this.onDidExecuteCommandEvent.fire(command), { sender: this.participant }),
-            this.messenger.onNotification(CTDTreeMessengerType.toggleNode, node => this.onDidToggleNodeEvent.fire(node), { sender: this.participant }),
-            this.messenger.onNotification(CTDTreeMessengerType.clickNode, node => this.onDidClickNodeEvent.fire(node), { sender: this.participant }),
+            this.messenger.onNotification(CTDTreeMessengerType.ready, () => this.onReady(), { sender: participant }),
+            this.messenger.onNotification(CTDTreeMessengerType.executeCommand, (event) => this.onDidExecuteCommandEvent.fire(event), { sender: participant }),
+            this.messenger.onNotification(CTDTreeMessengerType.toggleNode, event => this.onDidToggleNodeEvent.fire(event), { sender: participant }),
+            this.messenger.onNotification(CTDTreeMessengerType.clickNode, event => this.onDidClickNodeEvent.fire(event), { sender: participant }),
         ];
 
         webview.onDidDispose(() => disposables.forEach(disposible => disposible.dispose()));
@@ -120,12 +123,13 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
         if (!this.participant) {
             return;
         }
-        const state: CDTTreeState = {
-            items: await this.dataProvider.getCDTTreeRoots(),
-            selectedItem: await this.dataProvider.getSelectedItem?.(),
-            columnFields: this.dataProvider.getColumnDefinitions?.(),
-            type: this.type
-        };
-        this.messenger.sendNotification(CTDTreeMessengerType.updateState, this.participant, state);
+
+        const columnFields = this.dataProvider.getColumnDefinitions();
+        const items = await this.dataProvider.getSerializedRoots();
+
+        this.messenger.sendNotification(CTDTreeMessengerType.updateState, this.participant, {
+            columnFields,
+            items
+        });
     }
 }

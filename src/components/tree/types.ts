@@ -5,100 +5,163 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { TreeNode as PrimeTreeNode } from 'primereact/treenode';
 import { NotificationType } from 'vscode-messenger-common';
-import { CommandDefinition, VscodeContext } from '../../common';
+import { CommandDefinition, VSCodeContext } from '../../common';
+import { TreeNotification } from '../../common/notification';
 
-export interface CDTTreeOptions {
-    contextValue?: string,
-    commands?: CommandDefinition[];
-    highlights?: [number, number][];
-    tooltip?: string,
-}
+// ==== Items ====
 
-export interface CDTTreeTableExpanderColumn {
-    type: 'expander';
-    icon?: string;
-    label: string;
-    tooltip?: string;
-}
-
-export interface CDTTreeTableStringColumn {
-    type: 'string';
-    label: string;
-    highlight?: [number, number][];
-    tooltip?: string;
-}
-
-export interface CDTTreeItem extends PrimeTreeNode {
+/**
+ * A tree item that is used in the CDT tree view.
+ */
+export interface CDTTreeItem<T = unknown> {
     __type: 'CDTTreeItem'
     id: string;
     key: string;
-    icon?: string;
-    path: string[];
-    options?: CDTTreeOptions;
-    columns?: Record<string, CDTTreeTableExpanderColumn | CDTTreeTableStringColumn>;
-    children?: CDTTreeItem[];
+    parent?: CDTTreeItem<unknown>;
+    children?: CDTTreeItem<T>[];
+    /**
+     * The resource that this tree item represents. This can be any type of object.
+     */
+    resource: T;
+    /**
+     * The columns that are displayed for this tree item.
+     */
+    columns?: Record<string, CDTTreeTableColumn>;
+    /**
+     * Whether this item is pinned. Undefined means that the item can not be pinned.
+     */
+    pinned?: boolean;
+    /**
+     * Whether this item is expanded. Undefined means that the item is not expanded.
+     */
+    expanded?: boolean;
 }
 
 export namespace CDTTreeItem {
-    export function is(item: PrimeTreeNode): item is CDTTreeItem {
-        return '__type' in item && item.__type === 'CDTTreeItem';
-    }
-
-    export function assert(treeNode: PrimeTreeNode): asserts treeNode is CDTTreeItem {
-        if (!is(treeNode)) {
-            throw new Error(`Provided tree item isn't a valid CDTTreeItem: ${treeNode}`);
-        }
-    }
-
-    export function create(options: Omit<CDTTreeItem, '__type'>): CDTTreeItem {
+    export function create<TResource>(options: Omit<CDTTreeItem<TResource>, '__type'>): CDTTreeItem<TResource> {
         return {
             __type: 'CDTTreeItem',
             ...options
         };
     }
+
+    export function createRoot(): CDTTreeItem<unknown> {
+        return create<unknown>({
+            id: 'root',
+            key: 'root',
+            resource: undefined,
+            children: []
+        });
+    }
+
+    export function isRoot(item: CDTTreeItem): boolean {
+        return item.id === 'root';
+    }
 }
 
-export type CDTTreeViewType = 'tree' | 'treetable';
+// ==== Columns ====
 
+/**
+ * A column definition for a tree table.
+ * This is used to define the columns that are displayed in the tree table.
+ */
 export interface CDTTreeTableColumnDefinition {
+    /**
+     * The type of the column. It can be used to show different types of columns.
+     */
+    type: string;
+    /**
+     * The field that is used to get the value for this column. See {@link CDTTreeItem.columns}.
+     */
     field: string;
-    expander?: boolean;
 }
 
-export interface CDTTreeState {
-    items?: CDTTreeItem[];
-    selectedItem?: CDTTreeItem;
+/**
+ * A string column represents a column that displays a string value.
+ */
+export interface CDTTreeTableStringColumn {
+    type: 'string';
+    icon?: string;
+    label: string;
+    /**
+     * Allows to highlight parts of the string.
+     */
+    highlight?: [number, number][];
+    /**
+     * The tooltip that is displayed when hovering over the string.
+     */
+    tooltip?: string;
+}
+
+/**
+ * An action column represents a column that displays multiple interactable buttons/icons.
+ */
+export interface CDTTreeTableActionColumn {
+    type: 'action';
+    commands: CDTTreeTableActionColumnCommand[];
+}
+
+/**
+ * A command that can be executed when clicking on a button/icon in an action column.
+ */
+export interface CDTTreeTableActionColumnCommand extends CommandDefinition {
+    /**
+     * The value that is passed to the command when it is executed.
+     */
+    value?: unknown;
+}
+
+export type CDTTreeTableColumn = CDTTreeTableStringColumn | CDTTreeTableActionColumn;
+
+// ==== Model ====
+
+/**
+ * The model that is used to initialize the CDT tree view.
+ * It is passed to the webview when the tree view is created / updated.
+ */
+export interface CDTTreeExtensionModel<TItems = unknown> {
+    items?: TItems[];
     columnFields?: CDTTreeTableColumnDefinition[];
-    type: CDTTreeViewType;
 }
 
-export interface CDTTreeExecuteCommand {
-    commandId: string;
-    item: CDTTreeItem;
+/**
+ * The view model that is used to update the CDT tree view.
+ * It is the actual model that is used to render the tree view.
+ */
+export interface CDTTreeViewModel<TItem = unknown> {
+    items: CDTTreeItem<TItem>[];
+    expandedKeys: string[];
+    pinnedKeys: string[];
 }
+
 
 export interface CTDTreeWebviewContext {
     webviewSection: string;
     cdtTreeItemId: string;
-    cdtTreeItemPath: string[];
 }
 
 export namespace CTDTreeWebviewContext {
     export function is(context: object): context is CTDTreeWebviewContext {
-        return 'cdtTreeItemId' in context && 'cdtTreeItemPath' in context;
+        return 'cdtTreeItemId' in context;
     }
 
-    export function create(context: CTDTreeWebviewContext): VscodeContext {
-        return { 'data-vscode-context': JSON.stringify(context) };
+    export function create(context: CTDTreeWebviewContext): VSCodeContext {
+        return VSCodeContext.create(context);
     }
 }
 
+export interface CDTTreeExecuteCommand {
+    commandId: string;
+    itemId: string;
+    value?: unknown;
+}
+
 export namespace CTDTreeMessengerType {
-    export const updateState: NotificationType<CDTTreeState> = { method: 'updateState' };
+    export const updateState: NotificationType<CDTTreeExtensionModel> = { method: 'updateState' };
     export const ready: NotificationType<void> = { method: 'ready' };
-    export const executeCommand: NotificationType<CDTTreeExecuteCommand> = { method: 'executeCommand' };
-    export const toggleNode: NotificationType<CDTTreeItem> = { method: 'toggleNode' };
-    export const clickNode: NotificationType<CDTTreeItem> = { method: 'clickNode' };
+
+    export const executeCommand: NotificationType<TreeNotification<CDTTreeExecuteCommand>> = { method: 'executeCommand' };
+    export const toggleNode: NotificationType<TreeNotification<string>> = { method: 'toggleNode' };
+    export const clickNode: NotificationType<TreeNotification<string>> = { method: 'clickNode' };
 }

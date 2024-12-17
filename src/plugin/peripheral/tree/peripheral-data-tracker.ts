@@ -12,16 +12,19 @@ import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SvdResolver } from '../../../svd-resolver';
 import { MessageNode, PeripheralBaseNode, PeripheralRegisterNode } from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
-import { PeripheralTreeDataProvider } from './provider/peripheral-tree-data-provider';
+import { TreeNotification, TreeNotificationContext } from '../../../common/notification';
+import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
 
 export class PeripheralDataTracker {
-    protected onDidChangeEvent = new vscode.EventEmitter<PeripheralBaseNode | void>();
+    protected onDidChangeEvent = new vscode.EventEmitter<void>();
     public readonly onDidChange = this.onDidChangeEvent.event;
-    protected onDidSelectionChangeEvent = new vscode.EventEmitter<PeripheralBaseNode | undefined>();
+    protected onDidPeripheralChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
+    public readonly onDidPeripheralChange = this.onDidPeripheralChangeEvent.event;
+    protected onDidSelectionChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode | undefined>>();
     public readonly onDidSelectionChange = this.onDidSelectionChangeEvent.event;
-    protected onDidExpandEvent = new vscode.EventEmitter<PeripheralBaseNode>();
+    protected onDidExpandEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
     public readonly onDidExpand = this.onDidExpandEvent.event;
-    protected onDidCollapseEvent = new vscode.EventEmitter<PeripheralBaseNode>();
+    protected onDidCollapseEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
     public readonly onDidCollapse = this.onDidCollapseEvent.event;
 
     protected sessionPeripherals = new Map<string, PeripheralTreeForSession>();
@@ -44,7 +47,7 @@ export class PeripheralDataTracker {
         if (node && children && children.length > 0) {
             this.toggleNode(node);
         } else {
-            this.onDidSelectionChangeEvent.fire(node);
+            this.onDidSelectionChangeEvent.fire({ data: node });
         }
     }
 
@@ -65,18 +68,23 @@ export class PeripheralDataTracker {
         }
     }
 
-    public togglePin(node: PeripheralBaseNode): void {
+    public togglePin(
+        node: PeripheralBaseNode,
+        context?: TreeNotificationContext): void {
         const session = vscode.debug.activeDebugSession;
         if (session) {
             const peripheralTree = this.sessionPeripherals.get(session.id);
             if (peripheralTree) {
                 peripheralTree.togglePinPeripheral(node);
-                this.refresh();
+                this.onDidPeripheralChangeEvent.fire({ data: node, context });
             }
         }
     }
 
-    public expandNode(node: PeripheralBaseNode, emit = true): void {
+    public expandNode(
+        node: PeripheralBaseNode,
+        emit = true,
+        context?: TreeNotificationContext): void {
         node.expanded = true;
         const isReg = node instanceof PeripheralRegisterNode;
         if (!isReg) {
@@ -88,14 +96,17 @@ export class PeripheralDataTracker {
         }
 
         if (emit) {
-            this.onDidExpandEvent.fire(node);
+            this.onDidExpandEvent.fire({ data: node, context });
         }
     }
 
-    public collapseNode(node: PeripheralBaseNode, emit = true): void {
+    public collapseNode(
+        node: PeripheralBaseNode,
+        emit = true,
+        context?: TreeNotificationContext): void {
         node.expanded = false;
         if (emit) {
-            this.onDidCollapseEvent.fire(node);
+            this.onDidCollapseEvent.fire({ data: node, context });
         }
     }
 
@@ -104,14 +115,17 @@ export class PeripheralDataTracker {
             const children = await tree.getChildren();
             children.forEach(c => this.collapseNode(c, false));
         }
-        this.refresh();
+        this.fireOnDidChange();
     }
 
-    public toggleNode(node: PeripheralBaseNode, emit = true): void {
+    public toggleNode(
+        node: PeripheralBaseNode,
+        emit = true,
+        context?: TreeNotificationContext): void {
         if (node.expanded) {
-            this.collapseNode(node, emit);
+            this.collapseNode(node, emit, context);
         } else {
-            this.expandNode(node, emit);
+            this.expandNode(node, emit, context);
         }
     }
 
@@ -138,13 +152,13 @@ export class PeripheralDataTracker {
     public async updateData(): Promise<void> {
         const trees = this.sessionPeripherals.values();
         for (const tree of trees) {
+            // The tree will trigger a refresh on it's own
             await tree.updateData();
         }
-        this.refresh();
     }
 
-    public refresh(): void {
-        this.onDidChangeEvent.fire(undefined);
+    public fireOnDidChange(): void {
+        this.onDidChangeEvent.fire();
     }
 
     protected async onDebugSessionStarted(session: vscode.DebugSession): Promise<void> {
@@ -156,7 +170,7 @@ export class PeripheralDataTracker {
         }
 
         if (this.sessionPeripherals.get(session.id)) {
-            this.onDidChangeEvent.fire(undefined);
+            this.fireOnDidChange();
             vscode.debug.activeDebugConsole.appendLine(`Internal Error: Session ${session.name} id=${session.id} already in the tree view?`);
             return;
         }
@@ -166,7 +180,7 @@ export class PeripheralDataTracker {
             state = this.sessionPeripherals.size === 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
         }
         const peripheralTree = new PeripheralTreeForSession(session, this.api, state, () => {
-            this.onDidChangeEvent.fire(undefined);
+            this.fireOnDidChange();
         });
 
         this.sessionPeripherals.set(session.id, peripheralTree);
@@ -181,7 +195,7 @@ export class PeripheralDataTracker {
         } catch (e) {
             vscode.debug.activeDebugConsole.appendLine(`Internal Error: Unexpected rejection of promise ${e}`);
         } finally {
-            this.onDidChangeEvent.fire(undefined);
+            this.fireOnDidChange();
         }
 
         vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
@@ -197,7 +211,7 @@ export class PeripheralDataTracker {
             this.oldState.set(session.name, regs.myTreeItem.collapsibleState);
             this.sessionPeripherals.delete(session.id);
             regs.sessionTerminated(this.context);
-            this.onDidChangeEvent.fire(undefined);
+            this.fireOnDidChange();
         }
 
         vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);

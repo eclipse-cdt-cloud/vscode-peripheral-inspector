@@ -7,33 +7,20 @@
 
 import * as vscode from 'vscode';
 import * as manifest from '../../../manifest';
-import { CDTTreeViewType } from '../../../components/tree/types';
 import { PeripheralBaseNode } from '../nodes';
 import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
 import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
+import { PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 
-export class PeripheralsTreeWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNode> {
-    readonly type: CDTTreeViewType = 'tree';
-
-    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-tree`;
+export class PeripheralsTreeTableWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNode> {
+    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-treetable`;
 
     public constructor(
-        protected dataProvider: CDTTreeDataProvider<PeripheralBaseNode>,
+        protected dataProvider: CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO>,
         protected context: vscode.ExtensionContext,
     ) {
         super(dataProvider, context);
     }
-
-    async activate(context: vscode.ExtensionContext): Promise<void> {
-        context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(PeripheralsTreeWebView.viewType, this)
-        );
-    }
-}
-
-export class PeripheralsTreeTableWebView extends PeripheralsTreeWebView {
-    readonly type: CDTTreeViewType = 'treetable';
-    public static viewType = `${manifest.PACKAGE_NAME}.peripheral-treetable`;
 
     async activate(context: vscode.ExtensionContext): Promise<void> {
         context.subscriptions.push(

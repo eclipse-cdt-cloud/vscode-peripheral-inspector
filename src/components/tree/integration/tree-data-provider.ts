@@ -7,16 +7,30 @@
 
 import * as vscode from 'vscode';
 import { MaybePromise } from '../../../common';
-import { CDTTreeItem, CDTTreeTableColumnDefinition } from '../types';
+import { TreeNotification } from '../../../common/notification';
+import { CDTTreeTableColumnDefinition } from '../types';
 
-export interface CDTTreeDataProvider<TNode> {
-    onDidChangeTreeData: vscode.Event<TNode | undefined | null | void>;
+/**
+ * A tree data provider that provides data for the CDTTreeView.
+ *
+ * @param TNode The type of the tree nodes in the domain model.
+ * @param TSerializedNode The type of the serialized tree nodes. Those are the nodes that
+ * are actually send to the webview to be display in the tree.
+ */
+export interface CDTTreeDataProvider<TNode, TSerializedNode> {
+    onDidChangeTreeData: vscode.Event<TreeNotification<TNode | TNode[] | undefined | null>>;
+    /**
+     * Get the column definitions for the tree table.
+     */
+    getColumnDefinitions(): CDTTreeTableColumnDefinition[];
 
-    getCDTTreeItem(element: TNode): MaybePromise<CDTTreeItem>;
-    getCDTTreeRoots(): MaybePromise<CDTTreeItem[]>;
+    /**
+     * Get the root elements of the tree.
+     */
+    getSerializedRoots(): MaybePromise<TSerializedNode[]>;
 
-    getChildren(element?: TNode): vscode.ProviderResult<TNode[]>;
-
-    getSelectedItem?(): MaybePromise<CDTTreeItem | undefined>;
-    getColumnDefinitions?(): CDTTreeTableColumnDefinition[];
+    /**
+     * Get the children of the given element.
+     */
+    getSerializedData(element: TNode): MaybePromise<TSerializedNode>;
 }

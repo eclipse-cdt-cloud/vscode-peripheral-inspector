@@ -5,38 +5,45 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { Command, DebugSession, TreeItem } from 'vscode';
+import { DebugSession } from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { EnumerationMap } from '../../../api-types';
-import { CommandDefinition, MaybePromise, NodeSetting, NumberFormat } from '../../../common';
-import { CDTTreeItem } from '../../../components/tree/types';
+import { NodeSetting } from '../../../common';
+import { NumberFormat } from '../../../common/format';
+import { ClusterOrRegisterBaseNodeDTO, PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO, PeripheralBaseTreeNodeDTO } from '../../../common/peripheral-dto';
 
-export abstract class BaseNode {
+export abstract class BaseTreeNode {
+    get id(): string {
+        return this.getId();
+    }
+
+    /**
+     * Whether the node is expanded or not. Depending on the tree view implementation, this may refresh children.
+     */
     public expanded: boolean;
 
-    constructor(protected readonly parent?: BaseNode) {
+    constructor(protected readonly parent?: BaseTreeNode) {
         this.expanded = false;
     }
 
-    public getParent(): BaseNode | undefined {
+    public getParent(): BaseTreeNode | undefined {
         return this.parent;
     }
 
-    public abstract getChildren(): BaseNode[] | Promise<BaseNode[]>;
-    public abstract getTreeItem(): TreeItem | Promise<TreeItem>;
-    public abstract getCDTTreeItem(): MaybePromise<CDTTreeItem>;
+    public abstract getId(): string;
 
+    public abstract getChildren(): BaseTreeNode[] | Promise<BaseTreeNode[]>;
 
-    public getCommand(): Command | undefined {
-        return undefined;
+    serialize(): PeripheralBaseTreeNodeDTO {
+        return PeripheralBaseTreeNodeDTO.create({
+            id: this.id,
+            parentId: this.parent?.id,
+            expanded: this.expanded,
+        });
     }
-
-    public abstract getCopyValue(): string | undefined;
 }
 
-export const PERIPHERAL_ID_SEP = '-';
-
-export abstract class PeripheralBaseNode extends BaseNode {
+export abstract class PeripheralBaseNode extends BaseTreeNode {
     public format: NumberFormat;
     public pinned: boolean;
     public readonly name: string | undefined;
@@ -60,7 +67,7 @@ export abstract class PeripheralBaseNode extends BaseNode {
         return this.name ?? this.session?.id ?? 'unknown';
     }
 
-    public abstract performUpdate(): Thenable<boolean>;
+    public abstract performUpdate(args?: unknown): Thenable<boolean>;
     public abstract updateData(): Thenable<boolean>;
 
     public abstract getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]>;
@@ -70,9 +77,6 @@ export abstract class PeripheralBaseNode extends BaseNode {
 
     public abstract saveState(path?: string): NodeSetting[];
     public abstract findByPath(path: string[]): PeripheralBaseNode | undefined;
-    public getCommands(): CommandDefinition[] {
-        return [];
-    }
 
     public async setSession(session: DebugSession): Promise<void> {
         this.session = session;
@@ -81,9 +85,26 @@ export abstract class PeripheralBaseNode extends BaseNode {
             child.setSession(session);
         }
     }
+
+    serialize(): PeripheralBaseNodeDTO {
+        return PeripheralBaseNodeDTO.create({
+            ...super.serialize(),
+            id: this.getId(),
+            format: this.format,
+            pinned: this.pinned,
+            session: this.session?.id,
+        });
+    }
 }
 
 export abstract class ClusterOrRegisterBaseNode extends PeripheralBaseNode {
     public readonly offset: number | undefined;
     public abstract resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }): void;
+
+    serialize(): ClusterOrRegisterBaseNodeDTO {
+        return ClusterOrRegisterBaseNodeDTO.create({
+            ...super.serialize(),
+            offset: this.offset,
+        });
+    }
 }

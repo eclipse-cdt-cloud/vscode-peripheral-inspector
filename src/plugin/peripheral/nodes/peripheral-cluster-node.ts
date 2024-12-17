@@ -5,15 +5,14 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import * as vscode from 'vscode';
-import { PeripheralBaseNode, ClusterOrRegisterBaseNode, PERIPHERAL_ID_SEP } from './base-node';
-import { PeripheralRegisterNode } from './peripheral-register-node';
-import { PeripheralNode } from './peripheral-node';
 import { AddrRange } from '../../../addrranges';
 import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
-import { NumberFormat, NodeSetting } from '../../../common';
-import { hexFormat } from '../../../utils';
-import { CDTTreeItem } from '../../../components/tree/types';
+import { NodeSetting } from '../../../common';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralClusterNodeDTO } from '../../../common/peripheral-dto';
+import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './base-node';
+import { PeripheralNode } from './peripheral-node';
+import { PeripheralRegisterNode as PeripheralRegisterNode } from './peripheral-register-node';
 
 
 
@@ -29,7 +28,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
     public readonly resetValue: number;
     public readonly accessType: AccessType;
 
-    constructor(public parent: PeripheralOrClusterNode, options: ClusterOptions) {
+    constructor(public parent: PeripheralOrClusterNode, protected options: ClusterOptions) {
         super(parent);
         this.name = options.name;
         this.description = options.description;
@@ -48,60 +47,6 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         options.registers?.forEach((registerOptions) => {
             // PeripheralRegisterNode constructor already adding the reference as child to parent object (PeripheralClusterNode object)
             new PeripheralRegisterNode(this, registerOptions);
-        });
-    }
-
-    public getLabel(): string {
-        return `${this.getLabelTitle()} [${this.getLabelValue()}]`;
-    }
-
-    public getLabelTitle(): string {
-        return this.name;
-    }
-
-    public getLabelValue(): string {
-        return hexFormat(this.offset, 0);
-    }
-
-    public getContextValue(): string {
-        return 'cluster';
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = this.getLabel();
-
-        const item = new vscode.TreeItem(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
-        item.id = this.getId();
-        item.contextValue = this.getContextValue();
-        item.tooltip = this.description || undefined;
-
-        return item;
-    }
-
-    public getCDTTreeItem(): CDTTreeItem {
-        return CDTTreeItem.create({
-            id: this.getId(),
-            key: this.getId(),
-            expanded: this.expanded,
-            label: this.getLabel(),
-            path: this.getId().split(PERIPHERAL_ID_SEP),
-            options: {
-                commands: this.getCommands(),
-                contextValue: this.getContextValue(),
-                tooltip: this.description,
-            },
-            columns: {
-                'title': {
-                    type: 'expander',
-                    label: this.getLabelTitle(),
-                    tooltip: this.description,
-                },
-                'value': {
-                    type: 'string',
-                    label: this.getLabelValue(),
-                    tooltip: this.getLabelValue()
-                }
-            }
         });
     }
 
@@ -185,10 +130,6 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         return this.parent.getPeripheral();
     }
 
-    public getCopyValue(): string {
-        throw new Error('Method not implemented.');
-    }
-
     public performUpdate(): Thenable<boolean> {
         throw new Error('Method not implemented.');
     }
@@ -198,4 +139,14 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
             child.resolveDeferedEnums(enumTypeValuesMap);
         }
     }
+
+    serialize(): PeripheralClusterNodeDTO {
+        return PeripheralClusterNodeDTO.create({
+            ...super.serialize(),
+            ...this.options,
+            offset: this.offset,
+            children: []
+        });
+    }
+
 }

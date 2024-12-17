@@ -5,14 +5,6 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-:root {
-  --rct-color-focustree-item-selected-bg: inherit;
-  --rct-color-focustree-item-hover-bg: inherit;
-  --rct-color-focustree-item-hover-text: inherit;
-  --rct-color-focustree-item-active-bg: inherit;
-  --rct-color-focustree-item-active-text: inherit;
-}
-
 body {
   padding: 0;
 }

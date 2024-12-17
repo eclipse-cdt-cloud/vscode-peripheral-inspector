@@ -6,11 +6,13 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { NumberFormat } from './common';
+import { NumberFormat } from './common/format';
+import { TreeNotificationContext } from './common/notification';
+import { PERIPHERAL_ID_SEP } from './common/peripheral-dto';
+import { CTDTreeWebviewContext } from './components/tree/types';
+import { Commands } from './manifest';
 import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
-import { Commands } from './manifest';
-import { CTDTreeWebviewContext } from './components/tree/types';
 
 export class PeripheralCommands {
     public constructor(
@@ -19,24 +21,23 @@ export class PeripheralCommands {
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         context.subscriptions.push(
-            vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, node => this.peripheralsUpdateNode(node)),
-            vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, node => this.peripheralsCopyValue(node)),
-            vscode.commands.registerCommand(Commands.SET_FORMAT_COMMAND.commandId, node => this.peripheralsSetFormat(node)),
-            vscode.commands.registerCommand(Commands.FORCE_REFRESH_COMMAND.commandId, node => this.peripheralsForceRefresh(node)),
-            vscode.commands.registerCommand(Commands.PIN_COMMAND.commandId, node => this.peripheralsTogglePin(node)),
-            vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, node => this.peripheralsTogglePin(node)),
+            vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node, value) => this.peripheralsUpdateNode(node, value)),
+            vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, (node, value) => this.peripheralsCopyValue(node, value)),
+            vscode.commands.registerCommand(Commands.SET_FORMAT_COMMAND.commandId, (node) => this.peripheralsSetFormat(node)),
+            vscode.commands.registerCommand(Commands.FORCE_REFRESH_COMMAND.commandId, (node) => this.peripheralsForceRefresh(node)),
+            vscode.commands.registerCommand(Commands.PIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
+            vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
             vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND.commandId, () => this.peripheralsForceRefresh()),
             vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND.commandId, () => this.collapseAll()),
         );
     }
 
-    private async peripheralsUpdateNode(node: PeripheralBaseNode): Promise<void> {
+    private async peripheralsUpdateNode(node: PeripheralBaseNode, value?: unknown): Promise<void> {
         try {
-            const result = await node.performUpdate();
+            const result = await node.performUpdate(value);
             if (result) {
-                await this.peripheralsForceRefresh();
-            } else {
-                this.dataTracker.refresh();
+                // Update the tree view
+                this.dataTracker.fireOnDidChange();
             }
 
         } catch (error) {
@@ -44,10 +45,9 @@ export class PeripheralCommands {
         }
     }
 
-    private peripheralsCopyValue(node: PeripheralBaseNode): void {
-        const cv = node.getCopyValue();
-        if (cv) {
-            vscode.env.clipboard.writeText(cv);
+    private peripheralsCopyValue(_node: PeripheralBaseNode, value?: string): void {
+        if (value) {
+            vscode.env.clipboard.writeText(value);
         }
     }
 
@@ -68,13 +68,13 @@ export class PeripheralCommands {
 
         let node: PeripheralBaseNode;
         if (CTDTreeWebviewContext.is(context)) {
-            node = this.dataTracker.getNodeByPath(context.cdtTreeItemPath);
+            node = this.dataTracker.getNodeByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP));
         } else {
             node = context;
         }
 
         node.format = result.value;
-        this.dataTracker.refresh();
+        this.dataTracker.fireOnDidChange();
     }
 
     private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {
@@ -84,13 +84,13 @@ export class PeripheralCommands {
                 await p.updateData();
             }
 
-            this.dataTracker.refresh();
+            this.dataTracker.fireOnDidChange();
         } else {
             await this.dataTracker.updateData();
         }
     }
 
-    private peripheralsTogglePin(node: PeripheralBaseNode): void {
-        this.dataTracker.togglePin(node);
+    private peripheralsTogglePin(node: PeripheralBaseNode, context?: TreeNotificationContext): void {
+        this.dataTracker.togglePin(node, context);
     }
 }
