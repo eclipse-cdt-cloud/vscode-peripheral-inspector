@@ -162,6 +162,13 @@ export class CDTTreeView extends React.Component<unknown, State> {
                         }
                     }
                 }
+                edit={
+                    {
+                        onEdit: (record, value) => {
+                            this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: Commands.UPDATE_NODE_COMMAND.commandId, itemId: record.id, value } });
+                        }
+                    }
+                }
             /></div>;
     }
 

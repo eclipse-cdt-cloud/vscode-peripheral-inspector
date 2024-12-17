@@ -179,7 +179,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         return this;
     }
 
-    public selected(): Thenable<boolean> {
+    public selected(): Promise<boolean> {
         return this.performUpdate();
     }
 
@@ -215,7 +215,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         }
     }
 
-    public performUpdate(): Thenable<boolean> {
+    public async performUpdate(): Promise<boolean> {
         throw new Error('Method not implemented.');
     }
 

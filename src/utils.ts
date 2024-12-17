@@ -43,20 +43,29 @@ export function extractBits(value: number, offset: number, width: number): numbe
     return bvalue;
 }
 
-export function parseInteger(value: string): number | undefined {
-    if (value) {
-        value = value.toLowerCase();
-        if ((/^0b([01]+)$/i).test(value)) {
-            return parseInt(value.substring(2), 2);
-        } else if ((/^0x([0-9a-f]+)$/i).test(value)) {
-            return parseInt(value.substring(2), 16);
-        } else if ((/^[0-9]+/i).test(value)) {
-            return parseInt(value, 10);
-        } else if ((/^#[0-1]+/i).test(value)) {
-            return parseInt(value.substring(1), 2);
-        }
+export function parseInteger(value: string, { binaryLimit = Infinity, hexLimit = Infinity, decimalLimit = Infinity } = {}): number | undefined {
+    if (!value) {
+        return undefined;
     }
+    const text = value.toLowerCase();
+    const quantifier = (limit: number) => limit === Infinity ? '+' : `{1,${limit}}`;
 
+    const binRegex = new RegExp(`^0b[01]${quantifier(binaryLimit)}$`, 'i');
+    if (binRegex.test(text)) {
+        return parseInt(text.substring(2), 2);
+    }
+    const hexRegex = new RegExp(`^0x[0-9a-f]${quantifier(hexLimit)}$`, 'i');
+    if (hexRegex.test(text)) {
+        return parseInt(text.substring(2), 16);
+    }
+    const decRegex = new RegExp(`^[0-9]${quantifier(decimalLimit)}$`, 'i');
+    if (decRegex.test(text)) {
+        return parseInt(text, 10);
+    }
+    const binHashRegex = new RegExp(`^#[01]${quantifier(binaryLimit)}$`, 'i');
+    if (binHashRegex.test(text)) {
+        return parseInt(text.substring(1), 2);
+    }
     return undefined;
 }
 

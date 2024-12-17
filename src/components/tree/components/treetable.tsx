@@ -8,17 +8,19 @@
 import './common.css';
 import './treetable.css';
 
-import { ConfigProvider, Table, TableColumnsType } from 'antd';
+import { ConfigProvider, Table } from 'antd';
 import { ColumnType, ExpandableConfig } from 'antd/es/table/interface';
 import { default as React, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { CommandDefinition } from '../../../common';
-import { findNestedValue } from '../../../common/utils';
-import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
-import { classNames, createHighlightedText, createLabelWithTooltip, filterTree, getAncestors, traverseTree } from './utils';
 import { debounce } from 'throttle-debounce';
+import { CommandDefinition, findNestedValue } from '../../../common';
+import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableActionColumn, CDTTreeTableActionColumnCommand, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
+import ActionCell from './cells/ActionCell';
+import StringCell from './cells/StringCell';
+import { ExpandIcon } from './expand-icon';
 import { SearchOverlay } from './search-overlay';
 import { TreeNavigator } from './treetable-navigator';
-import { ExpandIcon } from './expand-icon';
+import { classNames, filterTree, getAncestors, traverseTree } from './utils';
+import { Commands } from '../../../manifest';
 
 /**
  * Component to render a tree table.
@@ -34,7 +36,7 @@ export type ComponentTreeTableProps<T extends CDTTreeItemResource = CDTTreeItemR
     dataSource?: CDTTreeItem<T>[];
     /**
     * Function to sort the data source.
-     */
+    */
     dataSourceSorter?: (dataSource: CDTTreeItem<T>[]) => CDTTreeItem<T>[];
     /**
      * Configuration for the expansion of the tree table.
@@ -61,7 +63,7 @@ export type ComponentTreeTableProps<T extends CDTTreeItemResource = CDTTreeItemR
          * Callback to be called when a row is pinned or unpinned.
          */
         onPin?: (event: React.UIEvent, pinned: boolean, record: CDTTreeItem<T>) => void;
-    }
+    },
     /**
      * Configuration for the actions of the tree table.
      */
@@ -70,6 +72,12 @@ export type ComponentTreeTableProps<T extends CDTTreeItemResource = CDTTreeItemR
          * Callback to be called when an action is triggered.
          */
         onAction?: (event: React.UIEvent, command: CommandDefinition, value: unknown, record: CDTTreeItem<T>) => void;
+    },
+    edit?: {
+        /**
+         * Callback to be called when a row is edited.
+         */
+        onEdit?: (record: CDTTreeItem<T>, value: string) => void;
     }
 };
 
@@ -183,6 +191,9 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
         [props.expansion?.onExpand]
     );
 
+    // ==== Edit ====
+    const [editRowKey, setEditRowKey] = useState<string | undefined>();
+
     // ==== Index ====
 
     const dataSourceIndex = useMemo(() => {
@@ -266,135 +277,86 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
         }
     }, [selection, dataSourceIndex]);
 
-    // ==== Renderers ====
-
-    const renderStringColumn = useCallback(
-        (label: string, item: CDTTreeItem<T>, column: CDTTreeTableStringColumn) => {
-            const icon = column.icon ? <i className={classNames('cell-icon', column.icon)}></i> : null;
-            let content = createHighlightedText(label, column.highlight);
-
-            if (column.tooltip) {
-                content = createLabelWithTooltip(<span>{content}</span>, column.tooltip);
-            }
-
-            return (
-                <div className='tree-cell ant-table-cell-ellipsis' tabIndex={0}>
-                    {icon}
-                    {content}
-                </div>
-            );
-        },
-        []
-    );
-
-    const renderActionColumn = useCallback(
-        (column: CDTTreeTableActionColumn | undefined, record: CDTTreeItem<T>) => {
-            const actions: React.ReactNode[] = [];
-
-            if (record.pinned !== undefined) {
-                actions.push(
-                    <i
-                        key={record.pinned ? 'unpin' : 'pin'}
-                        title={record.pinned ? 'Unpin row' : 'Pin row'}
-                        className={`codicon ${record.pinned ? 'codicon-pin' : 'codicon-pinned'}`}
-                        onClick={(event) => props.pin?.onPin?.(event, !record.pinned, record)}
-                        aria-label={record.pinned ? 'Unpin row' : 'Pin row'}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(event) => { if (event.key === 'Enter') props.pin?.onPin?.(event, !record.pinned, record); }}
-                    ></i>
-                );
-            }
-
-            if (column?.commands) {
-                column.commands.forEach((command) => {
-                    actions.push(
-                        <i
-                            key={command.commandId}
-                            title={command.title}
-                            className={`codicon codicon-${command.icon}`}
-                            onClick={(event) => props.action?.onAction?.(event, command, command.value, record)}
-                            aria-label={command.title}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(event) => { if (event.key === 'Enter') props.action?.onAction?.(event, command, command.value, record); }}
-                        ></i>
-                    );
-                });
-            }
-
-            return <div className={'tree-actions'}>{actions}</div>;
-        },
-        [props.pin, props.action]
-    );
 
     // ==== Columns ====
 
-    const createColumns = (columnDefinitions: CDTTreeTableColumnDefinition[]): TableColumnsType<CDTTreeItem<T>> => {
-        function stringColumn(columnDefinition: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem<T>> {
-            return {
-                title: columnDefinition.field,
-                dataIndex: ['columns', columnDefinition.field, 'label'],
-                width: 0,
-                ellipsis: true,
-                render: (label, record) => {
-                    const column = findNestedValue<CDTTreeTableStringColumn>(record, ['columns', columnDefinition.field]);
-
-                    if (!column) {
-                        return undefined;
-                    }
-
-                    return renderStringColumn(label, record, column);
-                },
-                onCell: (record) => {
-                    const column = findNestedValue<CDTTreeTableStringColumn>(record, ['columns', columnDefinition.field]);
-
-                    if (!column) {
-                        return {};
-                    }
-
-                    const colSpan = column.colSpan;
-                    if (colSpan) {
-                        return {
-                            colSpan: colSpan === 'fill' ? columnDefinitions.length : colSpan,
-                            style: {
-                                zIndex: 1
-                            }
-                        };
-                    }
-
-                    return {};
-                }
-            };
+    const getActions = useCallback((record: CDTTreeItem<T>, column: CDTTreeTableActionColumn) => {
+        const actions: CDTTreeTableActionColumnCommand[] = [];
+        if (record.pinned !== undefined) {
+            actions.push({
+                commandId: record.pinned ? Commands.UNPIN_COMMAND.commandId : Commands.PIN_COMMAND.commandId,
+                title: record.pinned ? 'Unpin row' : 'Pin row',
+                icon: record.pinned ? 'pin' : 'pinned',
+                value: !record.pinned,
+            });
         }
+        actions.push(...column.commands);
+        return actions;
+    }, []);
 
-        function actionColumn(columnDefinition: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem<T>> {
-            return {
-                title: columnDefinition.field,
-                dataIndex: ['columns', columnDefinition.field],
-                width: 16 * 5,
-                render: renderActionColumn,
-            };
+    const onAction = useCallback((event: React.UIEvent, command: CommandDefinition, value: unknown, record: CDTTreeItem<T>) => {
+        if (command.commandId === Commands.PIN_COMMAND.commandId || command.commandId === Commands.UNPIN_COMMAND.commandId) {
+            event.stopPropagation();
+            return props.pin?.onPin?.(event, !record.pinned, record);
         }
+        if (command.commandId === Commands.UPDATE_NODE_COMMAND.commandId) {
+            return setEditRowKey(record.key);
+        }
+        return props.action?.onAction?.(event, command, value, record);
+    }, [props.action, props.pin?.onPin]);
 
-        return [
-            ...(columnDefinitions?.map(c => {
-                if (c.type === 'string') {
-                    return stringColumn(c);
-                } else if (c.type === 'action') {
-                    return actionColumn(c);
-                }
+    const renderActionCell = useCallback((column: CDTTreeTableActionColumn, record: CDTTreeItem<T>) => (<ActionCell column={column} record={record} actions={getActions(record, column)} onAction={onAction} />), [props.pin, props.action]);
 
+    const onSubmitEdit = useCallback((record: CDTTreeItem<T>, value: string) => {
+        setEditRowKey(undefined);
+        props.edit?.onEdit?.(record, value);
+    }, [props.edit?.onEdit]);
+
+    const onSubmitCancel = useCallback(() => {
+        setEditRowKey(undefined);
+    }, []);
+
+    const renderStringCell = useCallback((column: CDTTreeTableStringColumn, record: CDTTreeItem<T>) => {
+        const editing = editRowKey === record.key;
+        return (<StringCell column={column} record={record} onSubmit={onSubmitEdit} onCancel={onSubmitCancel} editing={editing} />);
+    }, [editRowKey]);
+
+    const columns = useMemo(() => {
+        return props.columnDefinitions?.map<ColumnType<CDTTreeItem<T>>>((colDef) => {
+            if (colDef.type === 'string') {
                 return {
-                    title: c.field,
-                    dataIndex: ['columns', c.field, 'label'],
-                    width: 200
+                    title: colDef.field,
+                    dataIndex: ['columns', colDef.field],
+                    width: 0,
+                    ellipsis: true,
+                    render: renderStringCell,
+                    className: colDef.field,
+                    onCell: (record) => {
+                        const column = findNestedValue<CDTTreeTableStringColumn>(record, ['columns', colDef.field]);
+                        return !column || !column.colSpan
+                            ? {}
+                            : {
+                                colSpan: column.colSpan === 'fill' ? props.columnDefinitions?.length : column.colSpan,
+                                style: { zIndex: 1 }
+                            };
+                    }
                 };
-            }) ?? [])
-        ];
-    };
-
-    const columns = useMemo(() => createColumns(props.columnDefinitions ?? []), [props.columnDefinitions]);
+            }
+            if (colDef.type === 'action') {
+                return {
+                    title: colDef.field,
+                    dataIndex: ['columns', colDef.field],
+                    width: 16 * 5,
+                    render: renderActionCell,
+                };
+            }
+            return {
+                title: colDef.field,
+                dataIndex: ['columns', colDef.field, 'label'],
+                width: 200,
+            };
+        }) ?? [];
+    }, [props.columnDefinitions, renderStringCell, renderActionCell]);
 
     // ==== Handlers ====
 
@@ -413,7 +375,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
             if (!selectedRow) {
                 // Selected row was removed from the DOM, focus on the table
                 ref.current?.focus();
-            } else if (selectedRow !== document.activeElement) {
+            } else if (selectedRow !== document.activeElement && !selectedRow.contains(document.activeElement)) {
                 // Selected row is still in the DOM, but not focused
                 selectedRow?.focus();
             }
@@ -448,12 +410,10 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
     }, [autoSelectRowRef.current]);
 
     const onRowClick = useCallback(
-        (record: CDTTreeItem<T>, event: React.MouseEvent<HTMLElement>) => {
+        (record: CDTTreeItem<T>, _event: React.MouseEvent<HTMLElement>) => {
             const isExpanded = expandedRowKeys?.includes(record.id);
             handleExpand(!isExpanded, record);
             selectRow(record);
-
-            event.currentTarget.focus();
         },
         [props.expansion]
     );

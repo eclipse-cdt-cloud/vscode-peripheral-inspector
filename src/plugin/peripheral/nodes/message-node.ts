@@ -51,12 +51,12 @@ export class MessageNode extends PeripheralBaseNode {
         return undefined;
     }
 
-    public performUpdate(): Thenable<boolean> {
-        return Promise.resolve(false);
+    public async performUpdate(): Promise<boolean> {
+        return false;
     }
 
-    public updateData(): Thenable<boolean> {
-        return Promise.resolve(false);
+    public async updateData(): Promise<boolean> {
+        return false;
     }
 
     public getPeripheral(): PeripheralBaseNode | undefined {

@@ -12,7 +12,7 @@ import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralRegisterNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
-import { createMask, extractBits, hexFormat } from '../../../utils';
+import { createMask, extractBits, hexFormat, parseInteger } from '../../../utils';
 import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './base-node';
 import { PeripheralClusterNode } from './peripheral-cluster-node';
 import { PeripheralFieldNode } from './peripheral-field-node';
@@ -30,8 +30,6 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
 
     private maxValue: number;
     private hexLength: number;
-    private hexRegex: RegExp;
-    private binaryRegex: RegExp;
     private currentValue: number;
     private previousValue?: number;
 
@@ -49,8 +47,6 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         this.hexLength = Math.ceil(this.size / 4);
 
         this.maxValue = Math.pow(2, this.size);
-        this.binaryRegex = new RegExp(`^0b[01]{1,${this.size}}$`, 'i');
-        this.hexRegex = new RegExp(`^0x[0-9a-f]{1,${this.hexLength}}$`, 'i');
         this.children = [];
         this.parent.addChild(this);
 
@@ -68,18 +64,16 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return extractBits(this.currentValue, offset, width);
     }
 
-    public updateBits(offset: number, width: number, value: number): Thenable<boolean> {
-        return new Promise((resolve, reject) => {
-            const limit = Math.pow(2, width);
-            if (value > limit) {
-                return reject(`Value entered is invalid. Maximum value for this field is ${limit - 1} (${hexFormat(limit - 1, 0)})`);
-            } else {
-                const mask = createMask(offset, width);
-                const sv = value << offset;
-                const newval = (this.currentValue & ~mask) | sv;
-                this.updateValueInternal(newval).then(resolve, reject);
-            }
-        });
+    public async updateBits(offset: number, width: number, value: number): Promise<boolean> {
+        const limit = Math.pow(2, width);
+        if (value > limit) {
+            throw Error(`Value entered is invalid. Maximum value for this field is ${limit - 1} (${hexFormat(limit - 1, 0)})`);
+        }
+        const mask = createMask(offset, width);
+        const sv = value << offset;
+        const newval = (this.currentValue & ~mask) | sv;
+        await this.updateValueInternal(newval);
+        return true;
     }
 
     public extractBitsFromReset(offset: number, width: number): number {
@@ -101,26 +95,18 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     }
 
     public async performUpdate(value?: string): Promise<boolean> {
-        const val = await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value });
-        if (!val) {
-            return false;
-        }
-
-        let numval: number;
-        if (val.match(this.hexRegex)) {
-            numval = parseInt(val.substr(2), 16);
-        } else if (val.match(this.binaryRegex)) {
-            numval = parseInt(val.substr(2), 2);
-        } else if (val.match(/^[0-9]+/)) {
-            numval = parseInt(val, 10);
+        const val = value ?? await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value });
+        if (typeof val === 'string') {
+            const numval = parseInteger(val);
+            if (numval === undefined) {
+                return false;
+            }
             if (numval >= this.maxValue) {
                 throw new Error(`Value entered (${numval}) is greater than the maximum value of ${this.maxValue}`);
             }
-        } else {
-            throw new Error('Value entered is not a valid format.');
+            return this.updateValueInternal(numval);
         }
-
-        return this.updateValueInternal(numval);
+        return false;
     }
 
     public getAddress(): number {
@@ -139,7 +125,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return success;
     }
 
-    public updateData(): Thenable<boolean> {
+    public async updateData(): Promise<boolean> {
         const bc = this.size / 8;
         const bytes = this.parent.getBytes(this.offset, bc);
         const buffer = Buffer.from(bytes);
@@ -159,9 +145,8 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
                 vscode.debug.activeDebugConsole.appendLine(`Register ${this.name} has invalid size: ${this.size}. Should be 8, 16 or 32.`);
                 break;
         }
-        this.children.forEach((f) => f.updateData());
-
-        return Promise.resolve(true);
+        await Promise.all(this.children.map(child => child.updateData()));
+        return true;
     }
 
     public saveState(path?: string): NodeSetting[] {

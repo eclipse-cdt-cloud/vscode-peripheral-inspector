@@ -10,14 +10,16 @@ import remarkGfm from 'remark-gfm';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';
 import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableStringColumn } from '../types';
 
-export function classNames(...classes: (string | Record<string, boolean>)[]): string {
-    return classes.filter(c => c !== undefined).map(c => {
-        if (typeof c === 'string') {
-            return c;
+export function classNames(...classes: (string | Record<string, boolean> | undefined)[]): string {
+    return classes.map(className => {
+        if (!className) {
+            return '';
         }
-
-        return Object.entries(c).filter(([, value]) => value).map(([key]) => key);
-    }).join(' ');
+        if (typeof className === 'string') {
+            return className;
+        }
+        return Object.entries(className).filter(([, value]) => value).map(([key]) => key);
+    }).filter(className => className.length > 0).join(' ');
 }
 
 export function createHighlightedText(label?: string, highlights?: [number, number][]): React.JSX.Element {
@@ -54,7 +56,7 @@ export function createHighlightedText(label?: string, highlights?: [number, numb
 export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: string): React.JSX.Element {
     const label = <div className="tree-label flex-auto flex align-items-center">
         {child}
-    </div >;
+    </div>;
 
     if (tooltip === undefined) {
         return label;

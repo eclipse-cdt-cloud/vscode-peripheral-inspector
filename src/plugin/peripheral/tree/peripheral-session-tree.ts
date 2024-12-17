@@ -257,16 +257,15 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         }
     }
 
-    public performUpdate(): Thenable<boolean> {
-        throw new Error('Method not implemented.');
+    public async performUpdate(): Promise<boolean> {
+        return false;
     }
 
-    public updateData(): Thenable<boolean> {
+    public async updateData(): Promise<boolean> {
         if (this.loaded) {
-            const promises = this.peripherals.map((p) => p.updateData());
-            Promise.all(promises).then((_) => { this.refresh(); }, (_) => { this.refresh(); });
+            await Promise.all(this.peripherals.map(peripheral => peripheral.updateData())).finally(() => this.refresh());
         }
-        return Promise.resolve(true);
+        return true;
     }
 
     public getPeripheral(): PeripheralBaseNode {

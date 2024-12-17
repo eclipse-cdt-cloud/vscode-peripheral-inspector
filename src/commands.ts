@@ -128,14 +128,13 @@ export class PeripheralCommands {
 
     private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {
         if (node) {
-            const p = node.getPeripheral();
-            if (p) {
-                await p.updateData();
+            const peripheral = node.getPeripheral();
+            if (peripheral) {
+                await peripheral.updateData();
             }
-
             this.dataTracker.fireOnDidChange();
         } else {
-            await this.dataTracker.updateData();
+            return this.dataTracker.updateData();
         }
     }
 
