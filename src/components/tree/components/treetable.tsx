@@ -322,17 +322,20 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
             subtree: true
         });
 
-        const abortScrollOnLeave = () => {
-            const elements = document.getElementsByClassName('ant-table-tbody-virtual-scrollbar-thumb-moving');
-            if (elements.length > 0) {
-                // simulate mouse up to stop scrolling
-                window.dispatchEvent(new MouseEvent('mouseup'));
+        const abortScroll = (event: MouseEvent) => {
+            if (!(event.buttons & 1)) {
+                // left button is no longer pressed...
+                const elements = document.getElementsByClassName('ant-table-tbody-virtual-scrollbar-thumb-moving');
+                if (elements.length > 0) {
+                    // ...but we are still scrolling the thumb (left button was released outside iframe) -> abort scrolling
+                    window.dispatchEvent(new MouseEvent('mouseup'));
+                }
             }
         };
-        document.addEventListener('mouseleave', abortScrollOnLeave);
+        document.addEventListener('mouseenter', abortScroll);
 
         return () => {
-            document.removeEventListener('mouseleave', abortScrollOnLeave);
+            document.removeEventListener('mouseenter', abortScroll);
             observer.disconnect();
         };
     }, [ref, selectedRowKeys]);
