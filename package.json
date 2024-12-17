@@ -251,7 +251,7 @@
           "items": {
             "type": "string"
           },
-          "description": "List of case insensitive peripherals names to ignore"
+          "description": "List of case insensitive peripheral names to ignore"
         }
       }
     }
