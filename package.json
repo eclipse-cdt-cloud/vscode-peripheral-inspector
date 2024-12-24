@@ -238,7 +238,7 @@
         },
         {
           "command": "peripheral-inspector.svd.exportAll",
-          "when": "view == peripheral-inspector.peripheral-tree && debugState == stopped",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
           "group": "navigation"
         }
       ],

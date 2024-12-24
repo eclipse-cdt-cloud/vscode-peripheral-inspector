@@ -174,6 +174,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return PeripheralFieldNodeDTO.create({
             ...super.serialize(),
             ...this.options,
+            name: this.name,
             parentAddress: this.parent.getAddress(),
             previousValue: this.previousValue,
             currentValue: this.getCurrentValue(),

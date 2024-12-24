@@ -90,6 +90,7 @@ export abstract class PeripheralBaseNode extends BaseTreeNode {
         return PeripheralBaseNodeDTO.create({
             ...super.serialize(),
             id: this.getId(),
+            name: this.name || '',
             format: this.format,
             pinned: this.pinned,
             session: this.session?.id,

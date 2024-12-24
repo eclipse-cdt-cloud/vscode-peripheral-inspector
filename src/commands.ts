@@ -13,8 +13,6 @@ import { CTDTreeWebviewContext } from './components/tree/types';
 import { Commands } from './manifest';
 import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
-import { Commands } from './manifest';
-import { CTDTreeWebviewContext } from './components/tree/types';
 import { getFilePath } from './fileUtils';
 
 export class PeripheralCommands {
@@ -55,7 +53,7 @@ export class PeripheralCommands {
     ): Promise<void> {
         const filePath = await getFilePath();
         if (!filePath) {
-            this.dataTracker.refresh();
+            this.dataTracker.fireOnDidChange();
             return;
         }
         this.dataTracker.exportNodeToXml(node, filePath);
@@ -64,7 +62,7 @@ export class PeripheralCommands {
     private async peripheralsExportAll(): Promise<void> {
         const filePath = await getFilePath();
         if (!filePath) {
-            this.dataTracker.refresh();
+            this.dataTracker.fireOnDidChange();
             return;
         }
         this.dataTracker.exportAllNodesToXml(filePath);

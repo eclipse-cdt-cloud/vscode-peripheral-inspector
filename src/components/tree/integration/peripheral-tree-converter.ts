@@ -90,7 +90,7 @@ export class PeripheralNodeConverter implements TreeResourceConverter<Peripheral
             },
             'actions': {
                 type: 'action',
-                commands: [Commands.FORCE_REFRESH_COMMAND]
+                commands: [Commands.FORCE_REFRESH_COMMAND, Commands.EXPORT_NODE_COMMAND]
             }
         };
     }
@@ -127,9 +127,9 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
 
         switch (contextValue) {
             case 'registerRO':
-                return [copyValue, Commands.FORCE_REFRESH_COMMAND];
+                return [copyValue, Commands.FORCE_REFRESH_COMMAND, Commands.EXPORT_NODE_COMMAND];
             case 'registerRW':
-                return [copyValue, Commands.FORCE_REFRESH_COMMAND, updateNode];
+                return [copyValue, Commands.FORCE_REFRESH_COMMAND, updateNode, Commands.EXPORT_NODE_COMMAND];
             case 'registerWO':
                 return [];
             default:

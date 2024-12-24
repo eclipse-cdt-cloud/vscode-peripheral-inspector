@@ -229,6 +229,7 @@ export class PeripheralNode extends PeripheralBaseNode {
             ...super.serialize(),
             ...this.options,
             groupName: this.groupName,
+            name: this.name,
             children: []
         });
     }

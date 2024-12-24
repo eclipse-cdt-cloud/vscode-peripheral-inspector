@@ -42,6 +42,7 @@ export namespace PeripheralBaseTreeNodeDTO {
 
 export const PERIPHERAL_ID_SEP = '-';
 export interface PeripheralBaseNodeDTO extends PeripheralBaseTreeNodeDTO {
+    name: string;
     format: NumberFormat;
     pinned?: boolean;
     session: string | undefined;
@@ -159,6 +160,7 @@ export interface PeripheralRegisterNodeDTO extends ClusterOrRegisterBaseNodeDTO,
     resetValue: number;
     hexLength: number;
     offset: number;
+    size: number;
     address: number;
 }
 export namespace PeripheralRegisterNodeDTO {

@@ -144,6 +144,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         return PeripheralClusterNodeDTO.create({
             ...super.serialize(),
             ...this.options,
+            name: this.name,
             offset: this.offset,
             children: []
         });

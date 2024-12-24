@@ -208,10 +208,12 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return PeripheralRegisterNodeDTO.create({
             ...super.serialize(),
             ...this.options,
+            name: this.name,
             previousValue: this.previousValue,
             currentValue: this.currentValue,
             resetValue: this.resetValue,
             offset: this.offset,
+            size: this.size,
             hexLength: this.hexLength,
             children: [],
             address: this.getAddress()
