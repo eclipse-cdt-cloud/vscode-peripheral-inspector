@@ -1,0 +1,16 @@
+{
+    "Copyright": {
+        "prefix": [
+            "header",
+            "copyright"
+        ],
+        "body": "/********************************************************************************\n * Copyright (C) $CURRENT_YEAR ${YourCompany} and others.\n *\n * This program and the accompanying materials are made available under the\n * terms of the MIT License as outlined in the LICENSE File\n ********************************************************************************/\n\n$0",
+        "description": "Adds the copyright...",
+        "scope": "css,javascript,javascriptreact,typescript,typescriptreact"
+    },
+    "Import VSCode": {
+        "prefix": "codeimport",
+        "body": "import * as vscode from 'vscode';",
+        "scope": "typescript,javascript"
+    }
+}

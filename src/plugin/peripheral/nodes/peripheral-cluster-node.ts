@@ -5,14 +5,15 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import * as vscode from 'vscode';
-import { PeripheralBaseNode, ClusterOrRegisterBaseNode } from './basenode';
-import { PeripheralRegisterNode } from './peripheralregisternode';
-import { PeripheralNode } from './peripheralnode';
-import { NodeSetting, NumberFormat } from '../../common';
-import { AddrRange } from '../../addrranges';
-import { hexFormat } from '../../utils';
-import { AccessType, ClusterOptions, EnumerationMap } from '../../api-types';
+import { AddrRange } from '../../../addrranges';
+import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
+import { NodeSetting } from '../../../common';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralClusterNodeDTO } from '../../../common/peripheral-dto';
+import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './base-node';
+import { PeripheralNode } from './peripheral-node';
+import { PeripheralRegisterNode as PeripheralRegisterNode } from './peripheral-register-node';
+
 
 
 export type PeripheralOrClusterNode = PeripheralNode | PeripheralClusterNode;
@@ -27,7 +28,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
     public readonly resetValue: number;
     public readonly accessType: AccessType;
 
-    constructor(public parent: PeripheralOrClusterNode, options: ClusterOptions) {
+    constructor(public parent: PeripheralOrClusterNode, protected options: ClusterOptions) {
         super(parent);
         this.name = options.name;
         this.description = options.description;
@@ -47,16 +48,6 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
             // PeripheralRegisterNode constructor already adding the reference as child to parent object (PeripheralClusterNode object)
             new PeripheralRegisterNode(this, registerOptions);
         });
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = `${this.name} [${hexFormat(this.offset, 0)}]`;
-
-        const item = new vscode.TreeItem(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
-        item.contextValue = 'cluster';
-        item.tooltip = this.description || undefined;
-
-        return item;
     }
 
     public getChildren(): PeripheralRegisterOrClusterNode[] {
@@ -139,10 +130,6 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         return this.parent.getPeripheral();
     }
 
-    public getCopyValue(): string {
-        throw new Error('Method not implemented.');
-    }
-
     public performUpdate(): Thenable<boolean> {
         throw new Error('Method not implemented.');
     }
@@ -152,4 +139,14 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
             child.resolveDeferedEnums(enumTypeValuesMap);
         }
     }
+
+    serialize(): PeripheralClusterNodeDTO {
+        return PeripheralClusterNodeDTO.create({
+            ...super.serialize(),
+            ...this.options,
+            offset: this.offset,
+            children: []
+        });
+    }
+
 }

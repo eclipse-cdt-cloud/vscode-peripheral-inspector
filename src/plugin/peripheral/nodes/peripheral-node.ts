@@ -6,18 +6,19 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { PeripheralBaseNode } from './basenode';
-import { PeripheralRegisterNode } from './peripheralregisternode';
-import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheralclusternode';
-import { AddrRange, AddressRangesUtils } from '../../addrranges';
-import { NumberFormat, NodeSetting } from '../../common';
-import { MemUtils } from '../../memreadutils';
-import { hexFormat } from '../../utils';
-import { AccessType, EnumerationMap, PeripheralOptions } from '../../api-types';
+import { AddrRange, AddressRangesUtils } from '../../../addrranges';
+import { AccessType, EnumerationMap, PeripheralOptions } from '../../../api-types';
+import { NodeSetting } from '../../../common';
+import { NumberFormat } from '../../../common/format';
+import { PeripheralNodeDTO } from '../../../common/peripheral-dto';
+import { MemUtils } from '../../../memreadutils';
+import { PeripheralBaseNode } from './base-node';
+import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
+import { PeripheralRegisterNode } from './peripheral-register-node';
+
 
 export class PeripheralNode extends PeripheralBaseNode {
-    private children: Array<PeripheralRegisterNode | PeripheralClusterNode>;
-
+    public children: Array<PeripheralRegisterNode | PeripheralClusterNode>;
     public readonly name: string;
     public readonly baseAddress: number;
     public readonly description: string;
@@ -30,7 +31,7 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     private currentValue: number[] = [];
 
-    constructor(public gapThreshold: number, options: PeripheralOptions) {
+    constructor(public gapThreshold: number, protected options: PeripheralOptions) {
         super();
 
         this.name = options.name;
@@ -56,21 +57,6 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     public getPeripheral(): PeripheralBaseNode {
         return this;
-    }
-
-    public getTreeItem(): vscode.TreeItem | Promise<vscode.TreeItem> {
-        const label = `${this.name} @ ${hexFormat(this.baseAddress)}`;
-        const item = new vscode.TreeItem(label, this.expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
-        item.contextValue = this.pinned ? 'peripheral.pinned' : 'peripheral';
-        item.tooltip = this.description || undefined;
-        if (this.pinned) {
-            item.iconPath = new vscode.ThemeIcon('pinned');
-        }
-        return item;
-    }
-
-    public getCopyValue(): string {
-        throw new Error('Method not implemented.');
     }
 
     public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
@@ -115,7 +101,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         try {
             const errors = await this.readMemory();
             for (const error of errors) {
-                const str = `Failed to update peripheral ${this.name}: ${error}`;
+                const str = `Failed to read peripheral ${this.name}: ${error}`;
                 if (vscode.debug.activeDebugConsole) {
                     vscode.debug.activeDebugConsole.appendLine(str);
                 }
@@ -123,7 +109,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         } catch (e) {
             /* This should never happen */
             const msg = (e as Error).message || 'unknown error';
-            const str = `Failed to update peripheral ${this.name}: ${msg}`;
+            const str = `Failed to read peripheral ${this.name}: ${msg}`;
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(str);
             }
@@ -135,7 +121,8 @@ export class PeripheralNode extends PeripheralBaseNode {
             return true;
         } catch (e) {
             /* This should never happen */
-            const str = `Internal error: Failed to update peripheral ${this.name} after memory reads`;
+            const msg = (e as Error).message || 'unknown error';
+            const str = `Internal error: Failed to update peripheral ${this.name} after memory reads: ${msg}`;
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(str);
             }
@@ -214,7 +201,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         return results;
     }
 
-    public findByPath(path: string[]): PeripheralBaseNode | undefined{
+    public findByPath(path: string[]): PeripheralBaseNode | undefined {
         if (path.length === 0) {
             return this;
         } else {
@@ -231,24 +218,18 @@ export class PeripheralNode extends PeripheralBaseNode {
         throw new Error('Method not implemented.');
     }
 
-    public static compare(p1: PeripheralNode, p2: PeripheralNode): number {
-        if ((p1.pinned && p2.pinned) || (!p1.pinned && !p2.pinned)) {
-            // none or both peripherals are pinned, sort by name prioritizing groupname
-            if (p1.groupName !== p2.groupName) {
-                return p1.groupName > p2.groupName ? 1 : -1;
-            } else if (p1.name !== p2.name) {
-                return p1.name > p2.name ? 1 : -1;
-            } else {
-                return 0;
-            }
-        } else {
-            return p1.pinned ? -1 : 1;
-        }
-    }
-
     public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
         for (const child of this.children) {
             child.resolveDeferedEnums(enumTypeValuesMap);
         }
+    }
+
+    serialize(): PeripheralNodeDTO {
+        return PeripheralNodeDTO.create({
+            ...super.serialize(),
+            ...this.options,
+            groupName: this.groupName,
+            children: []
+        });
     }
 }

@@ -1,9 +1,11 @@
 /********************************************************************************
- * Copyright (C) 2023 Marcel Ball, Arm Limited and others.
+ * Copyright (C) 2023-2024 Marcel Ball, Arm Limited and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
+
+import { binaryFormat, hexFormat } from '../utils';
 
 export enum NumberFormat {
     Auto = 0,
@@ -12,11 +14,15 @@ export enum NumberFormat {
     Binary
 }
 
-export interface NodeSetting {
-    node: string;
-    expanded?: boolean;
-    format?: NumberFormat;
-    pinned?: boolean;
+export function formatValue(value: number, hexLength: number, format: NumberFormat): string {
+    switch (format) {
+        case NumberFormat.Decimal:
+            return value.toString();
+        case NumberFormat.Binary:
+            return binaryFormat(value, hexLength * 4);
+        default:
+            return hexFormat(value, hexLength, true);
+    }
 }
 
 export function toStringDecHexOctBin(val: number/* should be an integer*/): string {
@@ -54,5 +60,6 @@ export function toStringDecHexOctBin(val: number/* should be an integer*/): stri
         str = str.slice(0, -8);
     }
     ret += `\nbin: ${tmp}`;
-    return ret ;
+    return ret;
 }
+

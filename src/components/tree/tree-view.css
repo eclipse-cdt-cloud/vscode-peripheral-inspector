@@ -1,0 +1,34 @@
+/********************************************************************************
+ * Copyright (C) 2024 Arm Limited and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
+
+body {
+  padding: 0;
+}
+
+.markdown {
+  line-break: anywhere;
+}
+
+.markdown hr {
+  border: 0;
+  box-sizing: border-box;
+  height: 1px;
+  margin: 4px -8px 0;
+  border-top: 1px solid rgba(69, 69, 69, 0.5);
+}
+
+.markdown .code,
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6,
+.markdown p,
+.markdown ul {
+  margin: 8px 0;
+}

@@ -7,15 +7,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PeripheralRegisterNode } from './views/nodes/peripheralregisternode';
-import { PeripheralClusterNode, PeripheralOrClusterNode } from './views/nodes/peripheralclusternode';
-import { PeripheralFieldNode } from './views/nodes/peripheralfieldnode';
-import { PeripheralNode } from './views/nodes/peripheralnode';
-import { parseInteger, parseDimIndex } from './utils';
 import { parseStringPromise } from 'xml2js';
 import { AccessType, EnumerationMap } from './api-types';
+import { PeripheralNodeSort } from './common';
 import { EnumeratedValue } from './enumerated-value';
-
+import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
+import { parseDimIndex, parseInteger } from './utils';
+import * as manifest from './manifest';
 
 const accessTypeFromString = (type: string): AccessType => {
     switch (type) {
@@ -57,10 +55,10 @@ export class SVDParser {
     private gapThreshold = 16;
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    constructor() {}
+    constructor() { }
 
     public async parseSVD(
-        data: string, gapThreshold: number): Promise<PeripheralNode[]> {
+        data: string, gapThreshold: number, ignorePeripherals: string[]): Promise<PeripheralNode[]> {
         const svdData: SvdData = await parseStringPromise(data);
         this.gapThreshold = gapThreshold;
         this.enumTypeValuesMap = {};
@@ -85,7 +83,9 @@ export class SVDParser {
 
         svdData.device.peripherals[0].peripheral.forEach((element) => {
             const name = element.name[0];
-            peripheralMap[name] = element;
+            if (!manifest.IgnorePeripherals.includes(ignorePeripherals, name)) {
+                peripheralMap[name] = element;
+            }
         });
 
         for (const key in peripheralMap) {
@@ -101,7 +101,7 @@ export class SVDParser {
             peripherials.push(this.parsePeripheral(peripheralMap[key], defaultOptions));
         }
 
-        peripherials.sort(PeripheralNode.compare);
+        peripherials.sort(PeripheralNodeSort.compare);
 
         for (const p of peripherials) {
             p.resolveDeferedEnums(this.enumTypeValuesMap); // This can throw an exception
@@ -366,7 +366,7 @@ export class SVDParser {
 
         if (!clusterInfo) { return []; }
 
-        clusterInfo.forEach((c:any) => {
+        clusterInfo.forEach((c: any) => {
             const baseOptions: any = {};
             if (c.access) {
                 baseOptions.accessType = accessTypeFromString(c.access[0]);

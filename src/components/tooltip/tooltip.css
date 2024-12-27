@@ -1,0 +1,28 @@
+/********************************************************************************
+ * Copyright (C) 2024 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
+
+.tooltip {
+  background: var(--vscode-editorHoverWidget-background);
+  border: 1px solid var(--vscode-editorHoverWidget-border);
+  border-radius: 3px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  max-width: 700px;
+  max-height: 375px;
+  padding: 0;
+}
+
+.tooltip .tooltip-content {
+  background: var(--vscode-editorHoverWidget-background);
+  color: var(--vscode-editorHoverWidget-foreground);
+  font-size: 12px;
+  padding: 2px 8px;
+  max-width: var(--vscode-hover-maxWidth, 500px);
+  word-wrap: break-word;
+  white-space: unset;
+  display: block;
+  flex-direction: column;
+}

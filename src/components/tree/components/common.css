@@ -1,0 +1,48 @@
+/********************************************************************************
+ * Copyright (C) 2024 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ ********************************************************************************/
+
+.tree-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
+.tree-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
+.label-highlight {
+  background-color: var(--vscode-list-filterMatchBackground);
+  color: unset;
+  outline: 1px dotted var(--vscode-list-filterMatchBorder);
+  outline-offset: -1px;
+}
+
+.tree-toggler-container {
+  width: 1rem;
+  margin-right: 6px;
+  cursor: pointer;
+  padding-top: 3px;
+}
+
+.tree-actions {
+  display: none;
+  flex: 1;
+  justify-content: end;
+}
+
+.tree-actions .codicon {
+  padding: 2px;
+  border-radius: 5px;
+  font-size: var(--vscode-font-size);
+}
+
+.tree-actions .codicon:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}

@@ -38,23 +38,42 @@
     "serve": "serve --cors -p 9000"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.26.17",
+    "@vscode/codicons": "0.0.20",
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "antd": "^5.22.1",
     "jszip": "^3.10.1",
     "node-fetch": "^2.6.7",
+    "throttle-debounce": "5.0.2",
+    "primeflex": "^3.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "vscode-messenger": "^0.4.5",
+    "vscode-messenger-common": "^0.4.5",
+    "vscode-messenger-webview": "^0.4.5",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
     "@types/node": "^12.20.0",
+    "@types/throttle-debounce": "5.0.2",
+    "@types/react": "^18.0.26",
+    "@types/react-dom": "^18.0.9",
     "@types/vscode": "^1.63.2",
+    "@types/vscode-webview": "^1.57.0",
     "@types/xml2js": "^0.4.9",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
     "@vscode/debugprotocol": "^1.59.0",
     "@vscode/vsce": "^2.17.0",
     "buffer": "^6.0.3",
+    "css-loader": "^6.9.0",
     "eslint": "^8.33.0",
     "path-browserify": "1.0.1",
     "serve": "^14.0.1",
     "stream-browserify": "^3.0.0",
+    "style-loader": "^3.3.4",
     "timers-browserify": "^2.0.12",
     "ts-loader": "^9.2.6",
     "typescript": "^4.9.4",
@@ -65,7 +84,8 @@
     "views": {
       "debug": [
         {
-          "id": "peripheral-inspector.svd",
+          "type": "webview",
+          "id": "peripheral-inspector.peripheral-treetable",
           "name": "Peripherals",
           "when": "peripheral-inspector.svd.hasData"
         }
@@ -106,6 +126,11 @@
         "command": "peripheral-inspector.svd.refreshAll",
         "title": "Refresh All",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "peripheral-inspector.svd.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
       }
     ],
     "menus": {
@@ -168,79 +193,19 @@
       "view/title": [
         {
           "command": "peripheral-inspector.svd.refreshAll",
-          "when": "view == peripheral-inspector.svd && debugState == stopped",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
+          "group": "navigation"
+        },
+        {
+          "command": "peripheral-inspector.svd.collapseAll",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
           "group": "navigation"
         }
       ],
-      "view/item/context": [
-        {
-          "command": "peripheral-inspector.svd.updateNode",
-          "when": "view == peripheral-inspector.svd && viewItem == field",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.updateNode",
-          "when": "view == peripheral-inspector.svd && viewItem == fieldWO",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.updateNode",
-          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.copyValue",
-          "when": "view == peripheral-inspector.svd && viewItem == field",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.copyValue",
-          "when": "view == peripheral-inspector.svd && viewItem == fieldRO",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.copyValue",
-          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.copyValue",
-          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.forceRefresh",
-          "when": "view == peripheral-inspector.svd && viewItem == registerRW",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.forceRefresh",
-          "when": "view == peripheral-inspector.svd && viewItem == register",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.forceRefresh",
-          "when": "view == peripheral-inspector.svd && viewItem == registerRO",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.forceRefresh",
-          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.pin",
-          "when": "view == peripheral-inspector.svd && viewItem == peripheral",
-          "group": "inline"
-        },
-        {
-          "command": "peripheral-inspector.svd.unpin",
-          "when": "view == peripheral-inspector.svd && viewItem == peripheral.pinned",
-          "group": "inline"
-        },
+      "webview/context": [
         {
           "command": "peripheral-inspector.svd.setFormat",
-          "when": "view == peripheral-inspector.svd",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item",
           "group": "navigation"
         }
       ]
@@ -280,6 +245,13 @@
           "type": "boolean",
           "default": true,
           "description": "Save layout of peripheral view between sessions"
+        },
+        "peripheral-inspector.ignorePeripherals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of case insensitive peripheral names to ignore"
         }
       }
     },
@@ -314,6 +286,7 @@
     "onStartupFinished"
   ],
   "extensionKind": [
+    "workspace",
     "ui"
   ]
 }
