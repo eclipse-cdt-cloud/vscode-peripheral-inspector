@@ -256,6 +256,11 @@ export class PeripheralClusterNodeConverter {
 
     // ==== Rendering ====
 
+    private getCommands(): CDTTreeTableActionColumnCommand[] {
+
+        return [Commands.EXPORT_NODE_COMMAND];
+    }
+
     private getColumns(peripheral: PeripheralClusterNodeDTO, _context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const labelValue = hexFormat(peripheral.offset, 0);
 
@@ -269,6 +274,10 @@ export class PeripheralClusterNodeConverter {
                 type: 'string',
                 label: labelValue,
                 tooltip: labelValue
+            },
+            'actions': {
+                type: 'action',
+                commands: this.getCommands()
             }
         };
     }

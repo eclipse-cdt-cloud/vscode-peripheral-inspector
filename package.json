@@ -159,6 +159,10 @@
           "when": "false"
         },
         {
+          "command": "peripheral-inspector.svd.exportAll",
+          "when": "false"
+        },
+        {
           "command": "peripheral-inspector.svd.forceRefresh",
           "when": "false"
         },
@@ -214,7 +218,7 @@
         },
         {
           "command": "peripheral-inspector.svd.exportNode",
-          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/"
+          "when": "view == peripheral-inspector.svd"
         },
         {
           "command": "peripheral-inspector.svd.pin",
@@ -280,10 +284,6 @@
         },
         {
           "command": "peripheral-inspector.svd.exportNode",
-          "when": "view == peripheral-inspector.svd && viewItem == cluster"
-        },
-        {
-          "command": "peripheral-inspector.svd.exportNode",
           "when": "view == peripheral-inspector.svd && viewItem == registerRW",
           "group": "inline"
         },
@@ -294,7 +294,7 @@
         },
         {
           "command": "peripheral-inspector.svd.exportNode",
-          "when": "view == peripheral-inspector.svd && viewItem =~ /peripheral.*/",
+          "when": "view == peripheral-inspector.svd",
           "group": "inline"
         },
         {
