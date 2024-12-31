@@ -13,6 +13,7 @@ import { CTDTreeWebviewContext } from './components/tree/types';
 import { Commands } from './manifest';
 import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
+import { getFilePath } from './fileUtils';
 
 export class PeripheralCommands {
     public constructor(
@@ -22,6 +23,7 @@ export class PeripheralCommands {
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         context.subscriptions.push(
             vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node, value) => this.peripheralsUpdateNode(node, value)),
+            vscode.commands.registerCommand(Commands.EXPORT_NODE_COMMAND.commandId, node => this.peripheralsExportNode(node)),
             vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, (node, value) => this.peripheralsCopyValue(node, value)),
             vscode.commands.registerCommand(Commands.SET_FORMAT_COMMAND.commandId, (node) => this.peripheralsSetFormat(node)),
             vscode.commands.registerCommand(Commands.FORCE_REFRESH_COMMAND.commandId, (node) => this.peripheralsForceRefresh(node)),
@@ -29,6 +31,7 @@ export class PeripheralCommands {
             vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
             vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND.commandId, () => this.peripheralsForceRefresh()),
             vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND.commandId, () => this.collapseAll()),
+            vscode.commands.registerCommand(Commands.EXPORT_ALL_COMMAND.commandId, () => this.peripheralsExportAll()),
         );
     }
 
@@ -43,6 +46,26 @@ export class PeripheralCommands {
         } catch (error) {
             vscode.debug.activeDebugConsole.appendLine(`Unable to update value: ${(error as Error).message}`);
         }
+    }
+
+    private async peripheralsExportNode(
+        node: PeripheralBaseNode,
+    ): Promise<void> {
+        const filePath = await getFilePath();
+        if (!filePath) {
+            this.dataTracker.fireOnDidChange();
+            return;
+        }
+        this.dataTracker.exportNodeToXml(node, filePath);
+    }
+
+    private async peripheralsExportAll(): Promise<void> {
+        const filePath = await getFilePath();
+        if (!filePath) {
+            this.dataTracker.fireOnDidChange();
+            return;
+        }
+        this.dataTracker.exportAllNodesToXml(filePath);
     }
 
     private peripheralsCopyValue(_node: PeripheralBaseNode, value?: string): void {
