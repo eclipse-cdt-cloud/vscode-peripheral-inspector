@@ -432,7 +432,7 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
 
     // ==== Return ====
 
-    return <div onKeyDown={onKeyDown}>
+    return <div id='tree-table-root' onKeyDown={onKeyDown}>
         <SearchOverlay key={'search'} ref={globalSearchRef} onHide={onSearchHide} onShow={onSearchShow} onChange={onSearchChange} />
         <ConfigProvider
             theme={{

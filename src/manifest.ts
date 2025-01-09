@@ -59,6 +59,11 @@ export namespace Commands {
         icon: 'pinned',
         title: 'Unpin'
     } as const;
+    export const FIND_COMMAND: CommandDefinition = {
+        commandId: `${PACKAGE_NAME}.svd.find`,
+        icon: 'search',
+        title: 'Find'
+    } as const;
     export const REFRESH_ALL_COMMAND: CommandDefinition = {
         commandId: `${PACKAGE_NAME}.svd.refreshAll`,
         icon: 'refresh',

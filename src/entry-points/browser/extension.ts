@@ -12,7 +12,8 @@ import { DebugTracker } from '../../debug-tracker';
 import { PeripheralInspectorAPI } from '../../peripheral-inspector-api';
 import { PeripheralDataTracker } from '../../plugin/peripheral/tree/peripheral-data-tracker';
 import { SvdResolver } from '../../svd-resolver';
-import { enableTree } from '../tree';
+import { PeripheralTreeDataProvider } from '../../plugin/peripheral/tree/peripheral-tree-data-provider';
+import { PeripheralsTreeTableWebView } from '../../plugin/peripheral/webview/peripheral-tree-webview-main';
 export * as api from '../../api-types';
 
 export const activate = async (context: vscode.ExtensionContext): Promise<IPeripheralInspectorAPI> => {
@@ -21,12 +22,14 @@ export const activate = async (context: vscode.ExtensionContext): Promise<IPerip
     const resolver = new SvdResolver(api);
 
     const peripheralDataTracker = new PeripheralDataTracker(tracker, resolver, api, context);
-    const commands = new PeripheralCommands(peripheralDataTracker);
+    const dataProvider = new PeripheralTreeDataProvider(peripheralDataTracker, context);
+    const webView = new PeripheralsTreeTableWebView(dataProvider, context);
+    const commands = new PeripheralCommands(peripheralDataTracker, webView);
 
     await tracker.activate(context);
     await commands.activate(context);
-
-    await enableTree(context, peripheralDataTracker);
+    await dataProvider.activate(webView);
+    await webView.activate(context);
 
     return api;
 };

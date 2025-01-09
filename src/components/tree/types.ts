@@ -168,4 +168,5 @@ export namespace CTDTreeMessengerType {
     export const executeCommand: NotificationType<TreeNotification<CDTTreeExecuteCommand>> = { method: 'executeCommand' };
     export const toggleNode: NotificationType<TreeNotification<string>> = { method: 'toggleNode' };
     export const clickNode: NotificationType<TreeNotification<string>> = { method: 'clickNode' };
+    export const openSearch: NotificationType<void> = { method: 'openSearch' };
 }

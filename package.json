@@ -129,6 +129,11 @@
         "icon": "$(symbol-unit)"
       },
       {
+        "command": "peripheral-inspector.svd.find",
+        "title": "Find",
+        "icon": "$(search)"
+      },
+      {
         "command": "peripheral-inspector.svd.refreshAll",
         "title": "Refresh All",
         "icon": "$(refresh)"
@@ -176,6 +181,10 @@
         },
         {
           "command": "peripheral-inspector.svd.setFormat",
+          "when": "false"
+        },
+        {
+          "command": "peripheral-inspector.svd.find",
           "when": "false"
         },
         {
@@ -230,6 +239,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "peripheral-inspector.svd.find",
+          "when": "view =~ /peripheral-inspector.peripheral-*/",
+          "group": "navigation"
+        },
         {
           "command": "peripheral-inspector.svd.refreshAll",
           "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",

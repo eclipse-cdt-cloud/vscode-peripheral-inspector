@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { Messenger } from 'vscode-messenger';
-import { WebviewIdMessageParticipant } from 'vscode-messenger-common';
+import { NotificationType, WebviewIdMessageParticipant } from 'vscode-messenger-common';
 import { TreeNotification } from '../../../../common/notification';
 import { CDTTreeExecuteCommand, CTDTreeMessengerType } from '../../types';
 import { CDTTreeDataProvider } from '../tree-data-provider';
@@ -131,5 +131,11 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
             columnFields,
             items
         });
+    }
+
+    sendNotification<P>(type: NotificationType<P>, params?: P): void {
+        if (this.participant) {
+            this.messenger.sendNotification(type, this.participant, params);
+        }
     }
 }
