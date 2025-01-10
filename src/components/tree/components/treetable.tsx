@@ -12,7 +12,7 @@ import { ConfigProvider, Table, TableColumnsType } from 'antd';
 import { ColumnType, ExpandableConfig } from 'antd/es/table/interface';
 import { default as React, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { CommandDefinition } from '../../../common';
-import { getNestedValue } from '../../../common/utils';
+import { findNestedValue } from '../../../common/utils';
 import { CDTTreeItem, CDTTreeTableActionColumn, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
 import { classNames, createHighlightedText, createLabelWithTooltip, filterTree, getAncestors, traverseTree } from './utils';
 import { debounce } from 'throttle-debounce';
@@ -33,9 +33,9 @@ export type ComponentTreeTableProps<T = unknown> = {
      */
     dataSource?: CDTTreeItem<T>[];
     /**
-     * Function to sort the root elements of the data source.
-     */
-    dataSourceComparer?: (a: CDTTreeItem<T>, b: CDTTreeItem<T>) => number;
+    * Function to sort the data source.
+    */
+    dataSourceSorter?: (dataSource: CDTTreeItem<T>[]) => CDTTreeItem<T>[];
     /**
      * Configuration for the expansion of the tree table.
      */
@@ -123,11 +123,11 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
         if (globalSearchText) {
             data = filterTree(data, globalSearchText);
         }
-        if (props.dataSourceComparer) {
-            data = [...data].sort(props.dataSourceComparer);
+        if (props.dataSourceSorter) {
+            data = props.dataSourceSorter([...data]);
         }
         return data;
-    }, [props.dataSource, props.dataSourceComparer, globalSearchText]);
+    }, [props.dataSource, props.dataSourceSorter, globalSearchText]);
 
     // ==== Search ====
 
@@ -268,12 +268,12 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
     // ==== Renderers ====
 
     const renderStringColumn = useCallback(
-        (label: string, item: CDTTreeItem<unknown>, columnDef: CDTTreeTableStringColumn) => {
-            const icon = columnDef.icon ? <i className={classNames('cell-icon', columnDef.icon)}></i> : null;
-            let content = createHighlightedText(label, columnDef.highlight);
+        (label: string, item: CDTTreeItem<unknown>, column: CDTTreeTableStringColumn) => {
+            const icon = column.icon ? <i className={classNames('cell-icon', column.icon)}></i> : null;
+            let content = createHighlightedText(label, column.highlight);
 
-            if (columnDef.tooltip) {
-                content = createLabelWithTooltip(<span>{content}</span>, columnDef.tooltip);
+            if (column.tooltip) {
+                content = createLabelWithTooltip(<span>{content}</span>, column.tooltip);
             }
 
             return (
@@ -330,22 +330,49 @@ export const AntDComponentTreeTable = <T,>(props: ComponentTreeTableProps<T>) =>
     // ==== Columns ====
 
     const createColumns = (columnDefinitions: CDTTreeTableColumnDefinition[]): TableColumnsType<CDTTreeItem> => {
-        function stringColumn(def: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem> {
+        function stringColumn(columnDefinition: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem> {
             return {
-                title: def.field,
-                dataIndex: ['columns', def.field, 'label'],
+                title: columnDefinition.field,
+                dataIndex: ['columns', columnDefinition.field, 'label'],
                 width: 0,
                 ellipsis: true,
-                render: (label, record) => renderStringColumn(label, record, getNestedValue<CDTTreeTableStringColumn>(record, ['columns', def.field]))
+                render: (label, record) => {
+                    const column = findNestedValue<CDTTreeTableStringColumn>(record, ['columns', columnDefinition.field]);
+
+                    if (!column) {
+                        return undefined;
+                    }
+
+                    return renderStringColumn(label, record, column);
+                },
+                onCell: (record) => {
+                    const column = findNestedValue<CDTTreeTableStringColumn>(record, ['columns', columnDefinition.field]);
+
+                    if (!column) {
+                        return {};
+                    }
+
+                    const colSpan = column.colSpan;
+                    if (colSpan) {
+                        return {
+                            colSpan: colSpan === 'fill' ? columnDefinitions.length : colSpan,
+                            style: {
+                                zIndex: 1
+                            }
+                        };
+                    }
+
+                    return {};
+                }
             };
         }
 
-        function actionColumn(def: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem> {
+        function actionColumn(columnDefinition: CDTTreeTableColumnDefinition): ColumnType<CDTTreeItem> {
             return {
-                title: def.field,
-                dataIndex: ['columns', def.field],
-                width: 64,
-                render: renderActionColumn
+                title: columnDefinition.field,
+                dataIndex: ['columns', columnDefinition.field],
+                width: 16 * 5,
+                render: renderActionColumn,
             };
         }
 

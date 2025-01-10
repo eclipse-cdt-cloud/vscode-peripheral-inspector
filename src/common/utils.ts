@@ -6,21 +6,15 @@
  ********************************************************************************/
 
 /**
- * Get a nested value from an object using a dot-separated path.
+ * Finds a nested value from an object using a dot-separated path.
  */
-export function getNestedValue<T>(
+export function findNestedValue<T>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     obj: Record<string, any>,
     path: string | string[],
-): T {
+): T | undefined {
     const keys = Array.isArray(path) ? path : path.split('.');
-    const value = keys.reduce((acc, key) => acc?.[key], obj) as T;
-
-    if (value === undefined) {
-        throw new Error(`Value not found at path: ${path}`);
-    }
-
-    return value;
+    return keys.reduce((acc, key) => acc?.[key], obj) as T | undefined;
 }
 
 /**

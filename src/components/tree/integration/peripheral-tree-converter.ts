@@ -8,16 +8,17 @@
 import { AccessType } from '../../../api-types';
 import { CommandDefinition } from '../../../common';
 import { formatValue, NumberFormat } from '../../../common/format';
-import { PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeContextValue, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralTreeNodeDTOs } from '../../../common/peripheral-dto';
+import { PeripheralClusterNodeDTO, PeripheralFieldNodeContextValue, PeripheralFieldNodeDTO, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs } from '../../../common/peripheral-dto';
 import { Commands } from '../../../manifest';
 import { binaryFormat, extractBits, hexFormat } from '../../../utils';
 import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn } from '../types';
-import { TreeResourceConverter, TreeConverterContext } from './tree-converter';
+import { TreeConverterContext, TreeResourceConverter } from './tree-converter';
 
 
 export class PeripheralTreeConverter implements TreeResourceConverter<PeripheralTreeNodeDTOs> {
 
     protected converters: TreeResourceConverter<PeripheralTreeNodeDTOs>[] = [
+        new PeripheralSessionNodeConverter(),
         new PeripheralNodeConverter(),
         new PeripheralClusterNodeConverter(),
         new PeripheralFieldNodeConverter(),
@@ -51,6 +52,36 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
 
         throw new Error('No converter found for peripheral: ' + resource.__type);
 
+    }
+}
+
+export class PeripheralSessionNodeConverter implements TreeResourceConverter<PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs> {
+    canHandle(resource: PeripheralTreeNodeDTOs): boolean {
+        return PeripheralSessionNodeDTO.is(resource);
+    }
+
+    convert(resource: PeripheralSessionNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralSessionNodeDTO> {
+        return CDTTreeItem.create({
+            id: resource.id,
+            key: resource.id,
+            parent: context.parent,
+            resource,
+            expanded: context.expandedKeys.includes(resource.id),
+            columns: this.getColumns(resource, context),
+        });
+    }
+
+    // ==== Rendering ====
+
+    private getColumns(resource: PeripheralSessionNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+        return {
+            'title': {
+                type: 'string',
+                icon: context.pinnedKeys.includes(resource.id) ? 'codicon codicon-pinned' : undefined,
+                label: resource.name,
+                colSpan: 'fill'
+            },
+        };
     }
 }
 

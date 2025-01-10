@@ -39,7 +39,7 @@ export class PeripheralDataTracker {
 
     protected sessionPeripherals = new Map<string, PeripheralTreeForSession>();
     protected selectedNode?: PeripheralBaseNode;
-    protected oldState = new Map<string, vscode.TreeItemCollapsibleState>();
+    protected oldState = new Map<string, boolean>();
 
     getSessionPeripherals(): Map<string, PeripheralTreeForSession> {
         return this.sessionPeripherals;
@@ -193,8 +193,9 @@ export class PeripheralDataTracker {
         emit = true,
         context?: TreeNotificationContext): void {
         node.expanded = true;
-        const isReg = node instanceof PeripheralRegisterNode;
-        if (!isReg) {
+
+
+        if (!(node instanceof PeripheralTreeForSession) && !(node instanceof PeripheralRegisterNode)) {
             // If we are at a register level, parent already expanded, no update/refresh needed
             const p = node.getPeripheral();
             if (p) {
@@ -239,7 +240,7 @@ export class PeripheralDataTracker {
     public findNodeByPath(path: string[]): PeripheralBaseNode | undefined {
         const trees = this.sessionPeripherals.values();
         for (const tree of trees) {
-            const node = tree.findNodeByPath(path.join('.'));
+            const node = tree.findByPath(path);
             if (node) {
                 return node;
             }
@@ -282,11 +283,11 @@ export class PeripheralDataTracker {
             return;
         }
 
-        let state = this.oldState.get(session.name);
-        if (state === undefined) {
-            state = this.sessionPeripherals.size === 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
+        let expanded = this.oldState.get(session.name);
+        if (expanded === undefined) {
+            expanded = this.sessionPeripherals.size === 0 ? true : false;
         }
-        const peripheralTree = new PeripheralTreeForSession(session, this.api, state, () => {
+        const peripheralTree = new PeripheralTreeForSession(session, this.api, expanded, () => {
             this.fireOnDidChange();
         });
 
@@ -314,8 +315,8 @@ export class PeripheralDataTracker {
         }
         const regs = this.sessionPeripherals.get(session.id);
 
-        if (regs && regs.myTreeItem.collapsibleState) {
-            this.oldState.set(session.name, regs.myTreeItem.collapsibleState);
+        if (regs) {
+            this.oldState.set(session.name, regs.expanded);
             this.sessionPeripherals.delete(session.id);
             regs.sessionTerminated(this.context);
             this.fireOnDidChange();

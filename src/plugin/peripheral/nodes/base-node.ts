@@ -46,8 +46,8 @@ export abstract class BaseTreeNode {
 export abstract class PeripheralBaseNode extends BaseTreeNode {
     public format: NumberFormat;
     public pinned: boolean;
-    public readonly name: string | undefined;
-    public session: DebugSession | undefined;
+    public name?: string;
+    public session?: DebugSession;
 
     constructor(public readonly parent?: PeripheralBaseNode) {
         super(parent);
