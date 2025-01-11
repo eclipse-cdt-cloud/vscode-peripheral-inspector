@@ -240,24 +240,24 @@
       ],
       "view/title": [
         {
+          "command": "peripheral-inspector.svd.collapseAll",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
+          "group": "navigation@1"
+        },
+        {
           "command": "peripheral-inspector.svd.find",
           "when": "view =~ /peripheral-inspector.peripheral-*/",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "peripheral-inspector.svd.refreshAll",
           "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
-          "group": "navigation"
-        },
-        {
-          "command": "peripheral-inspector.svd.collapseAll",
-          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "peripheral-inspector.svd.exportAll",
           "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
-          "group": "navigation"
+          "group": "navigation@4"
         }
       ],
       "webview/context": [
