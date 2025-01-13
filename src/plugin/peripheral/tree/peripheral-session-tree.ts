@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
+import { IPeripheralsProvider, PeripheralOptions, PeripheralsConfiguration } from '../../../api-types';
 import { NodeSetting, PERIPHERAL_ID_SEP, PeripheralNodeSort, PeripheralSessionNodeDTO } from '../../../common';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
@@ -25,30 +26,44 @@ const pathToUri = (path: string): vscode.Uri => {
 interface CachedSVDFile {
     svdUri: vscode.Uri;
     mtime: number;
-    ignoredPeripherals: string[];
-    peripherals: PeripheralNode[]
+    peripherals: PeripheralNode[],
+    configuration: PeripheralsConfiguration;
 }
 
 export class PeripheralTreeForSession extends PeripheralBaseNode {
     public readonly name: string;
 
     private static svdCache: { [path: string]: CachedSVDFile } = {};
-    private peripherials: PeripheralNode[] = [];
+
+    private peripherals: PeripheralNode[] = [];
+    private peripheralsConfiguration?: PeripheralsConfiguration;
+
     private loaded = false;
     private errMessage = 'No SVD file loaded';
+    private svdUri: vscode.Uri | undefined;
 
     constructor(
         public session: vscode.DebugSession,
         protected api: PeripheralInspectorAPI,
         expanded: boolean,
-        private fireCb: () => void) {
+        private fireRefresh: () => void) {
         super();
         this.name = this.session.name;
         this.expanded = expanded;
+
+        this.init();
     }
 
     public getId(): string {
         return this.session.id;
+    }
+
+    private init(): void {
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
+                this.reloadIgnoredPeripherals();
+            }
+        });
     }
 
     private static getStatePropName(session: vscode.DebugSession): string {
@@ -77,14 +92,14 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
     public saveState(): NodeSetting[] {
         const state: NodeSetting[] = [];
-        this.peripherials.forEach((p) => {
+        this.peripherals.forEach((p) => {
             state.push(...p.saveState());
         });
 
         return state;
     }
 
-    private static async addToCache(uri: vscode.Uri, peripherals: PeripheralNode[], ignoredPeripherals: string[]) {
+    private static async addToCache(uri: vscode.Uri, peripherals: PeripheralNode[], configuration: PeripheralsConfiguration) {
         try {
             const stat = await vscode.workspace.fs.stat(uri);
             if (stat && stat.mtime) {
@@ -92,7 +107,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                     svdUri: uri,
                     mtime: stat.mtime,
                     peripherals,
-                    ignoredPeripherals
+                    configuration
                 };
                 PeripheralTreeForSession.svdCache[uri.toString()] = tmp;
             }
@@ -120,9 +135,10 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
     private async createPeripherals(svdPath: string, gapThreshold: number): Promise<void> {
         this.errMessage = `Loading ${svdPath} ...`;
-        let fileUri: vscode.Uri | undefined = undefined;
-        let peripherials: PeripheralNode[] | undefined;
-        const ignorePeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
+        let parsedConfiguration: PeripheralsConfiguration | undefined;
+        let parsedPeripherals: PeripheralNode[] | undefined;
+
+        const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
 
         try {
             let contents: ArrayBuffer | undefined;
@@ -130,16 +146,17 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             if (svdPath.startsWith('http')) {
                 contents = await readFromUrl(svdPath);
             } else {
-                fileUri = pathToUri(svdPath);
-                const cached = await PeripheralTreeForSession.getFromCache(fileUri);
-                if (cached && manifest.IgnorePeripherals.isEqual(cached.ignoredPeripherals, ignorePeripherals)) {
-                    this.peripherials = cached.peripherals;
+                this.svdUri = pathToUri(svdPath);
+                const cached = await PeripheralTreeForSession.getFromCache(this.svdUri);
+                if (cached && manifest.IgnorePeripherals.isEqual(cached.configuration.ignoredPeripherals, ignoredPeripherals)) {
+                    this.peripherals = cached.peripherals;
+                    this.peripheralsConfiguration = cached.configuration;
                     this.loaded = true;
                     this.errMessage = '';
                     await this.setSession(this.session);
                     return;
                 }
-                contents = await vscode.workspace.fs.readFile(fileUri);
+                contents = await vscode.workspace.fs.readFile(this.svdUri);
             }
 
             if (!contents) {
@@ -151,18 +168,18 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             const provider = this.api.getPeripheralsProvider(svdPath);
 
             if (provider) {
-                const enumTypeValuesMap = {};
-                const poptions = (await provider.getPeripherals(data, { gapThreshold })).filter(p => !manifest.IgnorePeripherals.includes(ignorePeripherals, p.name));
-                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options, this));
-                peripherials.sort(PeripheralNodeSort.compare);
-
-                for (const p of peripherials) {
-                    p.resolveDeferedEnums(enumTypeValuesMap); // This can throw an exception
-                    p.collectRanges();
-                }
+                parsedConfiguration = await this.parseWithProvider(provider, data, gapThreshold, ignoredPeripherals);
             } else {
-                const parser = new SVDParser();
-                peripherials = await parser.parseSVD(this, data, gapThreshold, ignorePeripherals);
+                parsedConfiguration = await this.parseWithSVDParser(data, gapThreshold, ignoredPeripherals);
+            }
+
+            const poptions = Array.from(Object.values(parsedConfiguration.peripheralOptions)).filter(p => !manifest.IgnorePeripherals.includes(ignoredPeripherals, p.name));
+            parsedPeripherals = poptions.map((options) => new PeripheralNode(gapThreshold, options, this));
+            parsedPeripherals.sort(PeripheralNodeSort.compare);
+
+            for (const p of parsedPeripherals) {
+                p.resolveDeferedEnums(parsedConfiguration.enumTypeValues); // This can throw an exception
+                p.collectRanges();
             }
 
         } catch (e: unknown) {
@@ -170,24 +187,84 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             vscode.debug.activeDebugConsole.appendLine(this.errMessage);
         }
 
-        if (!peripherials || peripherials.length === 0) {
+        if (!parsedConfiguration || !parsedPeripherals || parsedPeripherals.length === 0) {
             return;
         }
 
         try {
-            this.peripherials = peripherials;
+            this.peripherals = parsedPeripherals;
+            this.peripheralsConfiguration = parsedConfiguration;
+
             this.loaded = true;
             await this.setSession(this.session);
-            if (fileUri) {
-                await PeripheralTreeForSession.addToCache(fileUri, this.peripherials, ignorePeripherals);
+            if (this.svdUri) {
+                await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration);
             }
         } catch (e) {
-            this.peripherials = [];
+            this.peripherals = [];
+            this.peripheralsConfiguration = undefined;
             this.loaded = false;
             throw e;
         }
         this.loaded = true;
         this.errMessage = '';
+    }
+
+    private async parseWithProvider(provider: IPeripheralsProvider, data: string, gapThreshold: number, ignoredPeripherals: string[]): Promise<PeripheralsConfiguration> {
+        const enumTypeValues = {};
+        const providedOptions = (await provider.getPeripherals(data, { gapThreshold }));
+        const peripheralOptions = providedOptions.reduce((map, obj) => {
+            map[obj.name] = obj;
+            return map;
+        }, {} as Record<string, PeripheralOptions>);
+
+        return {
+            gapThreshold,
+            ignoredPeripherals,
+            peripheralOptions,
+            enumTypeValues
+        };
+    }
+
+    private async parseWithSVDParser(data: string, gapThreshold: number, ignoredPeripherals: string[]): Promise<PeripheralsConfiguration> {
+        const parser = new SVDParser();
+        return await parser.parseSVD(data, gapThreshold, ignoredPeripherals);
+    }
+
+
+    /**
+     * Reload allows the session to filter out peripherals that are in the ignore list or include them again.
+     */
+    private async reloadIgnoredPeripherals(): Promise<void> {
+        if (!this.loaded || !this.peripheralsConfiguration) {
+            // Do nothing
+            return;
+        }
+
+        const newIgnoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
+        const addPeripherals = this.peripheralsConfiguration.ignoredPeripherals.filter(p => !manifest.IgnorePeripherals.includes(newIgnoredPeripherals, p));
+        this.peripheralsConfiguration.ignoredPeripherals = newIgnoredPeripherals;
+
+        this.peripherals = this.peripherals.filter(p => !manifest.IgnorePeripherals.includes(newIgnoredPeripherals, p.name));
+        if (addPeripherals.length > 0) {
+            for (const peripheral of addPeripherals) {
+                const options = this.peripheralsConfiguration.peripheralOptions[peripheral];
+                if (options) {
+                    const p = new PeripheralNode(this.peripheralsConfiguration.gapThreshold, options, this);
+                    p.resolveDeferedEnums(this.peripheralsConfiguration.enumTypeValues);
+                    p.collectRanges();
+                    p.setSession(this.session);
+                    this.peripherals.push(p);
+                }
+            }
+            this.peripherals.sort(PeripheralNodeSort.compare);
+        }
+
+        if (this.svdUri) {
+            await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration);
+        }
+
+        this.refresh();
     }
 
     public performUpdate(): Thenable<boolean> {
@@ -196,8 +273,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
     public updateData(): Thenable<boolean> {
         if (this.loaded) {
-            const promises = this.peripherials.map((p) => p.updateData());
-            Promise.all(promises).then((_) => { this.fireCb(); }, (_) => { this.fireCb(); });
+            const promises = this.peripherals.map((p) => p.updateData());
+            Promise.all(promises).then((_) => { this.refresh(); }, (_) => { this.refresh(); });
         }
         return Promise.resolve(true);
     }
@@ -215,23 +292,23 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             return this;
         }
 
-        const peripheral = this.peripherials.find((p) => p.name === path[0]);
+        const peripheral = this.peripherals.find((p) => p.name === path[0]);
         if (!peripheral) { return undefined; }
 
         return peripheral.findByPath(path.slice(1));
     }
 
     public refresh(): void {
-        this.fireCb();
+        this.fireRefresh();
     }
 
     public getChildren(element?: PeripheralBaseNode): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         if (this.loaded) {
-            return element ? element.getChildren() : this.peripherials;
+            return element ? element.getChildren() : this.peripherals;
         } else if (!this.loaded) {
             return [new MessageNode(this.errMessage)];
         } else {
-            return this.peripherials;
+            return this.peripherals;
         }
     }
 
@@ -247,8 +324,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             thresh = ((((typeof thresh) === 'number') ? Math.max(0, Math.min(thresh, 32)) : 16) + 7) & ~0x7;
         }
 
-        this.peripherials = [];
-        this.fireCb();
+        this.peripherals = [];
+        this.refresh();
 
         try {
             await this.createPeripherals(svdPath, thresh);
@@ -264,15 +341,15 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                     }
                 }
             });
-            this.peripherials.sort(PeripheralNodeSort.compare);
-            this.fireCb();
+            this.peripherals.sort(PeripheralNodeSort.compare);
+            this.refresh();
         } catch (e) {
             this.errMessage = `Unable to parse definition file ${svdPath}: ${(e as Error).message}`;
             vscode.debug.activeDebugConsole.appendLine(this.errMessage);
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(this.errMessage);
             }
-            this.fireCb();
+            this.refresh();
         }
     }
 
@@ -283,7 +360,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
     public togglePinPeripheral(node: PeripheralBaseNode): void {
         node.pinned = !node.pinned;
-        this.peripherials.sort(PeripheralNodeSort.compare);
+        this.peripherals.sort(PeripheralNodeSort.compare);
     }
 
     serialize(): PeripheralSessionNodeDTO {

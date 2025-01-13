@@ -8,7 +8,7 @@
 import { AccessType } from '../../../api-types';
 import { CommandDefinition } from '../../../common';
 import { formatValue, NumberFormat } from '../../../common/format';
-import { PeripheralClusterNodeDTO, PeripheralFieldNodeContextValue, PeripheralFieldNodeDTO, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs } from '../../../common/peripheral-dto';
+import { PeripheralBaseNodeDTO, PeripheralClusterNodeDTO, PeripheralFieldNodeContextValue, PeripheralFieldNodeDTO, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs } from '../../../common/peripheral-dto';
 import { Commands } from '../../../manifest';
 import { binaryFormat, extractBits, hexFormat } from '../../../utils';
 import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn } from '../types';
@@ -18,6 +18,7 @@ import { TreeConverterContext, TreeResourceConverter } from './tree-converter';
 export class PeripheralTreeConverter implements TreeResourceConverter<PeripheralTreeNodeDTOs> {
 
     protected converters: TreeResourceConverter<PeripheralTreeNodeDTOs>[] = [
+        new PeripheralBaseNodeConverter(),
         new PeripheralSessionNodeConverter(),
         new PeripheralNodeConverter(),
         new PeripheralClusterNodeConverter(),
@@ -50,8 +51,38 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
             return item;
         }
 
-        throw new Error('No converter found for peripheral: ' + resource.__type);
+        throw new Error(`No converter found for peripheral: ${resource.__type}, ${JSON.stringify(resource)}`);
 
+    }
+}
+
+
+export class PeripheralBaseNodeConverter implements TreeResourceConverter<PeripheralBaseNodeDTO, PeripheralTreeNodeDTOs> {
+    canHandle(resource: PeripheralTreeNodeDTOs): boolean {
+        return PeripheralBaseNodeDTO.is(resource);
+    }
+
+    convert(resource: PeripheralBaseNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralBaseNodeDTO> {
+        return CDTTreeItem.create({
+            id: resource.id,
+            key: resource.id,
+            parent: context.parent,
+            resource,
+            expanded: context.expandedKeys.includes(resource.id),
+            columns: this.getColumns(resource, context),
+        });
+    }
+
+    // ==== Rendering ====
+
+    private getColumns(resource: PeripheralBaseNodeDTO, _context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+        return {
+            'title': {
+                type: 'string',
+                label: resource.name,
+                colSpan: 'fill'
+            },
+        };
     }
 }
 

@@ -8,13 +8,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { parseStringPromise } from 'xml2js';
-import { AccessType, EnumerationMap } from './api-types';
-import { PeripheralNodeSort } from './common';
+import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration } from './api-types';
 import { EnumeratedValue } from './enumerated-value';
-import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
 import { parseDimIndex, parseInteger } from './utils';
-import * as manifest from './manifest';
-import type { PeripheralTreeForSession } from './plugin/peripheral/tree/peripheral-session-tree';
 
 const accessTypeFromString = (type: string): AccessType => {
     switch (type) {
@@ -51,18 +47,16 @@ export interface SvdData {
 }
 
 export class SVDParser {
-    private enumTypeValuesMap: { [key: string]: EnumerationMap } = {};
+    private enumTypeValues: { [key: string]: EnumerationMap } = {};
     private peripheralRegisterMap: { [key: string]: any } = {};
-    private gapThreshold = 16;
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     constructor() { }
 
     public async parseSVD(
-        sessionTree: PeripheralTreeForSession, data: string, gapThreshold: number, ignorePeripherals: string[]): Promise<PeripheralNode[]> {
+        data: string, gapThreshold: number, ignoredPeripherals: string[]): Promise<PeripheralsConfiguration> {
         const svdData: SvdData = await parseStringPromise(data);
-        this.gapThreshold = gapThreshold;
-        this.enumTypeValuesMap = {};
+        this.enumTypeValues = {};
         this.peripheralRegisterMap = {};
 
         const peripheralMap: { [key: string]: any } = {};
@@ -84,9 +78,7 @@ export class SVDParser {
 
         svdData.device.peripherals[0].peripheral.forEach((element) => {
             const name = element.name[0];
-            if (!manifest.IgnorePeripherals.includes(ignorePeripherals, name)) {
-                peripheralMap[name] = element;
-            }
+            peripheralMap[name] = element;
         });
 
         for (const key in peripheralMap) {
@@ -97,30 +89,29 @@ export class SVDParser {
             }
         }
 
-        const peripherials = [];
-        for (const key in peripheralMap) {
-            peripherials.push(this.parsePeripheral(sessionTree, peripheralMap[key], defaultOptions));
+        const peripheralOptions: Record<string, PeripheralOptions> = {};
+        for (const name in peripheralMap) {
+            const option = this.parsePeripheralOptions(peripheralMap[name], defaultOptions);
+            peripheralOptions[name] = option;
         }
 
-        peripherials.sort(PeripheralNodeSort.compare);
-
-        for (const p of peripherials) {
-            p.resolveDeferedEnums(this.enumTypeValuesMap); // This can throw an exception
-            p.collectRanges();
-        }
-
-        return peripherials;
+        return {
+            gapThreshold,
+            peripheralOptions,
+            enumTypeValues: this.enumTypeValues,
+            ignoredPeripherals
+        };
     }
 
     private cleanupDescription(input: string): string {
         return input.replace(/\r/g, '').replace(/\n\s*/g, ' ');
     }
 
-    private parseFields(fieldInfo: any[], parent: PeripheralRegisterNode): PeripheralFieldNode[] {
-        const fields: PeripheralFieldNode[] = [];
+    private parseFieldOptions(fieldInfo: any[], parent: PeripheralRegisterOptions): FieldOptions[] {
+        const options: FieldOptions[] = [];
 
         if (fieldInfo == null) {
-            return fields;
+            return options;
         }
 
         fieldInfo.map((f) => {
@@ -155,7 +146,7 @@ export class SVDParser {
                 valueMap = {};
                 const eValues = f.enumeratedValues[0];
                 if (eValues.$ && eValues.$.derivedFrom) {
-                    const found = this.enumTypeValuesMap[eValues.$.derivedFrom];
+                    const found = this.enumTypeValues[eValues.$.derivedFrom];
                     if (!found) {
                         derivedFrom = eValues.$.derivedFrom as string;
                         // valueMap = undefined;
@@ -181,13 +172,13 @@ export class SVDParser {
                     // other peripherals. Global scope it is. Overrides duplicates from previous definitions!!!
                     if (eValues.name && eValues.name[0]) {
                         let evName = eValues.name[0];
-                        this.enumTypeValuesMap[evName] = valueMap;
+                        this.enumTypeValues[evName] = valueMap;
                         evName = f.name[0] + '.' + evName;
-                        this.enumTypeValuesMap[evName] = valueMap;
+                        this.enumTypeValues[evName] = valueMap;
                         let tmp: any = parent;
                         while (tmp) {
                             evName = tmp.name + '.' + evName;
-                            this.enumTypeValuesMap[evName] = valueMap;
+                            this.enumTypeValues[evName] = valueMap;
                             tmp = tmp.parent;
                         }
                         /*
@@ -236,20 +227,22 @@ export class SVDParser {
 
                     for (let i = 0; i < count; i++) {
                         const name = namebase.replace('%s', index[i]);
-                        fields.push(new PeripheralFieldNode(parent, { ...baseOptions, name: name, offset: offset + (increment * i) }));
+                        options.push({ ...baseOptions, name: name, offset: offset + (increment * i) });
                     }
                 }
             } else {
-                fields.push(new PeripheralFieldNode(parent, { ...baseOptions }));
+                options.push({ ...baseOptions });
             }
         });
 
-        return fields;
+        return options;
     }
 
-    private parseRegisters(regInfoOrig: any[], parent: PeripheralNode | PeripheralClusterNode): PeripheralRegisterNode[] {
+
+
+    private parseRegisterOptions(regInfoOrig: any[], parent: PeripheralOptions | ClusterOptions): PeripheralRegisterOptions[] {
         const regInfo = [...regInfoOrig];      // Make a shallow copy,. we will work on this
-        const registers: PeripheralRegisterNode[] = [];
+        const options: PeripheralRegisterOptions[] = [];
 
         const localRegisterMap: { [key: string]: any } = {};
         for (const r of regInfo) {
@@ -322,48 +315,39 @@ export class SVDParser {
                 for (let i = 0; i < count; i++) {
                     const name = namebase.replace('%s', index[i]);
                     const description = descbase.replace('%s', index[i]);
-
-                    const register = new PeripheralRegisterNode(parent, {
+                    const option: PeripheralRegisterOptions = {
                         ...baseOptions,
                         name: name,
                         description: description,
-                        addressOffset: offsetbase + (increment * i)
-                    });
+                        addressOffset: offsetbase + (increment * i),
+                    };
                     if (r.fields && r.fields.length === 1) {
-                        this.parseFields(r.fields[0].field, register);
+                        option.fields = this.parseFieldOptions(r.fields[0].field, option);
                     }
-                    registers.push(register);
+
+                    options.push(option);
                 }
             } else {
                 const description = this.cleanupDescription(r.description ? r.description[0] : '');
-                const register = new PeripheralRegisterNode(parent, {
+                const option: PeripheralRegisterOptions = {
                     ...baseOptions,
                     name: r.name[0],
                     description: description,
                     addressOffset: parseInteger(r.addressOffset[0])
-                });
+                };
                 if (r.fields && r.fields.length === 1) {
-                    this.parseFields(r.fields[0].field, register);
+                    option.fields = this.parseFieldOptions(r.fields[0].field, option);
                 }
-                registers.push(register);
+
+                options.push(option);
             }
         }
 
-        registers.sort((a, b) => {
-            if (a.offset < b.offset) {
-                return -1;
-            } else if (a.offset > b.offset) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-
-        return registers;
+        return options;
     }
 
-    private parseClusters(clusterInfo: any, parent: PeripheralOrClusterNode): PeripheralClusterNode[] {
-        const clusters: PeripheralClusterNode[] = [];
+    private parseClusterOptions(clusterInfo: any): ClusterOptions[] {
+        const options: ClusterOptions[] = [];
 
         if (!clusterInfo) { return []; }
 
@@ -405,43 +389,46 @@ export class SVDParser {
                 for (let i = 0; i < count; i++) {
                     const name = namebase.replace('%s', index[i]);
                     const description = descbase.replace('%s', index[i]);
-                    const cluster = new PeripheralClusterNode(parent, {
+                    const option: ClusterOptions = {
                         ...baseOptions,
                         name: name,
                         description: description,
                         addressOffset: offsetbase + (increment * i)
-                    });
+                    };
                     if (c.register) {
-                        this.parseRegisters(c.register, cluster);
+                        option.registers = this.parseRegisterOptions(c.register, option);
                     }
                     if (c.cluster) {
-                        this.parseClusters(c.cluster, cluster);
+                        option.clusters = this.parseClusterOptions(c.cluster);
                     }
-                    clusters.push(cluster);
+
+                    options.push(option);
                 }
             } else {
                 const description = this.cleanupDescription(c.description ? c.description[0] : '');
-                const cluster = new PeripheralClusterNode(parent, {
+                const option: ClusterOptions = {
                     ...baseOptions,
                     name: c.name[0],
                     description: description,
                     addressOffset: parseInteger(c.addressOffset[0]) ?? 0
-                });
+                };
                 if (c.register) {
-                    this.parseRegisters(c.register, cluster);
-                    clusters.push(cluster);
+                    option.registers = this.parseRegisterOptions(c.register, option);
                 }
                 if (c.cluster) {
-                    this.parseClusters(c.cluster, cluster);
-                    clusters.push(cluster);
+                    option.clusters = this.parseClusterOptions(c.cluster);
                 }
+
+                options.push(option);
             }
         });
 
-        return clusters;
+        return options;
     }
 
-    private parsePeripheral(sessionTree: PeripheralTreeForSession, p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralNode {
+    // ==== Create Peripherals ====
+
+    private parsePeripheralOptions(p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralOptions {
         let totalLength = 0;
         if (p.addressBlock) {
             for (const ab of p.addressBlock) {
@@ -453,30 +440,28 @@ export class SVDParser {
             }
         }
 
-        const options: any = {
+        const option = {
             name: p.name[0],
             baseAddress: parseInteger(p.baseAddress ? p.baseAddress[0] : '0'),
             description: this.cleanupDescription(p.description ? p.description[0] : ''),
             totalLength: totalLength
-        };
+        } as PeripheralOptions;
 
-        if (p.access) { options.accessType = accessTypeFromString(p.access[0]); }
-        if (p.size) { options.size = parseInteger(p.size[0]); }
-        if (p.resetValue) { options.resetValue = parseInteger(p.resetValue[0]); }
-        if (p.groupName) { options.groupName = p.groupName[0]; }
-
-        const peripheral = new PeripheralNode(this.gapThreshold, options, sessionTree);
+        if (p.access) { option.accessType = accessTypeFromString(p.access[0]); }
+        if (p.size) { option.size = parseInteger(p.size[0]); }
+        if (p.resetValue) { option.resetValue = parseInteger(p.resetValue[0]); }
+        if (p.groupName) { option.groupName = p.groupName[0]; }
 
         if (p.registers) {
             if (p.registers[0].register) {
-                this.parseRegisters(p.registers[0].register, peripheral);
+                option.registers = this.parseRegisterOptions(p.registers[0].register, option);
             }
             if (p.registers[0].cluster) {
-                this.parseClusters(p.registers[0].cluster, peripheral);
+                option.clusters = this.parseClusterOptions(p.registers[0].cluster);
             }
         }
 
-        return peripheral;
+        return option;
     }
 }
 

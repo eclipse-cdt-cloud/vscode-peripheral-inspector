@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
-import { NodeSetting } from '../../../common';
+import { NodeSetting, PeripheralBaseNodeDTO } from '../../../common';
 import { CDTTreeItem } from '../../../components/tree/types';
 import { PeripheralBaseNode } from './base-node';
 
@@ -71,5 +71,12 @@ export class MessageNode extends PeripheralBaseNode {
 
     public findByPath(_path: string[]): PeripheralBaseNode | undefined {
         return undefined;
+    }
+
+    serialize(): PeripheralBaseNodeDTO {
+        return PeripheralBaseNodeDTO.create({
+            ...super.serialize(),
+            name: this.message,
+        });
     }
 }
