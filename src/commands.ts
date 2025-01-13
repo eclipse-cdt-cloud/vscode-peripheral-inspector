@@ -9,15 +9,17 @@ import * as vscode from 'vscode';
 import { NumberFormat } from './common/format';
 import { TreeNotificationContext } from './common/notification';
 import { PERIPHERAL_ID_SEP } from './common/peripheral-dto';
-import { CTDTreeWebviewContext } from './components/tree/types';
+import { CTDTreeMessengerType, CTDTreeWebviewContext } from './components/tree/types';
 import { Commands } from './manifest';
 import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
+import { PeripheralsTreeTableWebView } from './plugin/peripheral/webview/peripheral-tree-webview-main';
 import { getFilePath } from './fileUtils';
 
 export class PeripheralCommands {
     public constructor(
-        protected readonly dataTracker: PeripheralDataTracker) {
+        protected readonly dataTracker: PeripheralDataTracker,
+        protected readonly webview: PeripheralsTreeTableWebView) {
     }
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
@@ -29,6 +31,7 @@ export class PeripheralCommands {
             vscode.commands.registerCommand(Commands.FORCE_REFRESH_COMMAND.commandId, (node) => this.peripheralsForceRefresh(node)),
             vscode.commands.registerCommand(Commands.PIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
             vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
+            vscode.commands.registerCommand(Commands.FIND_COMMAND.commandId, () => this.find()),
             vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND.commandId, () => this.peripheralsForceRefresh()),
             vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND.commandId, () => this.collapseAll()),
             vscode.commands.registerCommand(Commands.EXPORT_ALL_COMMAND.commandId, () => this.peripheralsExportAll()),
@@ -98,6 +101,10 @@ export class PeripheralCommands {
 
         node.format = result.value;
         this.dataTracker.fireOnDidChange();
+    }
+
+    private async find(): Promise<void> {
+        this.webview.sendNotification(CTDTreeMessengerType.openSearch);
     }
 
     private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {

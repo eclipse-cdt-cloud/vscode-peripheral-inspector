@@ -56,6 +56,28 @@ export class CDTTreeView extends React.Component<unknown, State> {
                 pinnedKeys: PeripheralTreeNodeDTOs.extractPinnedKeys(state.items)
             });
         });
+        messenger.onNotification(CTDTreeMessengerType.openSearch, () => {
+            const elements = document.getElementsByClassName('search-overlay visible');
+            if (elements.length > 0) {
+                // search overlay is already visible
+                elements[0]?.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'Escape',
+                    code: 'Escape',
+                    keyCode: 27,
+                    which: 27,
+                    bubbles: true,
+                    cancelable: true
+                }));
+            } else {
+                document.getElementById('tree-table-root')?.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'f',
+                    code: 'KeyF',
+                    ctrlKey: true,
+                    bubbles: true,
+                    cancelable: true
+                }));
+            }
+        });
         messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 

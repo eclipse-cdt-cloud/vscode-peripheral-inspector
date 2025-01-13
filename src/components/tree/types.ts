@@ -36,6 +36,10 @@ export interface CDTTreeItem<T = unknown> {
      * Whether this item is expanded. Undefined means that the item is not expanded.
      */
     expanded?: boolean;
+    /**
+     * Whether this item is matched by the current filter. Undefined means that the item is not matched.
+     */
+    matching?: boolean;
 }
 
 export namespace CDTTreeItem {
@@ -164,4 +168,5 @@ export namespace CTDTreeMessengerType {
     export const executeCommand: NotificationType<TreeNotification<CDTTreeExecuteCommand>> = { method: 'executeCommand' };
     export const toggleNode: NotificationType<TreeNotification<string>> = { method: 'toggleNode' };
     export const clickNode: NotificationType<TreeNotification<string>> = { method: 'clickNode' };
+    export const openSearch: NotificationType<void> = { method: 'openSearch' };
 }
