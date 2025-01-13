@@ -15,6 +15,8 @@ import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
 import { PeripheralsTreeTableWebView } from './plugin/peripheral/webview/peripheral-tree-webview-main';
 import { getFilePath } from './fileUtils';
+import * as manifest from './manifest';
+import { VSCodeContextKeys } from './common/vscode-context';
 
 export class PeripheralCommands {
     public constructor(
@@ -23,7 +25,13 @@ export class PeripheralCommands {
     }
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
+        this.initIgnoredPeripheralsContext();
         context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
+                    this.initIgnoredPeripheralsContext();
+                }
+            }),
             vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node, value) => this.peripheralsUpdateNode(node, value)),
             vscode.commands.registerCommand(Commands.EXPORT_NODE_COMMAND.commandId, node => this.peripheralsExportNode(node)),
             vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, (node, value) => this.peripheralsCopyValue(node, value)),
@@ -35,7 +43,14 @@ export class PeripheralCommands {
             vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND.commandId, () => this.peripheralsForceRefresh()),
             vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND.commandId, () => this.collapseAll()),
             vscode.commands.registerCommand(Commands.EXPORT_ALL_COMMAND.commandId, () => this.peripheralsExportAll()),
+            vscode.commands.registerCommand(Commands.IGNORE_PERIPHERAL.commandId, (context) => this.ignorePeripheral(context)),
+            vscode.commands.registerCommand(Commands.CLEAR_IGNORED_PERIPHERAL.commandId, () => this.clearIgnoredPeripherals()),
         );
+    }
+
+    private initIgnoredPeripheralsContext(): void {
+        const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME)?.inspect<string[]>(manifest.IGNORE_PERIPHERALS)?.workspaceValue ?? [];
+        vscode.commands.executeCommand('setContext', VSCodeContextKeys.IGNORED_PERIPHERALS_LENGTH, ignoredPeripherals.length);
     }
 
     private async peripheralsUpdateNode(node: PeripheralBaseNode, value?: unknown): Promise<void> {
@@ -122,5 +137,16 @@ export class PeripheralCommands {
 
     private peripheralsTogglePin(node: PeripheralBaseNode, context?: TreeNotificationContext): void {
         this.dataTracker.togglePin(node, context);
+    }
+
+    private ignorePeripheral(context: CTDTreeWebviewContext): void {
+        const node = this.dataTracker.getNodeByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP));
+
+        const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
+        vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).update(manifest.IGNORE_PERIPHERALS, [...ignoredPeripherals, node.name]);
+    }
+
+    private clearIgnoredPeripherals(): void {
+        vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).update(manifest.IGNORE_PERIPHERALS, undefined);
     }
 }

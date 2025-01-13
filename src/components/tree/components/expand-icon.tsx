@@ -4,7 +4,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
-import { CDTTreeItem } from '../types';
+import { CDTTreeItem, CDTTreeItemResource } from '../types';
 import { classNames } from './utils';
 import React from 'react';
 
@@ -18,7 +18,7 @@ export interface RenderExpandIconProps<RecordType> {
 
 export type TriggerEventHandler<RecordType> = (record: RecordType, event: React.MouseEvent<HTMLElement>) => void;
 
-export function ExpandIcon({ expanded, onExpand, record, expandable }: RenderExpandIconProps<CDTTreeItem>): React.ReactElement {
+export function ExpandIcon<T extends CDTTreeItemResource>({ expanded, onExpand, record, expandable }: RenderExpandIconProps<CDTTreeItem<T>>): React.ReactElement {
     if (!expandable) {
         // simulate spacing to the left that we gain through expand icon so that leaf items look correctly intended
         return <span className='leaf-item-spacer' />;

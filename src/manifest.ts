@@ -79,6 +79,16 @@ export namespace Commands {
         icon: 'desktop-download',
         title: 'Export All'
     } as const;
+    export const IGNORE_PERIPHERAL: CommandDefinition = {
+        commandId: `${PACKAGE_NAME}.svd.ignorePeripheral`,
+        icon: 'circle-slash',
+        title: 'Ignore Peripheral'
+    } as const;
+    export const CLEAR_IGNORED_PERIPHERAL: CommandDefinition = {
+        commandId: `${PACKAGE_NAME}.svd.clearIgnoredPeripherals`,
+        icon: 'clear-all',
+        title: 'Clear Ignored Peripheral'
+    } as const;
 }
 
 export namespace IgnorePeripherals {

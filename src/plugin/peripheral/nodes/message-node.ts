@@ -37,7 +37,9 @@ export class MessageNode extends PeripheralBaseNode {
         return CDTTreeItem.create({
             id: this.getId(),
             key: this.getId(),
-            resource: undefined,
+            resource: {
+                __type: 'message'
+            },
         });
     }
 

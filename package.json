@@ -147,6 +147,16 @@
         "command": "peripheral-inspector.svd.exportAll",
         "title": "Export All",
         "icon": "$(desktop-download)"
+      },
+      {
+        "command": "peripheral-inspector.svd.ignorePeripheral",
+        "title": "Ignore Peripheral",
+        "icon": "$(circle-slash)"
+      },
+      {
+        "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
+        "title": "Clear Ignored Peripherals",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
@@ -189,6 +199,14 @@
         },
         {
           "command": "peripheral-inspector.svd.refreshAll",
+          "when": "false"
+        },
+        {
+          "command": "peripheral-inspector.svd.ignorePeripheral",
+          "when": "false"
+        },
+        {
+          "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
           "when": "false"
         }
       ],
@@ -258,12 +276,22 @@
           "command": "peripheral-inspector.svd.exportAll",
           "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped",
           "group": "navigation@4"
+        },
+        {
+          "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped && peripheral-inspector.ignoredPeripheralsLength > 0",
+          "group": "more"
         }
       ],
       "webview/context": [
         {
           "command": "peripheral-inspector.svd.setFormat",
           "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item",
+          "group": "navigation"
+        },
+        {
+          "command": "peripheral-inspector.svd.ignorePeripheral",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType === peripheral-node",
           "group": "navigation"
         }
       ]
