@@ -50,20 +50,10 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         super();
         this.name = this.session.name;
         this.expanded = expanded;
-
-        this.init();
     }
 
     public getId(): string {
         return this.session.id;
-    }
-
-    private init(): void {
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
-                this.reloadIgnoredPeripherals();
-            }
-        });
     }
 
     private static getStatePropName(session: vscode.DebugSession): string {
@@ -235,7 +225,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     /**
      * Reload allows the session to filter out peripherals that are in the ignore list or include them again.
      */
-    private async reloadIgnoredPeripherals(): Promise<void> {
+    async reloadIgnoredPeripherals(): Promise<void> {
         if (!this.loaded || !this.peripheralsConfiguration) {
             // Do nothing
             return;
@@ -260,11 +250,11 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             this.peripherals.sort(PeripheralNodeSort.compare);
         }
 
+        this.refresh();
+
         if (this.svdUri) {
             await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration);
         }
-
-        this.refresh();
     }
 
     public performUpdate(): Thenable<boolean> {
