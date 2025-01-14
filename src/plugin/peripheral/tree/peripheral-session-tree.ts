@@ -153,7 +153,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             if (provider) {
                 const enumTypeValuesMap = {};
                 const poptions = (await provider.getPeripherals(data, { gapThreshold })).filter(p => !manifest.IgnorePeripherals.includes(ignorePeripherals, p.name));
-                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options));
+                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options, this));
                 peripherials.sort(PeripheralNodeSort.compare);
 
                 for (const p of peripherials) {
@@ -162,7 +162,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                 }
             } else {
                 const parser = new SVDParser();
-                peripherials = await parser.parseSVD(data, gapThreshold, ignorePeripherals);
+                peripherials = await parser.parseSVD(this, data, gapThreshold, ignorePeripherals);
             }
 
         } catch (e: unknown) {

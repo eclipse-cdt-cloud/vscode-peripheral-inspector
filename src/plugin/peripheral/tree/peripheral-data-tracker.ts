@@ -238,12 +238,14 @@ export class PeripheralDataTracker {
     }
 
     public findNodeByPath(path: string[]): PeripheralBaseNode | undefined {
-        const trees = this.sessionPeripherals.values();
-        for (const tree of trees) {
-            const node = tree.findByPath(path);
-            if (node) {
-                return node;
+        const trees = Array.from(this.sessionPeripherals.values());
+        const tree = trees.find(t => t.id === path[0]);
+        if (tree) {
+            if (path.length === 1) {
+                return tree;
             }
+
+            return tree.findByPath(path.slice(1));
         }
     }
 
