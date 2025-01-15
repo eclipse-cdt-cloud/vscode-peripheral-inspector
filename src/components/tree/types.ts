@@ -88,6 +88,7 @@ export interface CDTTreeTableStringColumn {
     type: 'string';
     icon?: string;
     label: string;
+    colSpan?: number | 'fill';
     /**
      * Allows to highlight parts of the string.
      */

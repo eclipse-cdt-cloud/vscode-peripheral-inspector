@@ -40,7 +40,7 @@ export namespace PeripheralBaseTreeNodeDTO {
 
 // ==== PeripheralBaseNode ====
 
-export const PERIPHERAL_ID_SEP = '-';
+export const PERIPHERAL_ID_SEP = '.';
 export interface PeripheralBaseNodeDTO extends PeripheralBaseTreeNodeDTO {
     name: string;
     format: NumberFormat;
@@ -55,6 +55,26 @@ export namespace PeripheralBaseNodeDTO {
     }
 
     export function create(options: OmitType<PeripheralBaseNodeDTO>): PeripheralBaseNodeDTO {
+        return {
+            ...options,
+            __type: Type,
+        };
+    }
+}
+
+// ==== PeripheralSessionNode ====
+
+export interface PeripheralSessionNodeDTO extends PeripheralBaseNodeDTO {
+    children: Array<PeripheralNodeDTO>;
+}
+export namespace PeripheralSessionNodeDTO {
+    export const Type = 'PeripheralSessionNode';
+
+    export function is(node: object): node is PeripheralSessionNodeDTO {
+        return PeripheralBaseTreeNodeDTO.hasType(node, Type);
+    }
+
+    export function create(options: OmitType<PeripheralSessionNodeDTO>): PeripheralSessionNodeDTO {
         return {
             ...options,
             __type: Type,
@@ -180,7 +200,7 @@ export namespace PeripheralRegisterNodeDTO {
 
 // ==== PeripheralTreeNodeDTOs ====
 
-export type PeripheralTreeNodeDTOs = PeripheralBaseTreeNodeDTO | PeripheralNodeDTO | PeripheralRegisterNodeDTO | PeripheralClusterNodeDTO | PeripheralFieldNodeDTO;
+export type PeripheralTreeNodeDTOs = PeripheralBaseTreeNodeDTO | PeripheralSessionNodeDTO | PeripheralNodeDTO | PeripheralRegisterNodeDTO | ClusterOrRegisterBaseNodeDTO | PeripheralClusterNodeDTO | PeripheralFieldNodeDTO;
 export namespace PeripheralTreeNodeDTOs {
     export function getFormat(peripheralId: string | undefined, tree: Map<string, PeripheralTreeNodeDTOs>): NumberFormat {
         if (peripheralId === undefined) {

@@ -93,3 +93,8 @@
 .ant-table-empty .ant-table-body {
   overflow: hidden !important;
 }
+
+/* The horizontal scrollbar is not necessary */
+.ant-table .ant-table-tbody-virtual-scrollbar-horizontal {
+  display: none;
+}

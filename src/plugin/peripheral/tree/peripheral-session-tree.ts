@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
-import { NodeSetting, PeripheralNodeSort } from '../../../common';
+import { NodeSetting, PERIPHERAL_ID_SEP, PeripheralNodeSort, PeripheralSessionNodeDTO } from '../../../common';
 import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
@@ -30,8 +30,9 @@ interface CachedSVDFile {
 }
 
 export class PeripheralTreeForSession extends PeripheralBaseNode {
+    public readonly name: string;
+
     private static svdCache: { [path: string]: CachedSVDFile } = {};
-    public myTreeItem: vscode.TreeItem;
     private peripherials: PeripheralNode[] = [];
     private loaded = false;
     private errMessage = 'No SVD file loaded';
@@ -39,19 +40,15 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     constructor(
         public session: vscode.DebugSession,
         protected api: PeripheralInspectorAPI,
-        public state: vscode.TreeItemCollapsibleState,
+        expanded: boolean,
         private fireCb: () => void) {
         super();
-        this.myTreeItem = new vscode.TreeItem(this.session.name, this.state);
-        this.myTreeItem.id = this.getId();
+        this.name = this.session.name;
+        this.expanded = expanded;
     }
 
     public getId(): string {
         return this.session.id;
-    }
-
-    public getTitle(): string {
-        return this.session.name;
     }
 
     private static getStatePropName(session: vscode.DebugSession): string {
@@ -156,7 +153,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             if (provider) {
                 const enumTypeValuesMap = {};
                 const poptions = (await provider.getPeripherals(data, { gapThreshold })).filter(p => !manifest.IgnorePeripherals.includes(ignorePeripherals, p.name));
-                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options));
+                peripherials = poptions.map((options) => new PeripheralNode(gapThreshold, options, this));
                 peripherials.sort(PeripheralNodeSort.compare);
 
                 for (const p of peripherials) {
@@ -165,7 +162,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                 }
             } else {
                 const parser = new SVDParser();
-                peripherials = await parser.parseSVD(data, gapThreshold, ignorePeripherals);
+                peripherials = await parser.parseSVD(this, data, gapThreshold, ignorePeripherals);
             }
 
         } catch (e: unknown) {
@@ -213,16 +210,15 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         throw new Error('Method not implemented.');
     }
 
-    public findByPath(_path: string[]): PeripheralBaseNode | undefined {
-        throw new Error('Method not implemented.');     // Shouldn't be called
-    }
+    public findByPath(path: string[]): PeripheralBaseNode | undefined {
+        if (path[0] === this.getId()) {
+            return this;
+        }
 
-    public findNodeByPath(path: string): PeripheralBaseNode | undefined {
-        const pathParts = path.split('.');
-        const peripheral = this.peripherials.find((p) => p.name === pathParts[0]);
+        const peripheral = this.peripherials.find((p) => p.name === path[0]);
         if (!peripheral) { return undefined; }
 
-        return peripheral.findByPath(pathParts.slice(1));
+        return peripheral.findByPath(path.slice(1));
     }
 
     public refresh(): void {
@@ -259,7 +255,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
             const settings = await this.loadSvdState(context);
             settings.forEach((s: NodeSetting) => {
-                const node = this.findNodeByPath(s.node);
+                const node = this.findByPath(s.node.split(PERIPHERAL_ID_SEP));
                 if (node) {
                     node.expanded = s.expanded || false;
                     node.pinned = s.pinned || false;
@@ -288,5 +284,12 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     public togglePinPeripheral(node: PeripheralBaseNode): void {
         node.pinned = !node.pinned;
         this.peripherials.sort(PeripheralNodeSort.compare);
+    }
+
+    serialize(): PeripheralSessionNodeDTO {
+        return PeripheralSessionNodeDTO.create({
+            ...super.serialize(),
+            children: []
+        });
     }
 }

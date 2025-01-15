@@ -15,6 +15,7 @@ import { MemUtils } from '../../../memreadutils';
 import { PeripheralBaseNode } from './base-node';
 import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
 import { PeripheralRegisterNode } from './peripheral-register-node';
+import type { PeripheralTreeForSession } from '../tree/peripheral-session-tree';
 
 
 export class PeripheralNode extends PeripheralBaseNode {
@@ -31,8 +32,8 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     private currentValue: number[] = [];
 
-    constructor(public gapThreshold: number, protected options: PeripheralOptions) {
-        super();
+    constructor(public gapThreshold: number, protected options: PeripheralOptions, parent: PeripheralTreeForSession) {
+        super(parent);
 
         this.name = options.name;
         this.baseAddress = options.baseAddress;

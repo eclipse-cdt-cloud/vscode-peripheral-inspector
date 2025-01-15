@@ -14,6 +14,7 @@ import { EnumeratedValue } from './enumerated-value';
 import { PeripheralClusterNode, PeripheralFieldNode, PeripheralNode, PeripheralOrClusterNode, PeripheralRegisterNode } from './plugin/peripheral/nodes';
 import { parseDimIndex, parseInteger } from './utils';
 import * as manifest from './manifest';
+import type { PeripheralTreeForSession } from './plugin/peripheral/tree/peripheral-session-tree';
 
 const accessTypeFromString = (type: string): AccessType => {
     switch (type) {
@@ -58,7 +59,7 @@ export class SVDParser {
     constructor() { }
 
     public async parseSVD(
-        data: string, gapThreshold: number, ignorePeripherals: string[]): Promise<PeripheralNode[]> {
+        sessionTree: PeripheralTreeForSession, data: string, gapThreshold: number, ignorePeripherals: string[]): Promise<PeripheralNode[]> {
         const svdData: SvdData = await parseStringPromise(data);
         this.gapThreshold = gapThreshold;
         this.enumTypeValuesMap = {};
@@ -98,7 +99,7 @@ export class SVDParser {
 
         const peripherials = [];
         for (const key in peripheralMap) {
-            peripherials.push(this.parsePeripheral(peripheralMap[key], defaultOptions));
+            peripherials.push(this.parsePeripheral(sessionTree, peripheralMap[key], defaultOptions));
         }
 
         peripherials.sort(PeripheralNodeSort.compare);
@@ -440,7 +441,7 @@ export class SVDParser {
         return clusters;
     }
 
-    private parsePeripheral(p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralNode {
+    private parsePeripheral(sessionTree: PeripheralTreeForSession, p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralNode {
         let totalLength = 0;
         if (p.addressBlock) {
             for (const ab of p.addressBlock) {
@@ -464,7 +465,7 @@ export class SVDParser {
         if (p.resetValue) { options.resetValue = parseInteger(p.resetValue[0]); }
         if (p.groupName) { options.groupName = p.groupName[0]; }
 
-        const peripheral = new PeripheralNode(this.gapThreshold, options);
+        const peripheral = new PeripheralNode(this.gapThreshold, options, sessionTree);
 
         if (p.registers) {
             if (p.registers[0].register) {
