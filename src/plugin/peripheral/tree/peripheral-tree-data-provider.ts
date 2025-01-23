@@ -6,7 +6,7 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { TreeNotification } from '../../../common/notification';
+import { TreeNotification, TreeTerminatedEvent } from '../../../common/notification';
 import { PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
 import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
@@ -18,27 +18,28 @@ import { PeripheralDataTracker } from './peripheral-data-tracker';
 export class PeripheralTreeDataProvider implements CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO> {
     public static viewName = `${manifest.PACKAGE_NAME}.svd`;
 
+    protected onDidTerminateEvent = new vscode.EventEmitter<TreeTerminatedEvent<PeripheralBaseNode>>();
+    readonly onDidTerminate = this.onDidTerminateEvent.event;
     protected onDidChangeTreeDataEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode | PeripheralBaseNode[] | undefined>>();
     readonly onDidChangeTreeData = this.onDidChangeTreeDataEvent.event;
 
     constructor(protected readonly dataTracker: PeripheralDataTracker, protected context: vscode.ExtensionContext) {
+        this.dataTracker.onDidTerminate((event) => {
+            this.onDidTerminateEvent.fire(event);
+        });
         this.dataTracker.onDidSelectionChange(() => {
             this.onDidChangeTreeDataEvent.fire({ data: undefined });
         });
         this.dataTracker.onDidChange(async () => {
-            await this.getSerializedRoots();
             this.onDidChangeTreeDataEvent.fire({ data: undefined });
         });
         this.dataTracker.onDidPeripheralChange(async (event) => {
-            await this.getSerializedData(event.data, true);
             this.onDidChangeTreeDataEvent.fire(event);
         });
         this.dataTracker.onDidExpand(async (event) => {
-            await this.getSerializedData(event.data, true);
             this.onDidChangeTreeDataEvent.fire(event);
         });
         this.dataTracker.onDidCollapse(async (event) => {
-            await this.getSerializedData(event.data, true);
             this.onDidChangeTreeDataEvent.fire(event);
         });
     }
@@ -73,12 +74,12 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         return Promise.all(children.map(c => this.getSerializedData(c)));
     }
 
-    async getSerializedData(element: PeripheralBaseNode, refreshCache = false): Promise<PeripheralBaseNodeDTO> {
+    async getSerializedData(element: PeripheralBaseNode): Promise<PeripheralBaseNodeDTO> {
         const item = await element.serialize();
 
         const children = await this.getChildren(element);
         if (children && children?.length > 0) {
-            item.children = await Promise.all(children.map(c => this.getSerializedData(c, refreshCache)));
+            item.children = await Promise.all(children.map(c => this.getSerializedData(c)));
         }
 
         return item;

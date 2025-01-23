@@ -286,7 +286,7 @@
       "webview/context": [
         {
           "command": "peripheral-inspector.svd.setFormat",
-          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType !== peripheral-session-node",
           "group": "navigation"
         },
         {

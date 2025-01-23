@@ -56,7 +56,6 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
     }
 }
 
-
 export class PeripheralBaseNodeConverter implements TreeResourceConverter<PeripheralBaseNodeDTO, PeripheralTreeNodeDTOs> {
     canHandle(resource: PeripheralTreeNodeDTOs): boolean {
         return PeripheralBaseNodeDTO.is(resource);
@@ -69,13 +68,13 @@ export class PeripheralBaseNodeConverter implements TreeResourceConverter<Periph
             parent: context.parent,
             resource,
             expanded: context.expandedKeys.includes(resource.id),
-            columns: this.getColumns(resource, context),
+            columns: this.getColumns(resource),
         });
     }
 
     // ==== Rendering ====
 
-    private getColumns(resource: PeripheralBaseNodeDTO, _context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(resource: PeripheralBaseNodeDTO): Record<string, CDTTreeTableColumn> {
         return {
             'title': {
                 type: 'string',
@@ -98,17 +97,16 @@ export class PeripheralSessionNodeConverter implements TreeResourceConverter<Per
             parent: context.parent,
             resource,
             expanded: context.expandedKeys.includes(resource.id),
-            columns: this.getColumns(resource, context),
+            columns: this.getColumns(resource),
         });
     }
 
     // ==== Rendering ====
 
-    private getColumns(resource: PeripheralSessionNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(resource: PeripheralSessionNodeDTO): Record<string, CDTTreeTableColumn> {
         return {
             'title': {
                 type: 'string',
-                icon: context.pinnedKeys.includes(resource.id) ? 'codicon codicon-pinned' : undefined,
                 label: resource.name,
                 colSpan: 'fill'
             },

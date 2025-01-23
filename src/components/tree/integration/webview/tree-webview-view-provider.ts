@@ -33,15 +33,6 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
         protected readonly context: vscode.ExtensionContext,
         protected readonly messenger = new Messenger({ ignoreHiddenViews: false, debugLog: true })
     ) {
-        this.init();
-    }
-
-    protected init(): void {
-        this.dataProvider.onDidChangeTreeData?.(async (event) => {
-            if (event.context?.resync !== false) {
-                this.refresh();
-            }
-        });
     }
 
     public async resolveWebviewView(webviewView: vscode.WebviewView, _context: vscode.WebviewViewResolveContext,
@@ -106,6 +97,16 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
         }
 
         const disposables = [
+            this.dataProvider.onDidTerminate(async (event) => {
+                if (event.remaining > 0) {
+                    this.refresh();
+                }
+            }),
+            this.dataProvider.onDidChangeTreeData(async (event) => {
+                if (event.context?.resync !== false) {
+                    this.refresh();
+                }
+            }),
             this.messenger.onNotification(CTDTreeMessengerType.ready, () => this.onReady(), { sender: participant }),
             this.messenger.onNotification(CTDTreeMessengerType.executeCommand, (event) => this.onDidExecuteCommandEvent.fire(event), { sender: participant }),
             this.messenger.onNotification(CTDTreeMessengerType.toggleNode, event => this.onDidToggleNodeEvent.fire(event), { sender: participant }),
@@ -127,10 +128,7 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
         const columnFields = this.dataProvider.getColumnDefinitions();
         const items = await this.dataProvider.getSerializedRoots();
 
-        this.messenger.sendNotification(CTDTreeMessengerType.updateState, this.participant, {
-            columnFields,
-            items
-        });
+        this.sendNotification(CTDTreeMessengerType.updateState, { columnFields, items });
     }
 
     sendNotification<P>(type: NotificationType<P>, params?: P): void {
