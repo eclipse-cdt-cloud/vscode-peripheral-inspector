@@ -22,7 +22,7 @@ export interface CDTTreeItem<T extends CDTTreeItemResource = CDTTreeItemResource
     __type: 'CDTTreeItem'
     id: string;
     key: string;
-    parent?: CDTTreeItem<CDTTreeItemResource> | undefined;
+    parent?: CDTTreeItem<CDTTreeItemResource>;
     children?: CDTTreeItem<T>[];
     /**
      * The resource that this tree item represents. This can be any type of object.

@@ -24,6 +24,16 @@ export const DEFAULT_SAVE_LAYOUT = true;
 
 // Commands
 export namespace Commands {
+    // Commands used only within VSCode
+    export const SET_FORMAT_COMMAND_ID = `${PACKAGE_NAME}.svd.setFormat`;
+    export const FIND_COMMAND_ID = `${PACKAGE_NAME}.svd.find`;
+    export const REFRESH_ALL_COMMAND_ID = `${PACKAGE_NAME}.svd.refreshAll`;
+    export const COLLAPSE_ALL_COMMAND_ID = `${PACKAGE_NAME}.svd.collapseAll`;
+    export const EXPORT_ALL_COMMAND_ID = `${PACKAGE_NAME}.svd.exportAll`;
+    export const IGNORE_PERIPHERAL_ID = `${PACKAGE_NAME}.svd.ignorePeripheral`;
+    export const CLEAR_IGNORED_PERIPHERAL_ID = `${PACKAGE_NAME}.svd.clearIgnoredPeripherals`;
+
+    // Commands used in the UI. They are manually inserted into the DOM.
     export const UPDATE_NODE_COMMAND: CommandDefinition = {
         commandId: `${PACKAGE_NAME}.svd.updateNode`,
         icon: 'edit',
@@ -39,11 +49,6 @@ export namespace Commands {
         icon: 'files',
         title: 'Copy Value'
     } as const;
-    export const SET_FORMAT_COMMAND: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.setFormat`,
-        icon: 'symbol-unit',
-        title: 'Set Value Format'
-    } as const;
     export const FORCE_REFRESH_COMMAND: CommandDefinition = {
         commandId: `${PACKAGE_NAME}.svd.forceRefresh`,
         icon: 'refresh',
@@ -58,36 +63,6 @@ export namespace Commands {
         commandId: `${PACKAGE_NAME}.svd.unpin`,
         icon: 'pinned',
         title: 'Unpin'
-    } as const;
-    export const FIND_COMMAND: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.find`,
-        icon: 'search',
-        title: 'Find'
-    } as const;
-    export const REFRESH_ALL_COMMAND: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.refreshAll`,
-        icon: 'refresh',
-        title: 'Refresh All'
-    } as const;
-    export const COLLAPSE_ALL_COMMAND: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.collapseAll`,
-        icon: 'collapse-all',
-        title: 'Collapse All'
-    } as const;
-    export const EXPORT_ALL_COMMAND: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.exportAll`,
-        icon: 'desktop-download',
-        title: 'Export All'
-    } as const;
-    export const IGNORE_PERIPHERAL: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.ignorePeripheral`,
-        icon: 'circle-slash',
-        title: 'Ignore Peripheral'
-    } as const;
-    export const CLEAR_IGNORED_PERIPHERAL: CommandDefinition = {
-        commandId: `${PACKAGE_NAME}.svd.clearIgnoredPeripherals`,
-        icon: 'clear-all',
-        title: 'Clear Ignored Peripheral'
     } as const;
 }
 

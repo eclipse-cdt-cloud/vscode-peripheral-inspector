@@ -32,7 +32,7 @@ If the pack supports multiple devices and/or processors, you will be prompted to
 }
 ```
 
-__TIP:__ The pack reference and device name can be automatically derived if you use the [Arm Device Manager extension in VS Code](https://marketplace.visualstudio.com/items?itemName=Arm.device-manager) using these commands:
+**TIP:** The pack reference and device name can be automatically derived if you use the [Arm Device Manager extension in VS Code](https://marketplace.visualstudio.com/items?itemName=Arm.device-manager) using these commands:
 
 ```json
 {
@@ -94,3 +94,10 @@ The following list outlines the setting names and default values:
 - `peripheral-inspector.definitionPathConfig` - Debug configuration key to use to get the SVD path (default `definitionPath`)
 - `peripheral-inspector.deviceConfig` - Debug configuration key to use to get the device name (default: `deviceName`)
 - `peripheral-inspector.processorConfig` - Debug configuration key to use to get the processor name (default: `processorName`)
+- `peripheral-inspector.packAssetUrl` - Base URL for CMSIS pack assets (default: `https://pack-content.cmsis.io`)
+- `peripheral-inspector.svdAddrGapThreshold`- If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow (default: `16`)
+
+Additionally the following settings can be used to customize the Peripheral Inspector:
+
+- `peripheral-inspector.saveLayout`- Save layout of peripheral view between sessions (default: `true`)
+- `peripheral-inspector.ignorePeripherals` - List of variable names to ignore. They will not show up in the tree view. The user can add variables by using the context menu (**Workspace only**) in the tree view, or by setting them manually in the **User** and **Workspace** preferences.

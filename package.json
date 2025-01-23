@@ -150,12 +150,12 @@
       },
       {
         "command": "peripheral-inspector.svd.ignorePeripheral",
-        "title": "Ignore Peripheral",
+        "title": "Ignore Peripheral (Workspace)",
         "icon": "$(circle-slash)"
       },
       {
         "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
-        "title": "Clear Ignored Peripherals",
+        "title": "Clear Ignored Peripherals (Workspace)",
         "icon": "$(clear-all)"
       }
     ],

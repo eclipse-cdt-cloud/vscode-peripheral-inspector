@@ -32,19 +32,23 @@ export class PeripheralCommands {
                     this.initIgnoredPeripheralsContext();
                 }
             }),
+
+            // VSCode specific commands
+            vscode.commands.registerCommand(Commands.FIND_COMMAND_ID, () => this.find()),
+            vscode.commands.registerCommand(Commands.SET_FORMAT_COMMAND_ID, (node) => this.peripheralsSetFormat(node)),
+            vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND_ID, () => this.peripheralsForceRefresh()),
+            vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND_ID, () => this.collapseAll()),
+            vscode.commands.registerCommand(Commands.EXPORT_ALL_COMMAND_ID, () => this.peripheralsExportAll()),
+            vscode.commands.registerCommand(Commands.IGNORE_PERIPHERAL_ID, (context) => this.ignorePeripheral(context)),
+            vscode.commands.registerCommand(Commands.CLEAR_IGNORED_PERIPHERAL_ID, () => this.clearIgnoredPeripherals()),
+
+            // Commands manually rendered in the DOM
             vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node, value) => this.peripheralsUpdateNode(node, value)),
             vscode.commands.registerCommand(Commands.EXPORT_NODE_COMMAND.commandId, node => this.peripheralsExportNode(node)),
             vscode.commands.registerCommand(Commands.COPY_VALUE_COMMAND.commandId, (node, value) => this.peripheralsCopyValue(node, value)),
-            vscode.commands.registerCommand(Commands.SET_FORMAT_COMMAND.commandId, (node) => this.peripheralsSetFormat(node)),
             vscode.commands.registerCommand(Commands.FORCE_REFRESH_COMMAND.commandId, (node) => this.peripheralsForceRefresh(node)),
             vscode.commands.registerCommand(Commands.PIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
             vscode.commands.registerCommand(Commands.UNPIN_COMMAND.commandId, (node, _, context) => this.peripheralsTogglePin(node, context)),
-            vscode.commands.registerCommand(Commands.FIND_COMMAND.commandId, () => this.find()),
-            vscode.commands.registerCommand(Commands.REFRESH_ALL_COMMAND.commandId, () => this.peripheralsForceRefresh()),
-            vscode.commands.registerCommand(Commands.COLLAPSE_ALL_COMMAND.commandId, () => this.collapseAll()),
-            vscode.commands.registerCommand(Commands.EXPORT_ALL_COMMAND.commandId, () => this.peripheralsExportAll()),
-            vscode.commands.registerCommand(Commands.IGNORE_PERIPHERAL.commandId, (context) => this.ignorePeripheral(context)),
-            vscode.commands.registerCommand(Commands.CLEAR_IGNORED_PERIPHERAL.commandId, () => this.clearIgnoredPeripherals()),
         );
     }
 
