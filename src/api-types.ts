@@ -66,6 +66,13 @@ export interface IPeripheralsProvider {
     getPeripherals: (data: string, options: IGetPeripheralsArguments) => Promise<PeripheralOptions[]>;
 }
 
+export interface PeripheralsConfiguration {
+    gapThreshold: number;
+    peripheralOptions: Record<string, PeripheralOptions>;
+    enumTypeValues: Record<string, EnumerationMap>;
+    ignoredPeripherals: string[];
+}
+
 export enum AccessType {
     ReadOnly = 1,
     ReadWrite = 2,

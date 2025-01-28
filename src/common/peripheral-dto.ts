@@ -68,7 +68,7 @@ export interface PeripheralSessionNodeDTO extends PeripheralBaseNodeDTO {
     children: Array<PeripheralNodeDTO>;
 }
 export namespace PeripheralSessionNodeDTO {
-    export const Type = 'PeripheralSessionNode';
+    export const Type = 'peripheral-session-node';
 
     export function is(node: object): node is PeripheralSessionNodeDTO {
         return PeripheralBaseTreeNodeDTO.hasType(node, Type);
@@ -90,7 +90,7 @@ export interface PeripheralNodeDTO extends PeripheralBaseNodeDTO, PeripheralOpti
     groupName: string;
 }
 export namespace PeripheralNodeDTO {
-    export const Type = 'PeripheralNode';
+    export const Type = 'peripheral-node';
 
     export function is(node: object): node is PeripheralNodeDTO {
         return PeripheralBaseTreeNodeDTO.hasType(node, Type);
@@ -110,7 +110,7 @@ export interface ClusterOrRegisterBaseNodeDTO extends PeripheralBaseNodeDTO {
     offset: number | undefined;
 }
 export namespace ClusterOrRegisterBaseNodeDTO {
-    export const Type = 'ClusterOrRegisterBaseNode';
+    export const Type = 'cluster-or-register-base-node';
 
     export function is(node: object): node is ClusterOrRegisterBaseNodeDTO {
         return PeripheralBaseTreeNodeDTO.hasType(node, Type);
@@ -132,7 +132,7 @@ export interface PeripheralClusterNodeDTO extends ClusterOrRegisterBaseNodeDTO, 
     offset: number;
 }
 export namespace PeripheralClusterNodeDTO {
-    export const Type = 'PeripheralClusterNode';
+    export const Type = 'peripheral-cluster-node';
 
     export function is(node: object): node is PeripheralClusterNodeDTO {
         return PeripheralBaseTreeNodeDTO.hasType(node, Type);
@@ -156,7 +156,7 @@ export interface PeripheralFieldNodeDTO extends PeripheralBaseNodeDTO, FieldOpti
     resetValue: number;
 }
 export namespace PeripheralFieldNodeDTO {
-    export const Type = 'PeripheralFieldNode';
+    export const Type = 'peripheral-field-node';
 
     export function is(node: object): node is PeripheralFieldNodeDTO {
         return PeripheralBaseTreeNodeDTO.hasType(node, Type);
@@ -184,7 +184,7 @@ export interface PeripheralRegisterNodeDTO extends ClusterOrRegisterBaseNodeDTO,
     address: number;
 }
 export namespace PeripheralRegisterNodeDTO {
-    export const Type = 'PeripheralRegisterNode';
+    export const Type = 'peripheral-register-node';
 
     export function is(node: object): node is PeripheralRegisterNodeDTO {
         return PeripheralBaseTreeNodeDTO.hasType(node, Type);

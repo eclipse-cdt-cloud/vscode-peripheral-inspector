@@ -11,14 +11,18 @@ import { TreeNotification } from '../../common/notification';
 
 // ==== Items ====
 
+export interface CDTTreeItemResource {
+    __type: string;
+}
+
 /**
  * A tree item that is used in the CDT tree view.
  */
-export interface CDTTreeItem<T = unknown> {
+export interface CDTTreeItem<T extends CDTTreeItemResource = CDTTreeItemResource> {
     __type: 'CDTTreeItem'
     id: string;
     key: string;
-    parent?: CDTTreeItem<unknown>;
+    parent?: CDTTreeItem<CDTTreeItemResource>;
     children?: CDTTreeItem<T>[];
     /**
      * The resource that this tree item represents. This can be any type of object.
@@ -43,18 +47,18 @@ export interface CDTTreeItem<T = unknown> {
 }
 
 export namespace CDTTreeItem {
-    export function create<TResource>(options: Omit<CDTTreeItem<TResource>, '__type'>): CDTTreeItem<TResource> {
+    export function create<TResource extends CDTTreeItemResource>(options: Omit<CDTTreeItem<TResource>, '__type'>): CDTTreeItem<TResource> {
         return {
             __type: 'CDTTreeItem',
             ...options
         };
     }
 
-    export function createRoot(): CDTTreeItem<unknown> {
-        return create<unknown>({
+    export function createRoot(): CDTTreeItem<CDTTreeItemResource> {
+        return create<CDTTreeItemResource>({
             id: 'root',
             key: 'root',
-            resource: undefined,
+            resource: { __type: 'root' },
             children: []
         });
     }
@@ -134,7 +138,7 @@ export interface CDTTreeExtensionModel<TItems = unknown> {
  * The view model that is used to update the CDT tree view.
  * It is the actual model that is used to render the tree view.
  */
-export interface CDTTreeViewModel<TItem = unknown> {
+export interface CDTTreeViewModel<TItem extends CDTTreeItemResource = CDTTreeItemResource> {
     items: CDTTreeItem<TItem>[];
     expandedKeys: string[];
     pinnedKeys: string[];
@@ -144,6 +148,7 @@ export interface CDTTreeViewModel<TItem = unknown> {
 export interface CTDTreeWebviewContext {
     webviewSection: string;
     cdtTreeItemId: string;
+    cdtTreeItemType: string;
 }
 
 export namespace CTDTreeWebviewContext {

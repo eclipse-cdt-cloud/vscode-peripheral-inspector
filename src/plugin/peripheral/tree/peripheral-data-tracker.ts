@@ -49,6 +49,27 @@ export class PeripheralDataTracker {
         tracker.onWillStartSession(session => this.onDebugSessionStarted(session));
         tracker.onWillStopSession(session => this.onDebugSessionTerminated(session));
         tracker.onDidStopDebug(session => this.onDebugStopped(session));
+
+        this.init();
+    }
+
+    private init(): void {
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
+                const sessions = Array.from(this.sessionPeripherals.values());
+                if (sessions.length === 0) {
+                    return;
+                }
+
+                vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Reloading peripherals',
+                    cancellable: false
+                }, () => {
+                    return Promise.all(sessions.map(s => s.reloadIgnoredPeripherals()));
+                });
+            }
+        });
     }
 
     public async selectNode(node?: PeripheralBaseNode): Promise<void> {

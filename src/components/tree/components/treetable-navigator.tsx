@@ -4,22 +4,22 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
-import { CDTTreeItem } from '../types';
+import { CDTTreeItem, CDTTreeItemResource } from '../types';
 
-export interface TreeNavigatorProps {
+export interface TreeNavigatorProps<T extends CDTTreeItemResource> {
     ref: React.RefObject<HTMLDivElement>;
     rowIndex: Map<string, number>;
     expandedRowKeys: string[];
-    expand: (expanded: boolean, record: CDTTreeItem) => void;
-    select: (record: CDTTreeItem) => void;
+    expand: (expanded: boolean, record: CDTTreeItem<T>) => void;
+    select: (record: CDTTreeItem<T>) => void;
 }
 
 /**
  * TreeNavigator is a helper class to navigate
  * through a tree table.
  */
-export class TreeNavigator {
-    constructor(private readonly props: TreeNavigatorProps) {
+export class TreeNavigator<T extends CDTTreeItemResource = CDTTreeItemResource> {
+    constructor(private readonly props: TreeNavigatorProps<T>) {
     }
 
     next(node: CDTTreeItem) {
@@ -104,14 +104,14 @@ export class TreeNavigator {
             if (this.props.expandedRowKeys.includes(node.id)) {
                 this.next(node);
             } else {
-                this.props.expand(true, node);
+                this.props.expand(true, node as CDTTreeItem<T>);
             }
         }
     }
 
     collapse(node: CDTTreeItem) {
         if (node.children && node.children.length > 0 && this.props.expandedRowKeys.includes(node.id)) {
-            this.props.expand(false, node);
+            this.props.expand(false, node as CDTTreeItem<T>);
         } else if (node.parent && !CDTTreeItem.isRoot(node.parent)) {
             this.select(node.parent, 'absolute');
         }
@@ -122,16 +122,16 @@ export class TreeNavigator {
         if (!this.isDomVisible(node)) {
             if (scrollMode === 'absolute') {
                 this.scrollAbsolute(node);
-                this.props.select(node);
+                this.props.select(node as CDTTreeItem<T>);
             } else {
                 this.scrollRelative(-(this.visibleDomElementCount / 2));
             }
 
-            this.props.select(node);
+            this.props.select(node as CDTTreeItem<T>);
             // Allow the DOM to update before focusing
             setTimeout(() => this.getDomElement(node)?.focus(), 100);
         } else {
-            this.props.select(node);
+            this.props.select(node as CDTTreeItem<T>);
             this.getDomElement(node)?.focus();
         }
 

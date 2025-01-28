@@ -28,6 +28,9 @@ export interface NodeSetting {
     pinned?: boolean;
 }
 
+/**
+ * A command definition that is manually inserted into the DOM and not by VSCode.
+ */
 export interface CommandDefinition {
     commandId: string;
     icon: string;

@@ -8,7 +8,7 @@ import React from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';
-import { CDTTreeItem, CDTTreeTableStringColumn } from '../types';
+import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableStringColumn } from '../types';
 
 export function classNames(...classes: (string | Record<string, boolean>)[]): string {
     return classes.filter(c => c !== undefined).map(c => {
@@ -75,7 +75,7 @@ export function createLabelWithTooltip(child: React.JSX.Element, tooltip?: strin
  * and their ancestor hierarchy. If children are not to be filtered, all children
  * of a matched item are included. Elements that match the search text are marked.
  */
-export function filterTree<T>(
+export function filterTree<T extends CDTTreeItemResource>(
     items: CDTTreeItem<T>[],
     searchText: string,
     options: { filterChildren?: boolean } = { filterChildren: false }
@@ -117,7 +117,7 @@ export function filterTree<T>(
 /**
  * Options for traversing the tree.
  */
-export interface TraverseOptions<T, U> {
+export interface TraverseOptions<T extends CDTTreeItemResource, U> {
     /**
      * A predicate function to determine if an item should be included.
      * If omitted, all items are included.
@@ -138,7 +138,7 @@ export interface TraverseOptions<T, U> {
  * @param options - Optional traversal options including predicate and mapFn.
  * @returns An array of items that satisfy the predicate and are optionally mapped.
  */
-export function traverseTree<T, U = CDTTreeItem<T>>(
+export function traverseTree<T extends CDTTreeItemResource, U = CDTTreeItem<T>>(
     items: CDTTreeItem<T>[],
     options?: TraverseOptions<T, U>
 ): U[] {
@@ -168,11 +168,11 @@ export function traverseTree<T, U = CDTTreeItem<T>>(
     return result;
 }
 
-export function getAncestors<T>(
+export function getAncestors<T extends CDTTreeItemResource>(
     item: CDTTreeItem<T>
-): CDTTreeItem<unknown>[] {
-    const ancestors: CDTTreeItem<unknown>[] = [];
-    let current: CDTTreeItem<unknown> | undefined = item.parent;
+): CDTTreeItem<CDTTreeItemResource>[] {
+    const ancestors: CDTTreeItem<CDTTreeItemResource>[] = [];
+    let current: CDTTreeItem<CDTTreeItemResource> | undefined = item.parent;
     while (current) {
         ancestors.push(current);
         current = current.parent as unknown as CDTTreeItem<T>;

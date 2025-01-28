@@ -5,15 +5,15 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { CDTTreeItem } from '../types';
+import { CDTTreeItem, CDTTreeItemResource } from '../types';
 
 /**
  * A TreeConverterContext is used to pass additional information to the TreeResourceConverter.
  * It contains the expanded keys, pinned keys and a resource map.
  * It will be propagated to all TreeResourceConverters.
  */
-export interface TreeConverterContext<TResource = unknown> {
-    parent?: CDTTreeItem<unknown>,
+export interface TreeConverterContext<TResource extends CDTTreeItemResource = CDTTreeItemResource> {
+    parent?: CDTTreeItem<CDTTreeItemResource>,
     /**
      * The expanded keys of the tree. This is used to determine if a node should be expanded or not.
      */
@@ -33,7 +33,7 @@ export interface TreeConverterContext<TResource = unknown> {
 /**
  * A TreeResourceConverter is responsible for converting a resource into a CDTTreeItem.
  */
-export interface TreeResourceConverter<TResource = unknown, TContextResource = TResource> {
+export interface TreeResourceConverter<TResource extends CDTTreeItemResource, TContextResource extends CDTTreeItemResource = TResource> {
     canHandle(resource: TResource): boolean;
 
     convert(resource: TResource, context: TreeConverterContext<TContextResource>): CDTTreeItem<TResource>;
