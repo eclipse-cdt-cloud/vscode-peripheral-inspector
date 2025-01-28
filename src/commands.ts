@@ -25,11 +25,11 @@ export class PeripheralCommands {
     }
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
-        this.initIgnoredPeripheralsContext();
+        this.updateIgnoredPeripheralsContext();
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
-                    this.initIgnoredPeripheralsContext();
+                    this.updateIgnoredPeripheralsContext();
                 }
             }),
 
@@ -52,7 +52,7 @@ export class PeripheralCommands {
         );
     }
 
-    private initIgnoredPeripheralsContext(): void {
+    private updateIgnoredPeripheralsContext(): void {
         const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME)?.inspect<string[]>(manifest.IGNORE_PERIPHERALS)?.workspaceValue ?? [];
         vscode.commands.executeCommand('setContext', VSCodeContextKeys.IGNORED_PERIPHERALS_LENGTH, ignoredPeripherals.length);
     }

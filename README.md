@@ -100,4 +100,4 @@ The following list outlines the setting names and default values:
 Additionally the following settings can be used to customize the Peripheral Inspector:
 
 - `peripheral-inspector.saveLayout`- Save layout of peripheral view between sessions (default: `true`)
-- `peripheral-inspector.ignorePeripherals` - List of variable names to ignore. They will not show up in the tree view. The user can add variables by using the context menu (**Workspace only**) in the tree view, or by setting them manually in the **User** and **Workspace** preferences.
+- `peripheral-inspector.ignorePeripherals` - List of peripheral names to ignore. They will not show up in the tree view and no values are read from the target system. The user can add variables by using the context menu (**Workspace only**) in the tree view, or by setting them manually in the **User** and **Workspace** preferences.
