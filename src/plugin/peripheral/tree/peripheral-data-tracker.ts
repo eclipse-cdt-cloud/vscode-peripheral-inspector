@@ -340,7 +340,6 @@ export class PeripheralDataTracker {
         }
         const regs = this.sessionPeripherals.get(session.id);
 
-
         if (regs) {
             this.oldState.set(session.name, regs.expanded);
             this.sessionPeripherals.delete(session.id);
