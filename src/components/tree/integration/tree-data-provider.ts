@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { MaybePromise } from '../../../common';
-import { TreeNotification } from '../../../common/notification';
+import { TreeNotification, TreeTerminatedEvent } from '../../../common/notification';
 import { CDTTreeTableColumnDefinition } from '../types';
 
 /**
@@ -18,6 +18,7 @@ import { CDTTreeTableColumnDefinition } from '../types';
  * are actually send to the webview to be display in the tree.
  */
 export interface CDTTreeDataProvider<TNode, TSerializedNode> {
+    onDidTerminate: vscode.Event<TreeTerminatedEvent<TNode>>;
     onDidChangeTreeData: vscode.Event<TreeNotification<TNode | TNode[] | undefined | null>>;
     /**
      * Get the column definitions for the tree table.

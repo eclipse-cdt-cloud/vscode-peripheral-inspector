@@ -16,3 +16,11 @@ export interface TreeNotification<T> {
     context?: TreeNotificationContext;
     data: T;
 }
+
+export interface TreeTerminatedEvent<T> {
+    /**
+     * The number of remaining trees.
+     */
+    remaining: number;
+    data: T;
+}

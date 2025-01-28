@@ -19,13 +19,15 @@ import {
     PeripheralRegisterNode,
 } from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
-import { TreeNotification, TreeNotificationContext } from '../../../common/notification';
+import { TreeNotification, TreeNotificationContext, TreeTerminatedEvent } from '../../../common/notification';
 import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
 import * as xmlWriter from 'xmlbuilder2';
 import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 import { hexFormat } from '../../../utils';
 
 export class PeripheralDataTracker {
+    protected onDidTerminateEvent = new vscode.EventEmitter<TreeTerminatedEvent<PeripheralTreeForSession>>();
+    public readonly onDidTerminate = this.onDidTerminateEvent.event;
     protected onDidChangeEvent = new vscode.EventEmitter<void>();
     public readonly onDidChange = this.onDidChangeEvent.event;
     protected onDidPeripheralChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
@@ -329,7 +331,7 @@ export class PeripheralDataTracker {
             this.fireOnDidChange();
         }
 
-        vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
+        this.refreshContext();
     }
 
     protected onDebugSessionTerminated(session: vscode.DebugSession): void {
@@ -342,10 +344,13 @@ export class PeripheralDataTracker {
             this.oldState.set(session.name, regs.expanded);
             this.sessionPeripherals.delete(session.id);
             regs.sessionTerminated(this.context);
-            this.fireOnDidChange();
+            this.onDidTerminateEvent.fire({
+                data: regs,
+                remaining: this.sessionPeripherals.size
+            });
         }
 
-        vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
+        this.refreshContext();
     }
 
     protected onDebugStopped(session: vscode.DebugSession): void {
@@ -362,5 +367,9 @@ export class PeripheralDataTracker {
                 peripheralTree.updateData();
             }
         }, 100);
+    }
+
+    protected refreshContext(): void {
+        vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
     }
 }
