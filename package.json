@@ -157,6 +157,16 @@
         "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
         "title": "Clear Ignored Peripherals (Workspace)",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "peripheral-inspector.svd.periodicRefreshMode",
+        "title": "Set Periodic Refresh Mode",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "peripheral-inspector.svd.periodicRefreshInterval",
+        "title": "Set Periodic Refresh Interval",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
@@ -293,9 +303,30 @@
           "command": "peripheral-inspector.svd.ignorePeripheral",
           "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType === peripheral-node",
           "group": "navigation"
+        },
+        {
+          "submenu": "peripheral-inspector.svd.periodicRefresh",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/"
+        }
+      ],
+      "peripheral-inspector.svd.periodicRefresh": [
+        {
+          "command": "peripheral-inspector.svd.periodicRefreshMode",
+          "when": "true"
+        },
+        {
+          "command": "peripheral-inspector.svd.periodicRefreshInterval",
+          "when": "true"
         }
       ]
     },
+    "submenus": [
+      {
+        "id": "peripheral-inspector.svd.periodicRefresh",
+        "label": "Periodic Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
     "configuration": {
       "title": "Peripheral Inspector",
       "properties": {
@@ -338,6 +369,29 @@
             "type": "string"
           },
           "description": "List of case insensitive peripheral names to ignore"
+        },
+        "peripheral-inspector.periodicRefreshMode": {
+          "type": "string",
+          "enum": [
+            "always",
+            "while stopped",
+            "while running",
+            "off"
+          ],
+          "markdownEnumDescriptions": [
+            "Always refresh automatically after the configured `#peripheral-inspector.periodicRefreshInterval#`",
+            "Refresh automatically after the configured `#peripheral-inspector.periodicRefreshInterval#` while the CPU is stopped",
+            "Refresh automatically after the configured `#peripheral-inspector.periodicRefreshInterval#` while the CPU is running",
+            "Do not automatically refresh after the configured delay"
+          ],
+          "default": "off",
+          "markdownDescription": "Refresh Peripheral Inspectors after the configured `#peripheral-inspector.periodicRefreshInterval#`."
+        },
+        "peripheral-inspector.periodicRefreshInterval": {
+          "type": "number",
+          "default": 500,
+          "minimum": 500,
+          "markdownDescription": "Controls the delay in milliseconds after which a Peripheral Inspector is refreshed automatically. Only applies when `#peripheral-inspector.periodicRefresh#` is enabled."
         }
       }
     }

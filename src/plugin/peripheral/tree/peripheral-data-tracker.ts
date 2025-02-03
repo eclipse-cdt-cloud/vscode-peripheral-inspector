@@ -7,7 +7,6 @@
 
 import * as vscode from 'vscode';
 import { DebugTracker } from '../../../debug-tracker';
-import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SvdResolver } from '../../../svd-resolver';
 import {
@@ -24,6 +23,7 @@ import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
 import * as xmlWriter from 'xmlbuilder2';
 import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 import { hexFormat } from '../../../utils';
+import { PeripheralConfigurationProvider } from './peripheral-configuration-provider';
 
 export class PeripheralDataTracker {
     protected onDidTerminateEvent = new vscode.EventEmitter<TreeTerminatedEvent<PeripheralTreeForSession>>();
@@ -47,30 +47,28 @@ export class PeripheralDataTracker {
         return this.sessionPeripherals;
     }
 
-    constructor(tracker: DebugTracker, protected resolver: SvdResolver, protected api: PeripheralInspectorAPI, protected context: vscode.ExtensionContext) {
+    constructor(tracker: DebugTracker, protected resolver: SvdResolver, protected api: PeripheralInspectorAPI, protected config: PeripheralConfigurationProvider, protected context: vscode.ExtensionContext) {
         tracker.onWillStartSession(session => this.onDebugSessionStarted(session));
         tracker.onWillStopSession(session => this.onDebugSessionTerminated(session));
         tracker.onDidStopDebug(session => this.onDebugStopped(session));
-
+        tracker.onDidContinueDebug(session => this.onDebugStopped(session));
         this.init();
     }
 
     private init(): void {
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
-                const sessions = Array.from(this.sessionPeripherals.values());
-                if (sessions.length === 0) {
-                    return;
-                }
-
-                vscode.window.withProgress({
-                    location: vscode.ProgressLocation.Notification,
-                    title: 'Reloading peripherals',
-                    cancellable: false
-                }, () => {
-                    return Promise.all(sessions.map(s => s.reloadIgnoredPeripherals()));
-                });
+        this.config.onDidChangeIgnorePeripherals(() => {
+            const sessions = Array.from(this.sessionPeripherals.values());
+            if (sessions.length === 0) {
+                return;
             }
+
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Reloading peripherals',
+                cancellable: false
+            }, () => {
+                return Promise.all(sessions.map(session => session.reloadIgnoredPeripherals()));
+            });
         });
     }
 
@@ -278,10 +276,20 @@ export class PeripheralDataTracker {
         if (node === undefined) {
             throw new Error(`No node found with path ${path}`);
         }
-
         return node;
     }
 
+    public findSessionByPath(path: string[]): vscode.DebugSession | undefined {
+        return this.sessionPeripherals.get(path[0])?.session;
+    }
+
+    public getSessionByPath(path: string[]): vscode.DebugSession {
+        const session = this.findSessionByPath(path);
+        if (session === undefined) {
+            throw new Error(`No node found with path ${path}`);
+        }
+        return session;
+    }
 
     public async updateData(): Promise<void> {
         const trees = this.sessionPeripherals.values();
@@ -313,16 +321,12 @@ export class PeripheralDataTracker {
         if (expanded === undefined) {
             expanded = this.sessionPeripherals.size === 0 ? true : false;
         }
-        const peripheralTree = new PeripheralTreeForSession(session, this.api, expanded, () => {
+        const peripheralTree = new PeripheralTreeForSession(session, this.api, this.config, expanded, () => {
             this.fireOnDidChange();
         });
 
         this.sessionPeripherals.set(session.id, peripheralTree);
-        let thresh = session.configuration[manifest.CONFIG_ADDRGAP];
-
-        if (!thresh) {
-            thresh = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<number>(manifest.CONFIG_ADDRGAP) || manifest.DEFAULT_ADDRGAP;
-        }
+        const thresh = this.config.addressGapThreshold(session);
 
         try {
             await peripheralTree.sessionStarted(this.context, svdPath, thresh);     // Should never reject
@@ -355,19 +359,11 @@ export class PeripheralDataTracker {
     }
 
     protected onDebugStopped(session: vscode.DebugSession): void {
-        if (!this.sessionPeripherals.get(session.id)) {
-            return;
-        }
+        this.sessionPeripherals.get(session.id)?.debugStopped(this.context);
+    }
 
-        // We are stopped for many reasons very briefly where we cannot even execute any queries
-        // reliably and get errors. Programs stop briefly to set breakpoints, during startup/reset/etc.
-        // Also give VSCode some time to finish it's updates (Variables, Stacktraces, etc.)
-        setTimeout(() => {
-            const peripheralTree = this.sessionPeripherals.get(session.id);
-            if (peripheralTree) {     // We are called even before the session has started, as part of reset
-                peripheralTree.updateData();
-            }
-        }, 100);
+    protected onDebugContinued(session: vscode.DebugSession): void {
+        this.sessionPeripherals.get(session.id)?.debugContinued(this.context);
     }
 
     protected refreshContext(): void {

@@ -6,32 +6,26 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import * as manifest from './manifest';
 import { isAbsolute, join, normalize } from 'path';
 import { parseStringPromise } from 'xml2js';
 import { PeripheralInspectorAPI } from './peripheral-inspector-api';
 import { parsePackString, pdscFromPack, fileFromPack, Pack } from './cmsis-pack/pack-utils';
 import { PDSC, Device, DeviceVariant, getDevices, getSvdPath, getProcessors } from './cmsis-pack/pdsc';
 import { readFromUrl } from './utils';
+import { PeripheralConfigurationProvider } from './plugin/peripheral/tree/peripheral-configuration-provider';
 
 export class SvdResolver {
-    public constructor(protected api: PeripheralInspectorAPI) {
+    public constructor(protected api: PeripheralInspectorAPI, protected readonly config: PeripheralConfigurationProvider) {
     }
 
     public async resolve(session: vscode.DebugSession, wsFolderPath?: vscode.Uri): Promise<string | undefined> {
-        const svdConfig = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string>(manifest.CONFIG_SVD_PATH) || manifest.DEFAULT_SVD_PATH;
-        let svdPath = session.configuration[svdConfig];
-
-        const deviceConfig = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string>(manifest.CONFIG_DEVICE) || manifest.DEFAULT_DEVICE;
-        const deviceName = session.configuration[deviceConfig];
-
-        const processorConfig = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string>(manifest.CONFIG_PROCESSOR) || manifest.DEFAULT_PROCESSOR;
-        const processorName = session.configuration[processorConfig];
-
+        let svdPath = this.config.sdvPath(session);
+        const deviceName = this.config.deviceName(session);
         if (!svdPath && !deviceName) {
             return undefined;
         }
 
+        const processorName = this.config.processorName(session);
         try {
             if (svdPath) {
                 const pack = parsePackString(svdPath);
@@ -50,7 +44,7 @@ export class SvdResolver {
                     svdPath = await this.api.getSVDFileFromCortexDebug(deviceName);
                 }
             }
-        } catch(e) {
+        } catch (e) {
             // eslint-disable-next-line no-console
             vscode.debug.activeDebugConsole.appendLine((e as Error).message);
         }
@@ -61,7 +55,7 @@ export class SvdResolver {
     protected async loadFromPack(pack: Pack, deviceName: string | undefined, processorName: string | undefined): Promise<string | undefined> {
         const getDeviceName = (device: Device) => (device as DeviceVariant).$.Dvariant || device.$.Dname;
 
-        const assetBase = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string>(manifest.CONFIG_ASSET_PATH) || manifest.DEFAULT_ASSET_PATH;
+        const assetBase = this.config.assetPath();
         const pdscPath = pdscFromPack(assetBase, pack);
         const pdscBuffer = await readFromUrl(pdscPath.toString());
 

@@ -28,7 +28,7 @@ interface IDebugTracker {
     subscribe(arg: IDebuggerTrackerSubscribeArg): void;
 }
 
-enum DebugSessionStatus {
+export enum DebugSessionStatus {
     Unknown = 'unknown',
     Initializing = 'initializing',
     Started = 'started',
@@ -50,6 +50,9 @@ export class DebugTracker {
     private _onDidStopDebug: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
     public readonly onDidStopDebug: vscode.Event<vscode.DebugSession> = this._onDidStopDebug.event;
 
+    private _onDidContinueDebug: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
+    public readonly onDidContinueDebug: vscode.Event<vscode.DebugSession> = this._onDidStopDebug.event;
+
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         const debugtracker = await this.getTracker();
         if (debugtracker) {
@@ -60,13 +63,16 @@ export class DebugTracker {
                     debuggers: '*',
                     handler: async event => {
                         if (event.event === DebugSessionStatus.Initializing && event.session) {
-                            this._onWillStartSession.fire(event.session);
+                            this.handleOnWillStartSession(event.session);
                         }
                         if (event.event === DebugSessionStatus.Terminated && event.session) {
-                            this._onWillStopSession.fire(event.session);
+                            this.handleOnWillStopSession(event.session);
                         }
                         if (event.event === DebugSessionStatus.Stopped && event.session) {
-                            this._onDidStopDebug.fire(event.session);
+                            this.handleOnDidStopDebug(event.session);
+                        }
+                        if (event.event === DebugSessionStatus.Running && event.session) {
+                            this.handleOnDidContinueDebug(event.session);
                         }
                     }
                 }
@@ -75,11 +81,14 @@ export class DebugTracker {
             // Use vscode debug tracker
             const createDebugAdapterTracker = (session: vscode.DebugSession): vscode.DebugAdapterTracker => {
                 return {
-                    onWillStartSession: () => this._onWillStartSession.fire(session),
-                    onWillStopSession: () => this._onWillStopSession.fire(session),
+                    onWillStartSession: () => this.handleOnWillStartSession(session),
+                    onWillStopSession: () => this.handleOnWillStopSession(session),
                     onDidSendMessage: message => {
                         if (message.type === 'event' && message.event === 'stopped') {
-                            this._onDidStopDebug.fire(session);
+                            this.handleOnDidStopDebug(session);
+                        }
+                        if (message.type === 'event' && message.event === 'continued') {
+                            this.handleOnDidContinueDebug(session);
                         }
                     }
                 };
@@ -91,13 +100,29 @@ export class DebugTracker {
         }
     }
 
+    private handleOnWillStartSession(session: vscode.DebugSession): void {
+        this._onWillStartSession.fire(session);
+    }
+
+    private handleOnWillStopSession(session: vscode.DebugSession): void {
+        this._onWillStopSession.fire(session);
+    }
+
+    private handleOnDidStopDebug(session: vscode.DebugSession): void {
+        this._onDidStopDebug.fire(session);
+    }
+
+    private handleOnDidContinueDebug(session: vscode.DebugSession): void {
+        this._onDidContinueDebug.fire(session);
+    }
+
     private async getTracker(): Promise<IDebugTracker | undefined> {
         try {
             const trackerExtension = vscode.extensions.getExtension<IDebugTracker>(DEBUG_TRACKER_EXTENSION);
             if (trackerExtension) {
                 return trackerExtension.activate();
             }
-        } catch(_e) {
+        } catch (_e) {
             // Ignore error
         }
 

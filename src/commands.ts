@@ -15,23 +15,20 @@ import { PeripheralBaseNode } from './plugin/peripheral/nodes';
 import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
 import { PeripheralsTreeTableWebView } from './plugin/peripheral/webview/peripheral-tree-webview-main';
 import { getFilePath } from './fileUtils';
-import * as manifest from './manifest';
 import { VSCodeContextKeys } from './common/vscode-context';
+import { PeripheralConfigurationProvider } from './plugin/peripheral/tree/peripheral-configuration-provider';
 
 export class PeripheralCommands {
     public constructor(
         protected readonly dataTracker: PeripheralDataTracker,
+        protected readonly config: PeripheralConfigurationProvider,
         protected readonly webview: PeripheralsTreeTableWebView) {
     }
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         this.updateIgnoredPeripheralsContext();
         context.subscriptions.push(
-            vscode.workspace.onDidChangeConfiguration(e => {
-                if (e.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.IGNORE_PERIPHERALS}`)) {
-                    this.updateIgnoredPeripheralsContext();
-                }
-            }),
+            this.config.onDidChangeIgnorePeripherals(() => this.updateIgnoredPeripheralsContext()),
 
             // VSCode specific commands
             vscode.commands.registerCommand(Commands.FIND_COMMAND_ID, () => this.find()),
@@ -41,6 +38,8 @@ export class PeripheralCommands {
             vscode.commands.registerCommand(Commands.EXPORT_ALL_COMMAND_ID, () => this.peripheralsExportAll()),
             vscode.commands.registerCommand(Commands.IGNORE_PERIPHERAL_ID, (context) => this.ignorePeripheral(context)),
             vscode.commands.registerCommand(Commands.CLEAR_IGNORED_PERIPHERAL_ID, () => this.clearIgnoredPeripherals()),
+            vscode.commands.registerCommand(Commands.PERIODIC_REFRESH_ID, (context) => this.periodicRefreshMode(context)),
+            vscode.commands.registerCommand(Commands.PERIODIC_REFRESH_INTERVAL_ID, (context) => this.periodicRefreshInterval(context)),
 
             // Commands manually rendered in the DOM
             vscode.commands.registerCommand(Commands.UPDATE_NODE_COMMAND.commandId, (node, value) => this.peripheralsUpdateNode(node, value)),
@@ -53,7 +52,7 @@ export class PeripheralCommands {
     }
 
     private updateIgnoredPeripheralsContext(): void {
-        const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME)?.inspect<string[]>(manifest.IGNORE_PERIPHERALS)?.workspaceValue ?? [];
+        const ignoredPeripherals = this.config.ignorePeripherals();
         vscode.commands.executeCommand('setContext', VSCodeContextKeys.IGNORED_PERIPHERALS_LENGTH, ignoredPeripherals.length);
     }
 
@@ -144,12 +143,22 @@ export class PeripheralCommands {
 
     private ignorePeripheral(context: CTDTreeWebviewContext): void {
         const node = this.dataTracker.getNodeByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP));
-
-        const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
-        vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).update(manifest.IGNORE_PERIPHERALS, [...ignoredPeripherals, node.name]);
+        if (node.name) {
+            this.config.addIgnorePeripherals(node.name);
+        }
     }
 
     private clearIgnoredPeripherals(): void {
-        vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).update(manifest.IGNORE_PERIPHERALS, undefined);
+        this.config.setIgnorePeripherals();
+    }
+
+    private periodicRefreshMode(context?: CTDTreeWebviewContext): void {
+        const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
+        this.config.queryPeriodicRefreshMode(session);
+    }
+
+    private periodicRefreshInterval(context?: CTDTreeWebviewContext): void {
+        const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
+        this.config.queryPeriodicRefreshInterval(session);
     }
 }
