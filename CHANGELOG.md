@@ -1,5 +1,19 @@
 # Change Log
 
+## [v1.6.0] - 2025-02-04
+
+### New Features
+
+- Allow use of Peripheral Inspector in SSH remote scenario. ([Rob Moran](https://github.com/thegecko)).
+- Updated Peripheral Inspector to use [Ant Design](https://ant.design/docs/react/introduce/) React UI library ([Haydar Metin](https://github.com/haydar-metin), [Martin Fleck](https://github.com/martin-fleck-at), and others)
+- Added `Export Registers` functionality ([QuocTrung76](https://github.com/QuocTrung76))
+- Added `Search` functionality ([Martin Fleck](https://github.com/martin-fleck-at))
+- Added `Peripheral-inspector: Ignore Peripherals` extension setting to hide peripherals and skip reading their registers. Also added context menu entries to add anc clear the setting on workspace level from the Peripheral Inspector view ([Haydar Metin](https://github.com/haydar-metin))
+
+### Other Changes
+
+- Updated extension logo.
+
 ## [v1.5.1] - 2023-12-13
 
 ### Bug Fixes
