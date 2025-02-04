@@ -1,7 +1,10 @@
+.eslintignore
 .github
+.gitignore
 .vscode
 node_modules
 src
+tsconfig.json
 *.vsix
 !node_modules/@vscode/codicons/dist/codicon.css
 !node_modules/@vscode/codicons/dist/codicon.ttf
