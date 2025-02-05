@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.6.0] - 2025-02-04
+## [v1.6.0] - 2025-02-05
 
 ### New Features
 
@@ -13,6 +13,12 @@
 ### Other Changes
 
 - Updated extension logo.
+
+### Known Issue
+
+- As a side effect of moving to a custom Webview implementation, the Peripheral Inspector may show the following message when launched after update from a previous version:<br>
+`There is no data provider registered that can provide view data.`<br>
+***Solution***: Please restart your IDE after the update installation to overcome this problem. Restarting the extension is not sufficient.
 
 ## [v1.5.1] - 2023-12-13
 
