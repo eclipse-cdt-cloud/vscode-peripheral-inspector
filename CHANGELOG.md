@@ -18,7 +18,7 @@
 
 - As a side effect of moving to a custom Webview implementation, the Peripheral Inspector may show the following message when launched after update from a previous version:<br>
 `There is no data provider registered that can provide view data.`<br>
-***Solution***: Please restart your IDE after the update installation to overcome this problem. Restarting the extension is not sufficient.
+***Solution***: Please restart your IDE after the update installation to overcome this problem. Restarting the extension may not be sufficient.
 
 ## [v1.5.1] - 2023-12-13
 
