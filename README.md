@@ -101,3 +101,9 @@ Additionally the following settings can be used to customize the Peripheral Insp
 
 - `peripheral-inspector.saveLayout`- Save layout of peripheral view between sessions (default: `true`)
 - `peripheral-inspector.ignorePeripherals` - List of peripheral names to ignore. They will not show up in the tree view and no values are read from the target system. The user can add variables by using the context menu (**Workspace only**) in the tree view, or by setting them manually in the **User** and **Workspace** preferences.
+
+## Contributing
+
+We welcome contributions on [GitHub](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector).
+Check our [contribution guidelines](./CONTRIBUTING.md) for more info.
+This open-source project is part of [Eclipse CDT Cloud](https://eclipse.dev/cdt-cloud/).
