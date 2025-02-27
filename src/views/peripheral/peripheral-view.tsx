@@ -6,26 +6,33 @@
  ********************************************************************************/
 
 import 'primeflex/primeflex.css';
-import './tree-view.css';
+import './peripheral-view.css';
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { HOST_EXTENSION, NotificationType } from 'vscode-messenger-common';
-import { PeripheralNodeDTO, PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs } from '../../common/peripheral-dto';
-import { Commands } from '../../manifest';
-import { messenger } from '../webview/messenger';
-import { AntDComponentTreeTable } from './components/treetable';
-import { PeripheralTreeConverter } from './integration/peripheral-tree-converter';
-import { TreeConverterContext } from './integration/tree-converter';
 import {
     CDTTreeExtensionModel,
     CDTTreeItem,
-    CDTTreePartialUpdate,
+    CDTTreeMessengerType,
     CDTTreeViewModel,
-    CTDTreeMessengerType
-} from './types';
+    CDTTreeConverterContext,
+    CDTTreePartialUpdate,
+} from '@eclipse-cdt-cloud/vscode-ui-components';
+import {
+    messenger,
+    CDTTree
+} from '@eclipse-cdt-cloud/vscode-ui-components/lib/browser-types';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { HOST_EXTENSION, NotificationType } from 'vscode-messenger-common';
 import { PeripheralNodeSort } from '../../common';
+import {
+    PeripheralNodeDTO,
+    PeripheralSessionNodeDTO,
+    PeripheralTreeNodeDTOs,
+} from '../../common/peripheral-dto';
+import { Commands } from '../../manifest';
+import { PeripheralTreeConverter } from './peripheral-resource-converter';
 
+messenger.start();
 
 interface State {
     extensionModel: CDTTreeExtensionModel<PeripheralTreeNodeDTOs>;
@@ -50,16 +57,16 @@ export class CDTTreeView extends React.Component<unknown, State> {
     }
 
     public async componentDidMount(): Promise<void> {
-        messenger.onNotification(CTDTreeMessengerType.updateState, (state: CDTTreeExtensionModel<PeripheralTreeNodeDTOs>) => {
+        messenger.onNotification(CDTTreeMessengerType.updateState, (state: CDTTreeExtensionModel<PeripheralTreeNodeDTOs>) => {
             this.setState(prev => ({
                 ...prev, extensionModel: state,
             }));
             this.refreshFull(state.items);
         });
-        messenger.onNotification(CTDTreeMessengerType.updatePartial, (message: CDTTreePartialUpdate<PeripheralTreeNodeDTOs>) => {
+        messenger.onNotification(CDTTreeMessengerType.updatePartial, (message: CDTTreePartialUpdate<PeripheralTreeNodeDTOs>) => {
             this.refreshPartial(message.items ?? []);
         });
-        messenger.onNotification(CTDTreeMessengerType.openSearch, () => {
+        messenger.onNotification(CDTTreeMessengerType.openSearch, () => {
             const elements = document.getElementsByClassName('search-overlay visible');
             if (elements.length > 0) {
                 // search overlay is already visible
@@ -81,11 +88,11 @@ export class CDTTreeView extends React.Component<unknown, State> {
                 }));
             }
         });
-        messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
+        messenger.sendNotification(CDTTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 
     protected refreshFull(items: PeripheralTreeNodeDTOs[] | undefined): void {
-        const context: TreeConverterContext<PeripheralTreeNodeDTOs> = {
+        const context: CDTTreeConverterContext<PeripheralTreeNodeDTOs> = {
             assignedItems: {},
             assignedResources: {},
             expandedKeys: [],
@@ -122,7 +129,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
         }
 
         this.setState(prev => {
-            const context: TreeConverterContext<PeripheralTreeNodeDTOs> = {
+            const context: CDTTreeConverterContext<PeripheralTreeNodeDTOs> = {
                 expandedKeys: prev.viewModel.expandedKeys,
                 pinnedKeys: prev.viewModel.pinnedKeys,
                 assignedItems: prev.viewModel.references,
@@ -183,7 +190,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
 
     protected createTreeTable(): React.ReactNode {
         return <div data-vscode-context='{"preventDefaultContextMenuItems": true}'>
-            <AntDComponentTreeTable<PeripheralTreeNodeDTOs>
+            <CDTTree<PeripheralTreeNodeDTOs>
                 dataSource={this.state.viewModel.items}
                 dataSourceSorter={(dataSource) => this.dataSourceSorter(dataSource)}
                 columnDefinitions={this.state.extensionModel.columnFields}
@@ -191,7 +198,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
                     expandedRowKeys: this.state.viewModel.expandedKeys,
                     onExpand: (expanded, record) => {
                         this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, expandedKeys: updateKeys(this.state.viewModel.expandedKeys, record.id, expanded) } }));
-                        this.notify(CTDTreeMessengerType.toggleNode,
+                        this.notify(CDTTreeMessengerType.toggleNode,
                             { data: record.id },
                         );
                     }
@@ -202,11 +209,11 @@ export class CDTTreeView extends React.Component<unknown, State> {
                         this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned) } }));
 
                         if (pinned) {
-                            this.notify(CTDTreeMessengerType.executeCommand,
+                            this.notify(CDTTreeMessengerType.executeCommand,
                                 { data: { commandId: Commands.UNPIN_COMMAND.commandId, itemId: record.id } },
                             );
                         } else {
-                            this.notify(CTDTreeMessengerType.executeCommand,
+                            this.notify(CDTTreeMessengerType.executeCommand,
                                 { data: { commandId: Commands.PIN_COMMAND.commandId, itemId: record.id } },
                             );
                         }
@@ -216,16 +223,21 @@ export class CDTTreeView extends React.Component<unknown, State> {
                 }}
                 action={
                     {
-                        onAction: (event, command, value, record) => {
+                        onAction: (event, command, value, record, api) => {
+                            if (command.commandId === Commands.UPDATE_NODE_COMMAND.commandId) {
+                                api.selectRow(record);
+                                return api.setEditRowKey(record.key);
+                            }
+
                             event.stopPropagation();
-                            this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: command.commandId, itemId: record.id, value } });
+                            this.notify(CDTTreeMessengerType.executeCommand, { data: { commandId: command.commandId, itemId: record.id, value } });
                         }
                     }
                 }
                 edit={
                     {
                         onEdit: (record, value) => {
-                            this.notify(CTDTreeMessengerType.executeCommand, { data: { commandId: Commands.UPDATE_NODE_COMMAND.commandId, itemId: record.id, value } });
+                            this.notify(CDTTreeMessengerType.executeCommand, { data: { commandId: Commands.UPDATE_NODE_COMMAND.commandId, itemId: record.id, value } });
                         }
                     }
                 }

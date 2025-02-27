@@ -10,11 +10,11 @@ import { IPeripheralInspectorAPI } from '../../api-types';
 import { PeripheralCommands } from '../../commands';
 import { DebugTracker } from '../../debug-tracker';
 import { PeripheralInspectorAPI } from '../../peripheral-inspector-api';
-import { PeripheralDataTracker } from '../../plugin/peripheral/tree/peripheral-data-tracker';
+import { PeripheralDataTracker } from '../../model/peripheral/tree/peripheral-data-tracker';
 import { SvdResolver } from '../../svd-resolver';
-import { PeripheralTreeDataProvider } from '../../plugin/peripheral/tree/peripheral-tree-data-provider';
-import { PeripheralsTreeTableWebView } from '../../plugin/peripheral/webview/peripheral-tree-webview-main';
-import { PeripheralConfigurationProvider } from '../../plugin/peripheral/tree/peripheral-configuration-provider';
+import { PeripheralConfigurationProvider } from '../../model/peripheral/tree/peripheral-configuration-provider';
+import { PeripheralTreeDataProvider } from '../../views/peripheral/peripheral-data-provider';
+import { PeripheralsTreeTableWebView } from '../../views/peripheral/peripheral-view-provider';
 export * as api from '../../api-types';
 
 export const activate = async (context: vscode.ExtensionContext): Promise<IPeripheralInspectorAPI> => {

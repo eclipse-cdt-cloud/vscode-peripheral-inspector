@@ -5,7 +5,7 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { CommandDefinition } from './common';
+import { CommandDefinition } from '@eclipse-cdt-cloud/vscode-ui-components/lib/vscode/webview-types';
 
 export const PACKAGE_NAME = 'peripheral-inspector';
 export const CONFIG_SVD_PATH = 'definitionPathConfig';

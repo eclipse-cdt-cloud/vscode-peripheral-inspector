@@ -6,11 +6,10 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import * as manifest from '../../../manifest';
-import { PeripheralBaseNode } from '../nodes';
-import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
-import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
-import { PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
+import * as manifest from '../../manifest';
+import { PeripheralBaseNode } from '../../model/peripheral/nodes';
+import { PeripheralBaseNodeDTO } from '../../common/peripheral-dto';
+import { CDTTreeDataProvider, CDTTreeWebviewViewProvider } from '@eclipse-cdt-cloud/vscode-ui-components/lib/vscode-types';
 
 export class PeripheralsTreeTableWebView extends CDTTreeWebviewViewProvider<PeripheralBaseNode> {
     public static viewType = `${manifest.PACKAGE_NAME}.peripheral-treetable`;

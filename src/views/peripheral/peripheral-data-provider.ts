@@ -5,15 +5,14 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
+import { CDTTreeTableColumnDefinition } from '@eclipse-cdt-cloud/vscode-ui-components';
+import { CDTTreeDataProvider, CDTTreeWebviewViewProvider } from '@eclipse-cdt-cloud/vscode-ui-components/lib/tree/vscode';
 import * as vscode from 'vscode';
-import { TreeNotification, TreeTerminatedEvent } from '../../../common/notification';
-import { PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
-import { CDTTreeDataProvider } from '../../../components/tree/integration/tree-data-provider';
-import { CDTTreeWebviewViewProvider } from '../../../components/tree/integration/webview';
-import { CDTTreeTableColumnDefinition } from '../../../components/tree/types';
-import * as manifest from '../../../manifest';
-import { PeripheralBaseNode } from '../nodes';
-import { PeripheralDataTracker } from './peripheral-data-tracker';
+import { TreeNotification, TreeTerminatedEvent } from '../../common/notification';
+import { PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO } from '../../common/peripheral-dto';
+import * as manifest from '../../manifest';
+import { PeripheralBaseNode } from '../../model/peripheral/nodes';
+import { PeripheralDataTracker } from '../../model/peripheral/tree/peripheral-data-tracker';
 
 export class PeripheralTreeDataProvider implements CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO> {
     public static viewName = `${manifest.PACKAGE_NAME}.svd`;
