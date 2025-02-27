@@ -5,9 +5,9 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
+import { hasProperty } from '@eclipse-cdt-cloud/vscode-ui-components';
 import { ClusterOptions, FieldOptions, PeripheralOptions, PeripheralRegisterOptions } from '../api-types';
 import { NumberFormat } from './format';
-import { hasProperty } from './utils';
 
 // ==== PeripheralBaseTreeNode ====
 

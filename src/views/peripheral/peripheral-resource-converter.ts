@@ -5,19 +5,16 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { AccessType, IEnumeratedValue } from '../../../api-types';
-import { CommandDefinition } from '../../../common';
-import { formatValue, NumberFormat } from '../../../common/format';
-import { PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeContextValue, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralTreeNodeDTOs, PeripheralRegisterNodeContextValue, PeripheralSessionNodeDTO, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
-import { Commands } from '../../../manifest';
-import { binaryFormat, extractBits, hexFormat } from '../../../utils';
-import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn, EditableData, EditableEnumDataOption } from '../types';
-import { TreeConverterContext, TreeResourceConverter } from './tree-converter';
+import { CDTTreeResourceConverter, CDTTreeConverterContext, CDTTreeItem, CDTTreeTableColumn, EditableData, CDTTreeTableActionColumnCommand, EditableEnumDataOption } from '@eclipse-cdt-cloud/vscode-ui-components';
+import { AccessType, IEnumeratedValue } from '../../api-types';
+import { PeripheralTreeNodeDTOs, PeripheralBaseNodeDTO, PeripheralSessionNodeDTO, PeripheralNodeDTO, formatValue, PeripheralRegisterNodeDTO, PeripheralRegisterNodeContextValue, NumberFormat, PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeContextValue } from '../../common';
+import { Commands } from '../../manifest';
+import { hexFormat, binaryFormat, extractBits } from '../../utils';
+import { CommandDefinition } from '@eclipse-cdt-cloud/vscode-ui-components/lib/vscode/webview-types';
 
+export class PeripheralTreeConverter implements CDTTreeResourceConverter<PeripheralTreeNodeDTOs> {
 
-export class PeripheralTreeConverter implements TreeResourceConverter<PeripheralTreeNodeDTOs> {
-
-    protected converters: TreeResourceConverter<PeripheralTreeNodeDTOs>[] = [
+    protected converters: CDTTreeResourceConverter<PeripheralTreeNodeDTOs>[] = [
         new PeripheralBaseNodeConverter(),
         new PeripheralSessionNodeConverter(),
         new PeripheralNodeConverter(),
@@ -29,7 +26,7 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
         return this.converters.some(c => c.canHandle(resource));
     }
 
-    convert(resource: PeripheralTreeNodeDTOs, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralTreeNodeDTOs> {
+    convert(resource: PeripheralTreeNodeDTOs, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralTreeNodeDTOs> {
         const converter = this.converters.find(c => c.canHandle(resource));
         if (converter) {
             context.assignedResources[resource.id] = resource;
@@ -62,12 +59,12 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
     }
 }
 
-export class PeripheralBaseNodeConverter implements TreeResourceConverter<PeripheralBaseNodeDTO, PeripheralTreeNodeDTOs> {
+export class PeripheralBaseNodeConverter implements CDTTreeResourceConverter<PeripheralBaseNodeDTO, PeripheralTreeNodeDTOs> {
     canHandle(resource: PeripheralTreeNodeDTOs): boolean {
         return PeripheralBaseNodeDTO.is(resource);
     }
 
-    convert(resource: PeripheralBaseNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralBaseNodeDTO> {
+    convert(resource: PeripheralBaseNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralBaseNodeDTO> {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
@@ -91,12 +88,12 @@ export class PeripheralBaseNodeConverter implements TreeResourceConverter<Periph
     }
 }
 
-export class PeripheralSessionNodeConverter implements TreeResourceConverter<PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs> {
+export class PeripheralSessionNodeConverter implements CDTTreeResourceConverter<PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs> {
     canHandle(resource: PeripheralTreeNodeDTOs): boolean {
         return PeripheralSessionNodeDTO.is(resource);
     }
 
-    convert(resource: PeripheralSessionNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralSessionNodeDTO> {
+    convert(resource: PeripheralSessionNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralSessionNodeDTO> {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
@@ -120,12 +117,12 @@ export class PeripheralSessionNodeConverter implements TreeResourceConverter<Per
     }
 }
 
-export class PeripheralNodeConverter implements TreeResourceConverter<PeripheralNodeDTO, PeripheralTreeNodeDTOs> {
+export class PeripheralNodeConverter implements CDTTreeResourceConverter<PeripheralNodeDTO, PeripheralTreeNodeDTOs> {
     canHandle(resource: PeripheralTreeNodeDTOs): boolean {
         return PeripheralNodeDTO.is(resource);
     }
 
-    convert(resource: PeripheralNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralNodeDTO> {
+    convert(resource: PeripheralNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralNodeDTO> {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
@@ -139,7 +136,7 @@ export class PeripheralNodeConverter implements TreeResourceConverter<Peripheral
 
     // ==== Rendering ====
 
-    private getColumns(resource: PeripheralNodeDTO, _context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(resource: PeripheralNodeDTO, _context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const value = formatValue(resource.baseAddress, 8, resource.format);
 
         return {
@@ -162,12 +159,12 @@ export class PeripheralNodeConverter implements TreeResourceConverter<Peripheral
     }
 }
 
-export class PeripheralRegisterNodeConverter implements TreeResourceConverter<PeripheralRegisterNodeDTO> {
+export class PeripheralRegisterNodeConverter implements CDTTreeResourceConverter<PeripheralRegisterNodeDTO> {
     canHandle(resource: PeripheralTreeNodeDTOs): boolean {
         return PeripheralRegisterNodeDTO.is(resource);
     }
 
-    convert(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralRegisterNodeDTO> {
+    convert(resource: PeripheralRegisterNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralRegisterNodeDTO> {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
@@ -183,7 +180,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
 
     }
 
-    private getCommands(resource: PeripheralRegisterNodeDTO, contextValue: string, edit: EditableData | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeTableActionColumnCommand[] {
+    private getCommands(resource: PeripheralRegisterNodeDTO, contextValue: string, edit: EditableData | undefined, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeTableActionColumnCommand[] {
         const value = this.getValue(resource, context);
         const commands: CDTTreeTableActionColumnCommand[] = [];
         commands.push({ ...Commands.COPY_VALUE_COMMAND, value });
@@ -199,7 +196,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         return resource.previousValue !== resource.currentValue;
     }
 
-    private getValue(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): string {
+    private getValue(resource: PeripheralRegisterNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): string {
         return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources));
     }
 
@@ -213,7 +210,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
 
     // ==== Rendering ====
 
-    private getColumns(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(resource: PeripheralRegisterNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const value = this.getValue(resource, context);
         const contextValue = this.getContextValue(resource);
         const edit = this.isEditable(contextValue) ? this.getEdit(resource, value) : undefined;
@@ -247,7 +244,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         return formatValue(value, resource.hexLength, format);
     }
 
-    private getTooltipMarkdown(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): string {
+    private getTooltipMarkdown(resource: PeripheralRegisterNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): string {
         let mds = '';
 
         const address = `${hexFormat(resource.address)}`;
@@ -312,7 +309,7 @@ export class PeripheralClusterNodeConverter {
         return PeripheralClusterNodeDTO.is(resource);
     }
 
-    convert(resource: PeripheralClusterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralClusterNodeDTO> {
+    convert(resource: PeripheralClusterNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralClusterNodeDTO> {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
@@ -330,7 +327,7 @@ export class PeripheralClusterNodeConverter {
         return [Commands.EXPORT_NODE_COMMAND];
     }
 
-    private getColumns(peripheral: PeripheralClusterNodeDTO, _context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(peripheral: PeripheralClusterNodeDTO, _context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const labelValue = hexFormat(peripheral.offset, 0);
 
         return {
@@ -353,12 +350,12 @@ export class PeripheralClusterNodeConverter {
 }
 
 
-export class PeripheralFieldNodeConverter implements TreeResourceConverter<PeripheralFieldNodeDTO> {
+export class PeripheralFieldNodeConverter implements CDTTreeResourceConverter<PeripheralFieldNodeDTO> {
     canHandle(resource: PeripheralTreeNodeDTOs): boolean {
         return PeripheralFieldNodeDTO.is(resource);
     }
 
-    convert(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralFieldNodeDTO> {
+    convert(resource: PeripheralFieldNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralFieldNodeDTO> {
         return CDTTreeItem.create({
             id: resource.id,
             key: resource.id,
@@ -387,7 +384,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return context;
     }
 
-    private getCommands(resource: PeripheralFieldNodeDTO, contextValue: PeripheralFieldNodeContextValue, edit: EditableData | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CommandDefinition[] {
+    private getCommands(resource: PeripheralFieldNodeDTO, contextValue: PeripheralFieldNodeContextValue, edit: EditableData | undefined, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): CommandDefinition[] {
         const value = this.getValue(resource, context);
         const commands: CDTTreeTableActionColumnCommand[] = [];
         if (this.isCopyable(contextValue)) {
@@ -403,7 +400,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return resource.previousValue !== resource.currentValue;
     }
 
-    private getValue(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): string {
+    private getValue(resource: PeripheralFieldNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): string {
         return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources));
     }
 
@@ -415,7 +412,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return contextValue === 'field' || contextValue === 'fieldWO';
     }
 
-    private getEdit(resource: PeripheralFieldNodeDTO, value: string, context: TreeConverterContext<PeripheralTreeNodeDTOs>): EditableData | undefined {
+    private getEdit(resource: PeripheralFieldNodeDTO, value: string, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): EditableData | undefined {
         if (resource.enumeration) {
             return {
                 type: 'enum',
@@ -434,7 +431,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
 
     // ==== Rendering ====
 
-    private getColumns(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(resource: PeripheralFieldNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const value = this.getValue(resource, context);
         const contextValue = this.getContextValue(resource);
         const edit = this.isEditable(contextValue) ? this.getEdit(resource, value, context) : undefined;
@@ -497,7 +494,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return formatted;
     }
 
-    private getTooltipMarkdown(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): string {
+    private getTooltipMarkdown(resource: PeripheralFieldNodeDTO, context: CDTTreeConverterContext<PeripheralTreeNodeDTOs>): string {
         let mds = '';
 
         const address = `${hexFormat(resource.parentAddress)}${this.getRange(resource)}`;

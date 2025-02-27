@@ -19,7 +19,7 @@ import {
 } from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
 import { TreeNotification, TreeTerminatedEvent } from '../../../common/notification';
-import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
+import { PeripheralTreeDataProvider } from '../../../views/peripheral/peripheral-data-provider';
 import * as xmlWriter from 'xmlbuilder2';
 import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 import { hexFormat } from '../../../utils';
