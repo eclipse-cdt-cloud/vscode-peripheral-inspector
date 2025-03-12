@@ -421,7 +421,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
     }
 
-    private getEdit(resource: PeripheralFieldNodeDTO, value: string): EditableData | undefined {
+    private getEdit(resource: PeripheralFieldNodeDTO, value: string, context: TreeConverterContext<PeripheralTreeNodeDTOs>): EditableData | undefined {
         const contextValue = this.getContextValue(resource);
         if (contextValue !== 'field' && contextValue !== 'fieldWO') {
             return undefined;
@@ -429,7 +429,10 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         if (resource.enumeration) {
             return {
                 type: 'enum',
-                options: Object.values(resource.enumeration ?? {}).map<EditableEnumDataOption>((value: IEnumeratedValue) => ({ value: value.name, detail: value.description })),
+                options: Object.values(resource.enumeration ?? {}).map<EditableEnumDataOption>((value: IEnumeratedValue) => ({
+                    value: value.name,
+                    label: this.formatValue(resource, value.value, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap))
+                })),
                 value: resource.enumeration[resource.currentValue]?.name ?? value
             };
         }
@@ -455,7 +458,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 label: value,
                 highlight: this.hasHighlight(resource) ? [[0, value.length]] : undefined,
                 tooltip: value,
-                edit: this.getEdit(resource, value)
+                edit: this.getEdit(resource, value, context)
             },
             'actions': {
                 type: 'action',
@@ -494,7 +497,8 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
 
         if (includeEnumeration && peripheral.enumeration) {
             if (peripheral.enumeration[value]) {
-                formatted = `${peripheral.enumeration[value].name} (${formatted})`;
+                const description = peripheral.enumeration[value].description;
+                formatted = `${peripheral.enumeration[value].name} (${formatted})${description ? ': ' + description : ''}`;
             } else {
                 formatted = `Unknown Enumeration (${formatted})`;
             }

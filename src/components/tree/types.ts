@@ -108,7 +108,7 @@ export interface EditableEnumData extends EditableCellData {
 
 export interface EditableEnumDataOption {
     value: string;
-    detail?: string;
+    label: string;
 }
 
 export interface EditableBooleanData extends EditableCellData {

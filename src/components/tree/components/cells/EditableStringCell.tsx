@@ -5,6 +5,7 @@ import { Input, Checkbox, Select } from 'antd';
 import type { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import LabelCell from './LabelCell';
 import { CDTTreeTableStringColumn, CDTTreeItem, EditableEnumData, CDTTreeItemResource } from '../../types';
+import * as Icons from '@ant-design/icons';
 
 interface EditableLabelCellProps<T extends CDTTreeItemResource> {
     column: CDTTreeTableStringColumn;
@@ -12,6 +13,7 @@ interface EditableLabelCellProps<T extends CDTTreeItemResource> {
     editing: boolean;
     onSubmit: (newValue: string) => void;
     onCancel: () => void;
+    onEdit?: (edit: boolean) => void;
 }
 
 const EditableLabelCell = <T extends CDTTreeItemResource>({
@@ -19,9 +21,10 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
     record,
     editing,
     onSubmit,
-    onCancel
+    onCancel,
+    onEdit
 }: EditableLabelCellProps<T>) => {
-    const [editMode, setEditMode] = useState(editing);
+    const [editMode] = useState(editing);
     const [value, setValue] = useState(column.label);
     const containerRef = useRef<HTMLDivElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,16 +37,18 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
         }
     }, [editMode]);
 
-    const commitEdit = useCallback((newValue: string = value) => {
+    const commitEdit = useCallback((newValue: string = value, event?: { stopPropagation: () => void; preventDefault: () => void; }) => {
+        event?.stopPropagation();
+        event?.preventDefault();
         setValue(newValue);
         onSubmit(newValue);
-        setEditMode(false);
+        onEdit?.(false);
     }, [onSubmit, value]);
 
     const cancelEdit = useCallback(() => {
         setValue(column.label);
         onCancel();
-        setEditMode(false);
+        onEdit?.(false);
     }, [column.label]);
 
     // Cancel the edit only if focus leaves the entire container.
@@ -73,7 +78,7 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
         e.preventDefault();
         e.stopPropagation();
         if (column.edit) {
-            setEditMode(true);
+            onEdit?.(true);
         }
     }, [column]);
 
@@ -95,8 +100,9 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
                                     className={'text-field-cell'}
                                     value={value}
                                     onChange={e => setValue(e.target.value)}
-                                    onPressEnter={e => commitEdit(e.currentTarget.value)}
+                                    onPressEnter={e => commitEdit(e.currentTarget.value, e)}
                                     onBlur={handleBlur}
+                                    onClick={e => e.stopPropagation()}
                                     onKeyDown={handleKeyDown}
                                 />
                             );
@@ -106,8 +112,9 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
                                 <Checkbox
                                     ref={editorRef}
                                     checked={checked}
-                                    onChange={(e: CheckboxChangeEvent) => commitEdit(e.target.checked ? '1' : '0')}
+                                    onChange={(e: CheckboxChangeEvent) => commitEdit(e.target.checked ? '1' : '0', e)}
                                     onBlur={handleBlur}
+                                    onClick={e => e.stopPropagation()}
                                     onKeyDown={handleKeyDown}
                                 />
                             );
@@ -122,13 +129,13 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
                                     value={value}
                                     onChange={(newValue) => commitEdit(newValue)}
                                     onBlur={handleBlur}
+                                    onClick={e => e.stopPropagation()}
                                     onKeyDown={handleKeyDown}
                                 >
                                     {enumEdit.options.map((opt) => {
-                                        const label = opt.value + (opt.detail ? `: ${opt.detail}` : '');
                                         return (
                                             <Select.Option key={opt.value} value={opt.value}>
-                                                {label}
+                                                {opt.label}
                                             </Select.Option>
                                         );
                                     })}

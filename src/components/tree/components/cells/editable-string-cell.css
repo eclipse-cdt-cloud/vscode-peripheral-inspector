@@ -60,20 +60,57 @@
   color: var(--ant-color-text);
 }
 
-.editable-string-cell:hover {
-  text-decoration: underline dotted var(--vscode-foreground);
-  text-underline-offset: 4px;
+.editable-string-cell {
+  display: contents;
 }
 
-.ant-table-cell.value {
+.editable-string-cell .tree-label>span>span {
+  border-bottom: 1px dotted;
+}
+
+.edit-field-container,
+.editable-string-cell {
   font-family: var(--ant-font-family-code);
+  font-style: normal;
+  filter: unset;
+  opacity: 1;
+}
+
+.ant-table-cell.value>.tree-cell {
+  font-family: var(--ant-font-family-code);
+  opacity: 0.8;
 }
 
 .edit-field-container {
-  display: flex;
+  display: contents;
   flex-grow: 1;
 }
 
 .edit-field-container>* {
   flex-grow: 1;
+}
+
+.edit-field-container .ant-select {
+  display: contents;
+  --ant-font-size-icon: 10px;
+}
+
+.ant-table-cell.value .tree-cell,
+.ant-table-cell.value .ant-checkbox-wrapper {
+  padding-left: 4px;
+}
+
+.ant-select-selector::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 4px;
+  /* Indent from the left */
+  width: calc(100% - 4px);
+  /* Make the dotted border span the remaining width */
+  border-bottom: 1px dotted;
+}
+
+.ant-select-selector {
+  border: 0 !important;
 }

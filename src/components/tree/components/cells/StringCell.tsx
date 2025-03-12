@@ -9,9 +9,10 @@ interface StringCellProps<T extends CDTTreeItemResource> {
     editing?: boolean;
     onSubmit?: (record: CDTTreeItem<T>, newValue: string) => void;
     onCancel?: (record: CDTTreeItem<T>) => void;
+    onEdit?: (record: CDTTreeItem<T>, edit: boolean) => void;
 }
 
-const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = false, onSubmit, onCancel }: StringCellProps<T>) => {
+const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = false, onSubmit, onCancel, onEdit }: StringCellProps<T>) => {
     const handleSubmit = useCallback(
         (newValue: string) => onSubmit?.(record, newValue),
         [record, onSubmit]
@@ -22,8 +23,14 @@ const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = f
         [record, onCancel]
     );
 
+    const handleEdit = useCallback(
+        (edit: boolean) => onEdit?.(record, edit),
+        [record, onEdit]
+    );
+
+
     return column.edit && onSubmit
-        ? <EditableStringCell record={record} column={column} onSubmit={handleSubmit} onCancel={handleCancel} editing={editing} />
+        ? <EditableStringCell record={record} column={column} onSubmit={handleSubmit} onCancel={handleCancel} onEdit={handleEdit} editing={editing} />
         : <LabelCell record={record} column={column} />;
 };
 

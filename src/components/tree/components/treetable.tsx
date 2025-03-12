@@ -19,7 +19,7 @@ import StringCell from './cells/StringCell';
 import { ExpandIcon } from './expand-icon';
 import { SearchOverlay } from './search-overlay';
 import { TreeNavigator } from './treetable-navigator';
-import { classNames, filterTree, getAncestors, traverseTree } from './utils';
+import { classNames, filterTree, getAncestors, traverseTree, useClickHook } from './utils';
 import { Commands } from '../../../manifest';
 
 /**
@@ -300,6 +300,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
             return props.pin?.onPin?.(event, !record.pinned, record);
         }
         if (command.commandId === Commands.UPDATE_NODE_COMMAND.commandId) {
+            selectRow(record);
             return setEditRowKey(record.key);
         }
         return props.action?.onAction?.(event, command, value, record);
@@ -316,13 +317,22 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
         setEditRowKey(undefined);
     }, []);
 
+    const onEdit = useCallback((record: CDTTreeItem<T>, edit: boolean) => {
+        if (edit) {
+            selectRow(record);
+            setEditRowKey(record.key);
+        } else {
+            setEditRowKey(undefined);
+        }
+    }, []);
+
     const renderStringCell = useCallback((column: CDTTreeTableStringColumn, record: CDTTreeItem<T>) => {
-        const editing = editRowKey === record.key;
-        return (<StringCell column={column} record={record} onSubmit={onSubmitEdit} onCancel={onSubmitCancel} editing={editing} />);
+        const editing = editRowKey === record.key || column.edit?.type === 'boolean' || column.edit?.type === 'enum';
+        return (<StringCell column={column} record={record} onSubmit={onSubmitEdit} onCancel={onSubmitCancel} onEdit={onEdit} editing={editing} />);
     }, [editRowKey]);
 
     const columns = useMemo(() => {
-        return props.columnDefinitions?.map<ColumnType<CDTTreeItem<T>>>((colDef) => {
+        return props.columnDefinitions?.map<ColumnType<CDTTreeItem<T>>>(colDef => {
             if (colDef.type === 'string') {
                 return {
                     title: colDef.field,
@@ -409,7 +419,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
         }
     }, [autoSelectRowRef.current]);
 
-    const onRowClick = useCallback(
+    const onRowSingleClick = useCallback(
         (record: CDTTreeItem<T>, _event: React.MouseEvent<HTMLElement>) => {
             const isExpanded = expandedRowKeys?.includes(record.id);
             handleExpand(!isExpanded, record);
@@ -417,6 +427,8 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
         },
         [props.expansion]
     );
+
+    const onRowClick = (record: CDTTreeItem<T>) => useClickHook<HTMLElement>({ onSingleClick: event => onRowSingleClick(record, event) });
 
     // ==== Return ====
 
@@ -446,7 +458,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
                     rowClassName={(record) => classNames({ 'ant-table-row-selected': record.key === selection?.key, 'ant-table-row-matched': record.matching ?? false })}
                     onRow={(record) => ({
                         record,
-                        onClick: (event) => onRowClick(record, event),
+                        onClick: onRowClick(record),
                     })}
                     expandable={{
                         expandIcon: props => <ExpandIcon {...props} />,

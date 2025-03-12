@@ -4,7 +4,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
-import React from 'react';
+import React, { MouseEventHandler, useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';
@@ -180,4 +180,49 @@ export function getAncestors<T extends CDTTreeItemResource>(
         current = current.parent as unknown as CDTTreeItem<T>;
     }
     return ancestors;
+}
+
+type UseClickHookProps<T> = {
+    onSingleClick?: MouseEventHandler<T>;
+    onDoubleClick?: MouseEventHandler<T>;
+    delay?: number;
+};
+
+export function useClickHook<T = Element>({
+    onSingleClick,
+    onDoubleClick,
+    delay = 250,
+}: UseClickHookProps<T>): MouseEventHandler<T> {
+    const [clicks, setClicks] = useState(0);
+    const eventRef = useRef<React.MouseEvent<T, MouseEvent> | null>(null);
+
+    useEffect(() => {
+        let singleClickTimer: ReturnType<typeof setTimeout> | null = null;
+
+        if (clicks === 1) {
+            // Trigger single-click after delay
+            singleClickTimer = setTimeout(() => {
+                if (clicks === 1 && onSingleClick && eventRef.current) {
+                    onSingleClick(eventRef.current); // Trigger onClick
+                }
+                setClicks(0); // Reset clicks after the delay
+            }, delay);
+        } else if (clicks === 2) {
+            // Trigger double-click immediately
+            if (onDoubleClick && eventRef.current) {
+                onDoubleClick(eventRef.current); // Trigger onDoubleClick
+            }
+            setClicks(0); // Reset clicks immediately
+        }
+
+        // Cleanup the timer on effect cleanup or if clicks change
+        return () => {
+            if (singleClickTimer) clearTimeout(singleClickTimer);
+        };
+    }, [clicks, delay, onSingleClick, onDoubleClick]);
+
+    return (event) => {
+        eventRef.current = event;
+        setClicks((prev) => prev + 1); // Increment the click count
+    };
 }

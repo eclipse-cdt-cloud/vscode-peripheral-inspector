@@ -13,7 +13,11 @@ const ActionCell = <T extends CDTTreeItemResource>({ record, actions, onAction }
     return (
         <div className="tree-actions">
             {actions.map((action) => {
-                const handleAction = (e: React.MouseEvent | React.KeyboardEvent) => onAction?.(e, action, action.value, record);
+                const handleAction = (e: React.MouseEvent | React.KeyboardEvent) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onAction?.(e, action, action.value, record);
+                };
                 return (
                     <i
                         key={action.commandId}
