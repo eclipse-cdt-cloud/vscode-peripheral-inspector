@@ -152,13 +152,13 @@ export class PeripheralCommands {
         this.config.setIgnorePeripherals();
     }
 
-    private periodicRefreshMode(context?: CTDTreeWebviewContext): void {
-        const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
-        this.config.queryPeriodicRefreshMode(session);
+    private periodicRefreshMode(_context?: CTDTreeWebviewContext): void {
+        // const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
+        this.config.queryPeriodicRefreshMode();
     }
 
-    private periodicRefreshInterval(context?: CTDTreeWebviewContext): void {
-        const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
-        this.config.queryPeriodicRefreshInterval(session);
+    private periodicRefreshInterval(_context?: CTDTreeWebviewContext): void {
+        // const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
+        this.config.queryPeriodicRefreshInterval();
     }
 }

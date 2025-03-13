@@ -329,8 +329,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
         this.onSessionTerminated.forEach(disposable => disposable.dispose());
         this.onSessionTerminated = [];
-        this.onSessionTerminated.push(this.config.onDidChangePeriodicRefreshMode(() => this.updatePeriodicRefresh(), this.session));
-        this.onSessionTerminated.push(this.config.onDidChangePeriodicRefreshInterval(() => this.updatePeriodicRefresh(), this.session));
+        this.onSessionTerminated.push(this.config.onDidChangePeriodicRefreshMode(() => this.updatePeriodicRefresh()));
+        this.onSessionTerminated.push(this.config.onDidChangePeriodicRefreshInterval(() => this.updatePeriodicRefresh()));
         this.setSessionStatus(DebugSessionStatus.Started);
 
         try {
@@ -397,8 +397,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             clearTimeout(this.sessionRefreshTimer);
         }
 
-        const refresh = this.config.periodicRefreshMode(this.session);
-        const interval = this.config.periodicRefreshInterval(this.session);
+        const refresh = this.config.periodicRefreshMode();
+        const interval = this.config.periodicRefreshInterval();
         if (interval <= 0 || this.sessionStatus === DebugSessionStatus.Terminated) {
             return;
         }
