@@ -92,12 +92,23 @@ export interface CDTTreeTableStringColumn {
     edit?: EditableData;
 }
 
+/**
+ * An editable column represents a column that allows to edit a string value.
+ */
+export interface EditableCDTTreeTableStringColumn extends CDTTreeTableStringColumn {
+    /**
+     * Contains the data that is used to provide proper UI for it.
+     */
+    edit: EditableData;
+}
+
 export interface EditableCellData {
     type: string;
 }
 
 export interface EditableTextData extends EditableCellData {
     type: 'text';
+    value: string;
 }
 
 export interface EditableEnumData extends EditableCellData {
@@ -107,8 +118,8 @@ export interface EditableEnumData extends EditableCellData {
 }
 
 export interface EditableEnumDataOption {
-    value: string;
     label: string;
+    value: string;
 }
 
 export interface EditableBooleanData extends EditableCellData {

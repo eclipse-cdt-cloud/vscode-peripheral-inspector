@@ -134,7 +134,7 @@ export class PeripheralCommands {
             }
             this.dataTracker.fireOnDidChange();
         } else {
-            return this.dataTracker.updateData();
+            await this.dataTracker.updateData();
         }
     }
 

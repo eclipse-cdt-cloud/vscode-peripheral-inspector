@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableStringColumn } from '../../types';
+import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableStringColumn, EditableCDTTreeTableStringColumn } from '../../types';
 import EditableStringCell from './EditableStringCell';
 import LabelCell from './LabelCell';
 
@@ -30,7 +30,7 @@ const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = f
 
 
     return column.edit && onSubmit
-        ? <EditableStringCell record={record} column={column} onSubmit={handleSubmit} onCancel={handleCancel} onEdit={handleEdit} editing={editing} />
+        ? <EditableStringCell record={record} column={column as EditableCDTTreeTableStringColumn} onSubmit={handleSubmit} onCancel={handleCancel} onEdit={handleEdit} editing={editing} />
         : <LabelCell record={record} column={column} />;
 };
 

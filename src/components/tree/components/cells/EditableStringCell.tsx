@@ -1,14 +1,13 @@
 import './editable-string-cell.css';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Input, Checkbox, Select } from 'antd';
+import { Checkbox, Input, Select } from 'antd';
 import type { CheckboxChangeEvent } from 'antd/lib/checkbox';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { CDTTreeItem, CDTTreeItemResource, EditableCDTTreeTableStringColumn, EditableEnumData } from '../../types';
 import LabelCell from './LabelCell';
-import { CDTTreeTableStringColumn, CDTTreeItem, EditableEnumData, CDTTreeItemResource } from '../../types';
-import * as Icons from '@ant-design/icons';
 
 interface EditableLabelCellProps<T extends CDTTreeItemResource> {
-    column: CDTTreeTableStringColumn;
+    column: EditableCDTTreeTableStringColumn;
     record: CDTTreeItem<T>;
     editing: boolean;
     onSubmit: (newValue: string) => void;
@@ -24,18 +23,12 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
     onCancel,
     onEdit
 }: EditableLabelCellProps<T>) => {
-    const [editMode] = useState(editing);
-    const [value, setValue] = useState(column.label);
+    const [value, setValue] = useState(column.edit.value);
     const containerRef = useRef<HTMLDivElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
 
-    // Focus the editor when entering edit mode.
-    useEffect(() => {
-        if (editMode && editorRef.current) {
-            editorRef.current.focus();
-        }
-    }, [editMode]);
+    useEffect(() => setValue(column.edit.value), [editing, column.edit.value]); // keep editMode in the dependencies to sync state when entering or leaving edit mode
 
     const commitEdit = useCallback((newValue: string = value, event?: { stopPropagation: () => void; preventDefault: () => void; }) => {
         event?.stopPropagation();
@@ -46,10 +39,10 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
     }, [onSubmit, value]);
 
     const cancelEdit = useCallback(() => {
-        setValue(column.label);
+        setValue(column.edit.value);
         onCancel();
         onEdit?.(false);
-    }, [column.label]);
+    }, [column.edit.value, onCancel, onEdit]);
 
     // Cancel the edit only if focus leaves the entire container.
     const handleBlur = useCallback(() => {
@@ -62,15 +55,16 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
                 cancelEdit();
             }
         }, 0);
-    }, [column.label]);
+    }, [cancelEdit]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
             if (e.key === 'Escape') {
                 cancelEdit();
             }
+            e.stopPropagation();
         },
-        [column.label]
+        [cancelEdit]
     );
 
     // Consume the double-click event so no other handler is triggered.
@@ -80,15 +74,16 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
         if (column.edit) {
             onEdit?.(true);
         }
-    }, [column]);
+    }, [column, onEdit]);
 
+    // Focus the editor when entering edit mode.
     useEffect(() => {
-        if (editMode || editing) {
-            editorRef.current && editorRef.current.focus();
+        if (editing && editorRef.current) {
+            editorRef.current.focus();
         }
-    }, [editMode, editing]);
+    }, [editing]);
 
-    if (editMode || editing) {
+    if (editing) {
         return (
             <div className='edit-field-container' ref={containerRef}>
                 {(() => {
