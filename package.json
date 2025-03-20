@@ -161,12 +161,12 @@
       {
         "command": "peripheral-inspector.svd.periodicRefreshMode",
         "title": "Set Periodic Refresh Mode (Workspace)",
-        "icon": "$(clear-all)"
+        "icon": "$(refresh)"
       },
       {
         "command": "peripheral-inspector.svd.periodicRefreshInterval",
         "title": "Set Periodic Refresh Interval (Workspace)",
-        "icon": "$(clear-all)"
+        "icon": "$(calendar)"
       }
     ],
     "menus": {
@@ -288,18 +288,18 @@
           "group": "navigation@4"
         },
         {
-          "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
-          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped && peripheral-inspector.ignoredPeripheralsLength > 0",
-          "group": "more@1"
-        },
-        {
           "command": "peripheral-inspector.svd.periodicRefreshMode",
           "when": "view =~ /peripheral-inspector.peripheral-*/",
-          "group": "more@2"
+          "group": "more@1"
         },
         {
           "command": "peripheral-inspector.svd.periodicRefreshInterval",
           "when": "view =~ /peripheral-inspector.peripheral-*/",
+          "group": "more@2"
+        },
+        {
+          "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
+          "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped && peripheral-inspector.ignoredPeripheralsLength > 0",
           "group": "more@3"
         }
       ],
@@ -307,17 +307,17 @@
         {
           "command": "peripheral-inspector.svd.setFormat",
           "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType !== peripheral-session-node",
-          "group": "navigation"
-        },
-        {
-          "command": "peripheral-inspector.svd.ignorePeripheral",
-          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType === peripheral-node",
-          "group": "navigation"
+          "group": "navigation@0.1"
         },
         {
           "submenu": "peripheral-inspector.svd.periodicRefresh",
           "when": "webviewId =~ /peripheral-inspector.peripheral-*/",
-          "group": "navigation"
+          "group": "navigation@0.2"
+        },
+        {
+          "command": "peripheral-inspector.svd.ignorePeripheral",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType === peripheral-node",
+          "group": "navigation@0.3"
         }
       ],
       "peripheral-inspector.svd.periodicRefresh": [

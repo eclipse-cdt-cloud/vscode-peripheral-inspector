@@ -185,57 +185,63 @@ export class PeripheralConfigurationProvider {
         return vscode.Disposable.from(...disposables);
     }
 
-    periodicRefreshMode(session?: never): manifest.PeriodicRefreshMode {
-        return this.getSessionOrWorkspaceConfiguration(manifest.CONFIG_PERIODIC_REFRESH_MODE, session, manifest.DEFAULT_PERIODIC_REFRESH);
+    periodicRefreshMode(): manifest.PeriodicRefreshMode {
+        return this.workspaceConfiguration().get(manifest.CONFIG_PERIODIC_REFRESH_MODE, manifest.DEFAULT_PERIODIC_REFRESH_MODE);
     }
 
-    onDidChangePeriodicRefreshMode(callback: (newValue: manifest.PeriodicRefreshMode) => void, session?: never): vscode.Disposable {
-        return this.onDidChangeSessionOrWorkspaceConfiguration(manifest.CONFIG_PERIODIC_REFRESH_MODE, session, callback, () => this.periodicRefreshMode(session));
+    onDidChangePeriodicRefreshMode(callback: (newValue: manifest.PeriodicRefreshMode) => void): vscode.Disposable {
+        return vscode.workspace.onDidChangeConfiguration(evt => {
+            if (evt.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.CONFIG_PERIODIC_REFRESH_MODE}`)) {
+                callback(this.periodicRefreshMode());
+            }
+        });
     }
 
-    setPeriodicRefreshMode(periodicRefreshMode: manifest.PeriodicRefreshMode | undefined, session?: never): void {
-        this.setSessionOrWorkspaceConfiguration(manifest.CONFIG_PERIODIC_REFRESH_MODE, session, periodicRefreshMode);
+    setPeriodicRefreshMode(periodicRefreshMode: manifest.PeriodicRefreshMode | undefined): void {
+        this.workspaceConfiguration().update(manifest.CONFIG_PERIODIC_REFRESH_MODE, periodicRefreshMode);
     }
 
-    async queryPeriodicRefreshMode(session?: never): Promise<void> {
-        const context = session ? 'Session: ' : 'Workspace: ';
-        const currentValue = this.periodicRefreshMode(session);
+    async queryPeriodicRefreshMode(): Promise<void> {
+        const currentValue = this.periodicRefreshMode();
         // hide 'while stopped' option for now but we want to keep the logic
         const pick = await vscode.window.showQuickPick(manifest.PERIODIC_REFRESH_MODE_CHOICES.filter(entry => entry !== 'while stopped'), {
             placeHolder: currentValue,
-            title: context + 'Select the periodic refresh mode'
+            title: 'Select the periodic refresh mode (Workspace)'
         });
         if (pick) {
-            return this.setPeriodicRefreshMode(pick as manifest.PeriodicRefreshMode, session);
+            return this.setPeriodicRefreshMode(pick as manifest.PeriodicRefreshMode);
         }
     }
 
-    periodicRefreshInterval(session?: never): number {
-        return this.getSessionOrWorkspaceConfiguration(manifest.CONFIG_PERIODIC_REFRESH_INTERVAL, session, manifest.DEFAULT_PERIODIC_REFRESH_INTERVAL);
+    periodicRefreshInterval(): number {
+        return this.workspaceConfiguration().get(manifest.CONFIG_PERIODIC_REFRESH_INTERVAL, manifest.DEFAULT_PERIODIC_REFRESH_INTERVAL);
     }
 
-    onDidChangePeriodicRefreshInterval(callback: (newValue: number) => void, session?: never): vscode.Disposable {
-        return this.onDidChangeSessionOrWorkspaceConfiguration(manifest.CONFIG_PERIODIC_REFRESH_INTERVAL, session, callback, () => this.periodicRefreshInterval(session));
+    onDidChangePeriodicRefreshInterval(callback: (newValue: number) => void): vscode.Disposable {
+        return vscode.workspace.onDidChangeConfiguration(evt => {
+            if (evt.affectsConfiguration(`${manifest.PACKAGE_NAME}.${manifest.CONFIG_PERIODIC_REFRESH_INTERVAL}`)) {
+                callback(this.periodicRefreshInterval());
+            }
+        });
     }
 
-    setPeriodicRefreshInterval(periodicRefreshInterval: number | undefined, session?: never): void {
-        this.setSessionOrWorkspaceConfiguration(manifest.CONFIG_PERIODIC_REFRESH_INTERVAL, session, periodicRefreshInterval);
+    setPeriodicRefreshInterval(periodicRefreshInterval: number | undefined): void {
+        this.workspaceConfiguration().update(manifest.CONFIG_PERIODIC_REFRESH_INTERVAL, periodicRefreshInterval);
     }
 
-    async queryPeriodicRefreshInterval(session?: never): Promise<void> {
-        const context = session ? 'Session: ' : 'Workspace: ';
-        const currentValue = this.periodicRefreshInterval(session);
+    async queryPeriodicRefreshInterval(): Promise<void> {
+        const currentValue = this.periodicRefreshInterval();
         const input = await vscode.window.showInputBox({
-            prompt: context + 'Enter the interval in milliseconds or -1 for no refresh',
+            prompt: 'Enter the refresh interval in milliseconds (Workspace)',
             placeHolder: String(currentValue),
             value: String(currentValue),
             validateInput: value => {
                 const interval = parseInt(value);
-                return isNaN(interval) || (interval < 1 && interval !== -1) ? 'Please enter a positive integer or -1 for no refresh' : undefined;
+                return isNaN(interval) || interval < 1 ? 'Please enter a positive integer' : undefined;
             }
         });
         if (input) {
-            return this.setPeriodicRefreshInterval(parseInt(input), session);
+            return this.setPeriodicRefreshInterval(parseInt(input));
         }
     }
 }

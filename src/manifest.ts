@@ -27,7 +27,7 @@ export const DEFAULT_IGNORE_PERIPHERALS: string[] = [];
 export const CONFIG_PERIODIC_REFRESH_MODE = 'periodicRefreshMode';
 export const PERIODIC_REFRESH_MODE_CHOICES = ['always', 'while stopped', 'while running', 'off'] as const;
 export type PeriodicRefreshMode = (typeof PERIODIC_REFRESH_MODE_CHOICES)[number];
-export const DEFAULT_PERIODIC_REFRESH: PeriodicRefreshMode = 'always';
+export const DEFAULT_PERIODIC_REFRESH_MODE: PeriodicRefreshMode = 'always';
 
 export const CONFIG_PERIODIC_REFRESH_INTERVAL = 'periodicRefreshInterval';
 export const DEFAULT_PERIODIC_REFRESH_INTERVAL = 500;

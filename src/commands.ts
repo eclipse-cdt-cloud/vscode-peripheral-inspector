@@ -153,12 +153,10 @@ export class PeripheralCommands {
     }
 
     private periodicRefreshMode(_context?: CTDTreeWebviewContext): void {
-        // const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
         this.config.queryPeriodicRefreshMode();
     }
 
     private periodicRefreshInterval(_context?: CTDTreeWebviewContext): void {
-        // const session = context ? this.dataTracker.findSessionByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP)) : undefined;
         this.config.queryPeriodicRefreshInterval();
     }
 }
