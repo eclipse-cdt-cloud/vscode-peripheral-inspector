@@ -51,7 +51,7 @@ export class PeripheralDataTracker {
         tracker.onWillStartSession(session => this.onDebugSessionStarted(session));
         tracker.onWillStopSession(session => this.onDebugSessionTerminated(session));
         tracker.onDidStopDebug(session => this.onDebugStopped(session));
-        tracker.onDidContinueDebug(session => this.onDebugStopped(session));
+        tracker.onDidContinueDebug(session => this.onDebugContinued(session));
         this.init();
     }
 

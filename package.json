@@ -160,12 +160,12 @@
       },
       {
         "command": "peripheral-inspector.svd.periodicRefreshMode",
-        "title": "Set Periodic Refresh Mode (Workspace)",
+        "title": "Set Periodic Refresh Mode",
         "icon": "$(refresh)"
       },
       {
         "command": "peripheral-inspector.svd.periodicRefreshInterval",
-        "title": "Set Periodic Refresh Interval (Workspace)",
+        "title": "Set Periodic Refresh Interval",
         "icon": "$(calendar)"
       }
     ],
@@ -336,7 +336,7 @@
     "submenus": [
       {
         "id": "peripheral-inspector.svd.periodicRefresh",
-        "label": "Periodic Refresh",
+        "label": "Periodic Refresh  (Workspace)",
         "icon": "$(refresh)"
       }
     ],
