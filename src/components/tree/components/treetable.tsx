@@ -329,7 +329,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
     const isEditing = useCallback((column: CDTTreeTableStringColumn, record: CDTTreeItem<T>) => editRowKey === record.key || column.edit?.type === 'boolean' || column.edit?.type === 'enum', [editRowKey]);
 
     const renderStringCell = useCallback((column: CDTTreeTableStringColumn, record: CDTTreeItem<T>) => {
-        return (<StringCell column={column} record={record} onSubmit={onSubmitEdit} onCancel={onSubmitCancel} onEdit={onEdit} editing={isEditing(column, record)} />);
+        return (<StringCell column={column} record={record} onSubmit={onSubmitEdit} onCancel={onSubmitCancel} onEdit={onEdit} editing={isEditing(column, record)} autoFocus={column.edit?.type === 'text'} />);
     }, [editRowKey]);
 
     const columns = useMemo(() => {

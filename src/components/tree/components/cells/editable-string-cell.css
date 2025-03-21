@@ -61,6 +61,7 @@
 }
 
 .editable-string-cell {
+  cursor: pointer;
   display: contents;
 }
 

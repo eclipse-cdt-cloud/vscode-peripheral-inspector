@@ -8,7 +8,7 @@
 import { AccessType, IEnumeratedValue } from '../../../api-types';
 import { CommandDefinition } from '../../../common';
 import { formatValue, NumberFormat } from '../../../common/format';
-import { PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeContextValue, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralTreeNodeDTOs, PeripheralRegisterNodeContextValue, PeripheralSessionNodeDTO, PeripheralBaseNodeDTO, PeripheralNodeContextValue } from '../../../common/peripheral-dto';
+import { PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeContextValue, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralTreeNodeDTOs, PeripheralRegisterNodeContextValue, PeripheralSessionNodeDTO, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 import { Commands } from '../../../manifest';
 import { binaryFormat, extractBits, hexFormat } from '../../../utils';
 import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn, EditableData, EditableEnumDataOption } from '../types';
@@ -415,7 +415,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 type: 'enum',
                 options: Object.values(resource.enumeration ?? {}).map<EditableEnumDataOption>((value: IEnumeratedValue) => ({
                     value: value.name,
-                    label: this.formatValue(resource, value.value, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap))
+                    label: this.formatLabel(resource, value.value, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap))
                 })),
                 value: resource.enumeration[resource.currentValue]?.name ?? value
             };
@@ -423,7 +423,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         if (resource.width === 1) {
             return { type: 'boolean', value: resource.currentValue === 0 ? '0' : '1' };
         }
-        return { type: 'text', value };
+        return { type: 'text', value: resource.accessType === AccessType.WriteOnly ? '' : value };
     }
 
     // ==== Rendering ====
@@ -461,12 +461,11 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
     }
 
     formatValue(peripheral: PeripheralFieldNodeDTO, value: number, format: NumberFormat, includeEnumeration = true): string {
-        if (peripheral.accessType === AccessType.WriteOnly) {
-            return '(Write Only)';
-        }
+        return peripheral.accessType === AccessType.WriteOnly ? '(Write Only)' : this.formatLabel(peripheral, value, format, includeEnumeration);
+    }
 
+    formatLabel(peripheral: PeripheralFieldNodeDTO, value: number, format: NumberFormat, includeEnumeration = true): string {
         let formatted = '';
-
         switch (format) {
             case NumberFormat.Decimal:
                 formatted = value.toString();
@@ -481,7 +480,6 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 formatted = peripheral.width >= 4 ? hexFormat(value, Math.ceil(peripheral.width / 4), true) : binaryFormat(value, peripheral.width);
                 break;
         }
-
         if (includeEnumeration && peripheral.enumeration) {
             if (peripheral.enumeration[value]) {
                 const description = peripheral.enumeration[value].description;
@@ -490,7 +488,6 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 formatted = `Unknown Enumeration (${formatted})`;
             }
         }
-
         return formatted;
     }
 

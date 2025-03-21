@@ -2,14 +2,15 @@ import './editable-string-cell.css';
 
 import { Checkbox, Input, Select } from 'antd';
 import type { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CDTTreeItem, CDTTreeItemResource, EditableCDTTreeTableStringColumn, EditableEnumData } from '../../types';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { CDTTreeItem, CDTTreeItemResource, EditableCDTTreeTableStringColumn } from '../../types';
 import LabelCell from './LabelCell';
 
 interface EditableLabelCellProps<T extends CDTTreeItemResource> {
     column: EditableCDTTreeTableStringColumn;
     record: CDTTreeItem<T>;
     editing: boolean;
+    autoFocus: boolean;
     onSubmit: (newValue: string) => void;
     onCancel: () => void;
     onEdit?: (edit: boolean) => void;
@@ -19,27 +20,23 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
     column,
     record,
     editing,
+    autoFocus,
     onSubmit,
     onCancel,
     onEdit
 }: EditableLabelCellProps<T>) => {
-    const [value, setValue] = useState(column.edit.value);
     const containerRef = useRef<HTMLDivElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
 
-    useEffect(() => setValue(column.edit.value), [editing, column.edit.value]); // keep editMode in the dependencies to sync state when entering or leaving edit mode
-
-    const commitEdit = useCallback((newValue: string = value, event?: { stopPropagation: () => void; preventDefault: () => void; }) => {
+    const commitEdit = useCallback((newValue: string, event?: { stopPropagation: () => void; preventDefault: () => void; }) => {
         event?.stopPropagation();
         event?.preventDefault();
-        setValue(newValue);
         onSubmit(newValue);
         onEdit?.(false);
-    }, [onSubmit, value]);
+    }, [onSubmit]);
 
     const cancelEdit = useCallback(() => {
-        setValue(column.edit.value);
         onCancel();
         onEdit?.(false);
     }, [column.edit.value, onCancel, onEdit]);
@@ -71,30 +68,27 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (column.edit) {
-            onEdit?.(true);
-        }
+        onEdit?.(true);
     }, [column, onEdit]);
 
     // Focus the editor when entering edit mode.
     useEffect(() => {
-        if (editing && editorRef.current) {
+        if (editing && editorRef.current && autoFocus) {
             editorRef.current.focus();
         }
-    }, [editing]);
+    }, [editing, autoFocus]);
 
     if (editing) {
         return (
             <div className='edit-field-container' ref={containerRef}>
                 {(() => {
-                    switch (column.edit?.type) {
+                    switch (column.edit.type) {
                         case 'text':
                             return (
                                 <Input
                                     ref={editorRef}
                                     className={'text-field-cell'}
-                                    value={value}
-                                    onChange={e => setValue(e.target.value)}
+                                    defaultValue={column.edit.value}
                                     onPressEnter={e => commitEdit(e.currentTarget.value, e)}
                                     onBlur={handleBlur}
                                     onClick={e => e.stopPropagation()}
@@ -102,7 +96,7 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
                                 />
                             );
                         case 'boolean': {
-                            const checked = value === '1';
+                            const checked = column.edit.value === '1';
                             return (
                                 <Checkbox
                                     ref={editorRef}
@@ -115,19 +109,18 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
                             );
                         }
                         case 'enum': {
-                            const enumEdit = column.edit as EditableEnumData;
                             return (
                                 <Select
                                     ref={editorRef}
                                     className={'enum-field-cell'}
                                     placeholder={column.label}
-                                    value={value}
+                                    value={column.label} // we want to use 'Write Only' as value even if it is not an option
                                     onChange={(newValue) => commitEdit(newValue)}
                                     onBlur={handleBlur}
                                     onClick={e => e.stopPropagation()}
                                     onKeyDown={handleKeyDown}
                                 >
-                                    {enumEdit.options.map((opt) => {
+                                    {column.edit.options.map((opt) => {
                                         return (
                                             <Select.Option key={opt.value} value={opt.value}>
                                                 {opt.label}
@@ -146,11 +139,7 @@ const EditableLabelCell = <T extends CDTTreeItemResource>({
     }
 
     return (
-        <div
-            className='editable-string-cell'
-            onDoubleClick={handleDoubleClick}
-            style={{ cursor: column.edit ? 'pointer' : 'default' }}
-        >
+        <div className='editable-string-cell' onDoubleClick={handleDoubleClick}>
             <LabelCell record={record} column={column} />
         </div>
     );

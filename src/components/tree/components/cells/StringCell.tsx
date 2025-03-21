@@ -7,12 +7,13 @@ interface StringCellProps<T extends CDTTreeItemResource> {
     column: CDTTreeTableStringColumn;
     record: CDTTreeItem<T>;
     editing?: boolean;
+    autoFocus?: boolean;
     onSubmit?: (record: CDTTreeItem<T>, newValue: string) => void;
     onCancel?: (record: CDTTreeItem<T>) => void;
     onEdit?: (record: CDTTreeItem<T>, edit: boolean) => void;
 }
 
-const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = false, onSubmit, onCancel, onEdit }: StringCellProps<T>) => {
+const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = false, autoFocus = false, onSubmit, onCancel, onEdit }: StringCellProps<T>) => {
     const handleSubmit = useCallback(
         (newValue: string) => onSubmit?.(record, newValue),
         [record, onSubmit]
@@ -30,7 +31,7 @@ const StringCell = <T extends CDTTreeItemResource>({ column, record, editing = f
 
 
     return column.edit && onSubmit
-        ? <EditableStringCell record={record} column={column as EditableCDTTreeTableStringColumn} onSubmit={handleSubmit} onCancel={handleCancel} onEdit={handleEdit} editing={editing} />
+        ? <EditableStringCell record={record} column={column as EditableCDTTreeTableStringColumn} onSubmit={handleSubmit} onCancel={handleCancel} onEdit={handleEdit} editing={editing} autoFocus={autoFocus} />
         : <LabelCell record={record} column={column} />;
 };
 
