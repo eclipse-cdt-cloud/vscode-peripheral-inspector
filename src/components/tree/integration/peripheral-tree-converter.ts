@@ -267,8 +267,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         const decimal = this.formatValue(resource, resource.currentValue, NumberFormat.Decimal);
         const binary = this.formatValue(resource, resource.currentValue, NumberFormat.Binary);
 
-        mds += '**Formats**\n\n';
-        mds += '| Format &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | |\n';
+        mds += '| Format | |\n';
         mds += '| :--- | :--- |\n';
         mds += `| Hex | ${hex} |\n`;
         mds += `| Decimal |  ${decimal} |\n`;
@@ -278,7 +277,6 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         const children = resource.children;
         if (children.length === 0) { return mds; }
 
-        mds += '**Fields**\n\n';
         mds += '| Field | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Bit-Range | Value |\n';
         mds += '|:---|:---:|:---|:---|\n';
 
@@ -518,7 +516,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 enumerationDescription = resource.enumeration[value].description;
             }
 
-            mds += '| Format &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | |\n';
+            mds += '| Format | |\n';
             mds += '| :--- | :--- |\n';
             mds += `| Enumeration | ${enumerationName} |\n`;
             mds += `| Hex | ${hex} |\n`;
