@@ -22,12 +22,16 @@ export abstract class BaseTreeNode {
      */
     public expanded: boolean;
 
-    constructor(protected readonly parent?: BaseTreeNode) {
+    constructor(protected parent?: BaseTreeNode) {
         this.expanded = false;
     }
 
     public getParent(): BaseTreeNode | undefined {
         return this.parent;
+    }
+
+    public setParent(parent: BaseTreeNode): void {
+        this.parent = parent;
     }
 
     public abstract getId(): string;
@@ -49,7 +53,7 @@ export abstract class PeripheralBaseNode extends BaseTreeNode {
     public name?: string;
     public session?: DebugSession;
 
-    constructor(public readonly parent?: PeripheralBaseNode) {
+    constructor(parent?: PeripheralBaseNode) {
         super(parent);
         this.format = NumberFormat.Auto;
         this.pinned = false;
