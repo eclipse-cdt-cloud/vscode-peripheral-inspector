@@ -340,7 +340,32 @@
           "description": "List of case insensitive peripheral names to ignore"
         }
       }
-    }
+    },
+    "debuggers": [
+      {
+        "type": "gdbtarget",
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "definitionPath": {
+                "default": null,
+                "description": "Setting for 'PERIPHERALS' window provided by 'eclipse-cdt.peripheral-inspector'. It can be a simple file name or based on a CMSIS pack or deviceName. See 'eclipse-cdt.peripheral-inspector' for format",
+                "type": "string"
+              }
+            }
+          },
+          "attach": {
+            "properties": {
+              "definitionPath": {
+                "default": null,
+                "description": "Setting for 'PERIPHERALS' window provided by 'eclipse-cdt.peripheral-inspector'. It can be a simple file name or based on a CMSIS pack or deviceName. See 'eclipse-cdt.peripheral-inspector' for format",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    ]
   },
   "activationEvents": [
     "onDebug",
