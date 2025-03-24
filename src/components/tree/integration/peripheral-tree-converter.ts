@@ -241,25 +241,22 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         let mds = '';
 
         const address = `${hexFormat(resource.address)}`;
-
         const formattedValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
+        const roLabel = resource.accessType === AccessType.ReadOnly ? '(Read Only)' : undefined;
 
-        const roLabel = resource.accessType === AccessType.ReadOnly ? '(Read Only)' : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-
-        mds += (`| ${resource.name}@${address} | ${roLabel} | *${formattedValue}* |\n`);
-        mds += ('|:---|:---:|---:|\n\n');
+        mds += `**${resource.name}@${address}**${roLabel ? ` ${roLabel}` : ''}\n\n`;
+        mds += `**Value:** ${formattedValue}\n\n`;
 
         if (resource.accessType !== AccessType.WriteOnly) {
             const resetValue = this.formatValue(resource, resource.resetValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
-            mds += (`**Reset Value:** ${resetValue}\n`);
+            mds += `**Reset Value:** ${resetValue}\n`;
         }
 
-        mds += ('\n____\n\n');
+        mds += '\n____\n\n';
         if (resource.description) {
-            mds += (resource.description);
+            mds += resource.description;
+            mds += '\n_____\n\n';
         }
-
-        mds += ('\n_____\n\n');
 
         // Don't try to display current value table for write only fields
         if (resource.accessType === AccessType.WriteOnly) {
@@ -270,16 +267,20 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         const decimal = this.formatValue(resource, resource.currentValue, NumberFormat.Decimal);
         const binary = this.formatValue(resource, resource.currentValue, NumberFormat.Binary);
 
-        mds += ('| Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
-        mds += ('|:---|:---|:---|\n');
-        mds += (`| ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n\n`);
+        mds += '**Formats**\n\n';
+        mds += '| Format &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | |\n';
+        mds += '| :--- | :--- |\n';
+        mds += `| Hex | ${hex} |\n`;
+        mds += `| Decimal |  ${decimal} |\n`;
+        mds += `| Binary | ${binary} |\n`;
+        mds += ('\n_____\n\n');
 
         const children = resource.children;
         if (children.length === 0) { return mds; }
 
-        mds += ('**Fields**\n\n');
-        mds += ('| Field | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Bit-Range | Value |\n');
-        mds += ('|:---|:---:|:---|:---|\n');
+        mds += '**Fields**\n\n';
+        mds += '| Field | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Bit-Range | Value |\n';
+        mds += '|:---|:---:|:---|:---|\n';
 
         const fieldFormatter = new PeripheralFieldNodeConverter();
         children.forEach((field) => {
@@ -290,8 +291,8 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
                         : field.format !== NumberFormat.Auto ? field.format : PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap);
             const value = fieldFormatter.formatValue(field, field.currentValue, format, true);
 
-            mds += (`| ${field.name} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ${range} | `
-                + `${value} |\n`);
+            mds += `| ${field.name} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ${range} | `
+                + `${value} |\n`;
         });
 
         return mds;
@@ -480,27 +481,24 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         const address = `${hexFormat(resource.parentAddress)}${this.getRange(resource)}`;
 
         if (this.isReserved(resource)) {
-            mds += (`| ${resource.name}@${address} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | *Reserved* |\n`);
-            mds += ('|:---|:---:|---:|');
+            mds += `${resource.name}@${address} (*Reserved*)\n`;
             return mds;
         }
 
         const formattedValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap), true);
+        const roLabel = resource.accessType === AccessType.ReadOnly ? '(Read Only)' : undefined;
 
-        const roLabel = resource.accessType === AccessType.ReadOnly ? '(Read Only)' : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-
-        mds += (`| ${resource.name}@${address} | ${roLabel} | *${formattedValue}* |\n`);
-        mds += ('|:---|:---:|---:|\n\n');
+        mds += `**${resource.name}@${address}**${roLabel ? ` ${roLabel}` : ''}\n\n`;
+        mds += `**Value:** ${formattedValue}\n\n`;
 
         if (resource.accessType !== AccessType.WriteOnly) {
             const resetValue = this.formatValue(resource, resource.resetValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap), true);
-            mds += (`**Reset Value:** ${resetValue}\n`);
+            mds += `**Reset Value:** ${resetValue}\n`;
         }
 
-        mds += ('\n____\n\n');
-        mds += (resource.description);
-
-        mds += ('\n_____\n\n');
+        mds += '\n____\n\n';
+        mds += resource.description;
+        mds += '\n_____\n\n';
 
         // Don't try to display current value table for write only fields
         if (resource.accessType === AccessType.WriteOnly) {
@@ -513,21 +511,29 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         const binary = binaryFormat(value, resource.width);
 
         if (resource.enumeration) {
-            mds += ('| Enumeration Value &nbsp;&nbsp; | Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
-            mds += ('|:---|:---|:---|:---|\n');
-            let ev = 'Unknown';
+            let enumerationName = 'Unknown';
+            let enumerationDescription: string | undefined = undefined;
             if (resource.enumeration[value]) {
-                ev = resource.enumeration[value].name;
+                enumerationName = resource.enumeration[value].name;
+                enumerationDescription = resource.enumeration[value].description;
             }
 
-            mds += (`| ${ev} &nbsp;&nbsp; | ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n\n`);
-            if (resource.enumeration[value] && resource.enumeration[value].description) {
+            mds += '| Format &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | |\n';
+            mds += '| :--- | :--- |\n';
+            mds += `| Enumeration | ${enumerationName} |\n`;
+            mds += `| Hex | ${hex} |\n`;
+            mds += `| Decimal |  ${decimal} |\n`;
+            mds += `| Binary | ${binary} |\n\n`;
+
+            if (enumerationDescription) {
                 mds += (resource.enumeration[value].description);
             }
         } else {
-            mds += ('| Hex &nbsp;&nbsp; | Decimal &nbsp;&nbsp; | Binary &nbsp;&nbsp; |\n');
-            mds += ('|:---|:---|:---|\n');
-            mds += (`| ${hex} &nbsp;&nbsp; | ${decimal} &nbsp;&nbsp; | ${binary} &nbsp;&nbsp; |\n`);
+            mds += '| Format &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | |\n';
+            mds += '| :--- | :--- |\n';
+            mds += `| Hex | ${hex} |\n`;
+            mds += `| Decimal |  ${decimal} |\n`;
+            mds += `| Binary | ${binary} |\n`;
         }
 
         return mds;
