@@ -143,6 +143,9 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                     this.peripheralsConfiguration = cached.configuration;
                     this.loaded = true;
                     this.errMessage = '';
+
+                    // Update peripherals to use new session
+                    this.peripherals.forEach((p) => p.setParent(this));
                     await this.setSession(this.session);
                     return;
                 }
