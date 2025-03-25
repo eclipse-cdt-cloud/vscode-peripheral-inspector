@@ -360,12 +360,10 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
     const [prevWindowWidth, setPrevWindowWidth] = useState(width);
     const availableWidth = useMemo(() => width - ACTION_COLUMN_WIDTH - COLUMN_MIN_WIDTH * (props.columnDefinitions?.filter(c => c.resizable).length ?? 0), [width, props.columnDefinitions]);
 
-    const handleResize =
-        (field: string) =>
-            (_: MouseEvent | TouchEvent, width: number) => {
-                console.log('handleResize', field, width);
-                setColumnWidths((prev) => ({ ...prev, [field]: width }));
-            };
+    const handleResize = (field: string) =>
+        (_: MouseEvent | TouchEvent, width: number) => {
+            setColumnWidths((prev) => ({ ...prev, [field]: width }));
+        };
 
     useEffect(() => {
         const delta = width - prevWindowWidth;

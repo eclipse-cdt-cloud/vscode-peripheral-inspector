@@ -101,7 +101,12 @@
 }
 
 .ant-table .resizable-handle {
-  border-left: var(--vscode-sideBarSectionHeader-border) 1px solid;
+  border-left: var(--vscode-sideBarSectionHeader-border) 2px solid;
+}
+
+.ant-table .resizable-handle:hover,
+.ant-table .resizable-handle:active {
+  border-color: var(--vscode-sash-hoverBorder);
 }
 
 .ant-table .ant-table-row.ant-table-row-resizing .tree-actions {
