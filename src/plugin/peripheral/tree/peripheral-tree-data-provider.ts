@@ -63,7 +63,7 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
 
     getColumnDefinitions(): CDTTreeTableColumnDefinition[] {
         return [
-            { type: 'string', field: 'title' },
+            { type: 'string', field: 'title', resizable: true },
             { type: 'string', field: 'value' },
             { type: 'action', field: 'actions' }];
     }
