@@ -211,18 +211,19 @@ export class PeripheralDataTracker {
         this.fireOnDidChange();
     }
 
-    public expandNode(
+    public async expandNode(
         node: PeripheralBaseNode,
         emit = true,
-        context?: TreeNotificationContext): void {
+        context?: TreeNotificationContext): Promise<void> {
         node.expanded = true;
 
 
         if (!(node instanceof PeripheralTreeForSession) && !(node instanceof PeripheralRegisterNode)) {
             // If we are at a register level, parent already expanded, no update/refresh needed
-            const p = node.getPeripheral();
-            if (p) {
-                p.updateData();
+            const peripheral = node.getPeripheral();
+            if (peripheral) {
+                await peripheral.updateData();
+                this.fireOnDidChange();
             }
         }
 

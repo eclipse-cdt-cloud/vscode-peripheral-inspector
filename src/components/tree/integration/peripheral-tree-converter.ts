@@ -5,13 +5,13 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import { AccessType } from '../../../api-types';
+import { AccessType, IEnumeratedValue } from '../../../api-types';
 import { CommandDefinition } from '../../../common';
 import { formatValue, NumberFormat } from '../../../common/format';
-import { PeripheralBaseNodeDTO, PeripheralClusterNodeDTO, PeripheralFieldNodeContextValue, PeripheralFieldNodeDTO, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralSessionNodeDTO, PeripheralTreeNodeDTOs } from '../../../common/peripheral-dto';
+import { PeripheralClusterNodeDTO, PeripheralFieldNodeDTO, PeripheralFieldNodeContextValue, PeripheralNodeDTO, PeripheralRegisterNodeDTO, PeripheralTreeNodeDTOs, PeripheralRegisterNodeContextValue, PeripheralSessionNodeDTO, PeripheralBaseNodeDTO } from '../../../common/peripheral-dto';
 import { Commands } from '../../../manifest';
 import { binaryFormat, extractBits, hexFormat } from '../../../utils';
-import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn } from '../types';
+import { CDTTreeItem, CDTTreeTableActionColumnCommand, CDTTreeTableColumn, EditableData, EditableEnumDataOption } from '../types';
 import { TreeConverterContext, TreeResourceConverter } from './tree-converter';
 
 
@@ -52,7 +52,6 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
         }
 
         throw new Error(`No converter found for peripheral: ${resource.__type}, ${JSON.stringify(resource)}`);
-
     }
 }
 
@@ -172,29 +171,21 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         });
     }
 
-    private getCommands(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeTableActionColumnCommand[] {
-        const contextValue = resource.accessType === AccessType.ReadWrite ? 'registerRW' : (resource.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
+    private getContextValue(resource: PeripheralRegisterNodeDTO): PeripheralRegisterNodeContextValue {
+        return resource.accessType === AccessType.ReadWrite ? 'registerRW' : (resource.accessType === AccessType.ReadOnly ? 'registerRO' : 'registerWO');
 
+    }
+
+    private getCommands(resource: PeripheralRegisterNodeDTO, contextValue: string, edit: EditableData | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeTableActionColumnCommand[] {
         const value = this.getValue(resource, context);
-        const copyValue: CDTTreeTableActionColumnCommand = {
-            ...Commands.COPY_VALUE_COMMAND,
-            value,
-        };
-        const updateNode: CDTTreeTableActionColumnCommand = {
-            ...Commands.UPDATE_NODE_COMMAND,
-            value
-        };
-
-        switch (contextValue) {
-            case 'registerRO':
-                return [copyValue, Commands.FORCE_REFRESH_COMMAND, Commands.EXPORT_NODE_COMMAND];
-            case 'registerRW':
-                return [copyValue, Commands.FORCE_REFRESH_COMMAND, updateNode, Commands.EXPORT_NODE_COMMAND];
-            case 'registerWO':
-                return [];
-            default:
-                return [];
+        const commands: CDTTreeTableActionColumnCommand[] = [];
+        commands.push({ ...Commands.COPY_VALUE_COMMAND, value });
+        commands.push(Commands.FORCE_REFRESH_COMMAND);
+        if (edit?.type === 'text') {
+            commands.push({ ...Commands.UPDATE_NODE_COMMAND, value });
         }
+        commands.push(Commands.EXPORT_NODE_COMMAND);
+        return commands;
     }
 
     private hasHighlight(resource: PeripheralRegisterNodeDTO): boolean {
@@ -205,10 +196,21 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
     }
 
+    private isEditable(contextValue: PeripheralRegisterNodeContextValue): boolean {
+        return contextValue === 'registerRW';
+    }
+
+    private getEdit(_resource: PeripheralRegisterNodeDTO, value: string): EditableData | undefined {
+        return { type: 'text', value };
+    }
+
     // ==== Rendering ====
 
     private getColumns(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const value = this.getValue(resource, context);
+        const contextValue = this.getContextValue(resource);
+        const edit = this.isEditable(contextValue) ? this.getEdit(resource, value) : undefined;
+        const commands = this.getCommands(resource, contextValue, edit, context);
 
         return {
             'title': {
@@ -220,11 +222,12 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
                 type: 'string',
                 label: value,
                 tooltip: value,
-                highlight: this.hasHighlight(resource) ? [[0, value.length]] : undefined
+                highlight: this.hasHighlight(resource) ? [[0, value.length]] : undefined,
+                edit
             },
             'actions': {
                 type: 'action',
-                commands: this.getCommands(resource, context)
+                commands
             }
         };
     }
@@ -377,29 +380,16 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return context;
     }
 
-    private getCommands(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CommandDefinition[] {
+    private getCommands(resource: PeripheralFieldNodeDTO, contextValue: PeripheralFieldNodeContextValue, edit: EditableData | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CommandDefinition[] {
         const value = this.getValue(resource, context);
-        const copyValue: CDTTreeTableActionColumnCommand = {
-            ...Commands.COPY_VALUE_COMMAND,
-            value
-        };
-        const updateNode: CDTTreeTableActionColumnCommand = {
-            ...Commands.UPDATE_NODE_COMMAND,
-            value
-        };
-
-        switch (this.getContextValue(resource)) {
-            case 'field':
-                return [copyValue, updateNode];
-            case 'field-res':
-                return [];
-            case 'fieldRO':
-                return [copyValue];
-            case 'fieldWO':
-                return [updateNode];
-            default:
-                return [];
+        const commands: CDTTreeTableActionColumnCommand[] = [];
+        if (this.isCopyable(contextValue)) {
+            commands.push({ ...Commands.COPY_VALUE_COMMAND, value });
         }
+        if (edit?.type === 'text') {
+            commands.push({ ...Commands.UPDATE_NODE_COMMAND, value });
+        }
+        return commands;
     }
 
     private hasHighlight(resource: PeripheralFieldNodeDTO): boolean {
@@ -410,10 +400,38 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
         return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
     }
 
+    private isCopyable(contextValue: PeripheralFieldNodeContextValue): boolean {
+        return contextValue === 'field' || contextValue === 'fieldRO';
+    }
+
+    private isEditable(contextValue: PeripheralFieldNodeContextValue): boolean {
+        return contextValue === 'field' || contextValue === 'fieldWO';
+    }
+
+    private getEdit(resource: PeripheralFieldNodeDTO, value: string, context: TreeConverterContext<PeripheralTreeNodeDTOs>): EditableData | undefined {
+        if (resource.enumeration) {
+            return {
+                type: 'enum',
+                options: Object.values(resource.enumeration ?? {}).map<EditableEnumDataOption>((value: IEnumeratedValue) => ({
+                    value: value.name,
+                    label: this.formatLabel(resource, value.value, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap))
+                })),
+                value: resource.enumeration[resource.currentValue]?.name ?? value
+            };
+        }
+        if (resource.width === 1) {
+            return { type: 'boolean', value: resource.currentValue === 0 ? '0' : '1' };
+        }
+        return { type: 'text', value: resource.accessType === AccessType.WriteOnly ? '' : value };
+    }
+
     // ==== Rendering ====
 
     private getColumns(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const value = this.getValue(resource, context);
+        const contextValue = this.getContextValue(resource);
+        const edit = this.isEditable(contextValue) ? this.getEdit(resource, value, context) : undefined;
+        const commands = this.getCommands(resource, contextValue, edit, context);
 
         return {
             'title': {
@@ -425,11 +443,12 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 type: 'string',
                 label: value,
                 highlight: this.hasHighlight(resource) ? [[0, value.length]] : undefined,
-                tooltip: value
+                tooltip: value,
+                edit
             },
             'actions': {
                 type: 'action',
-                commands: this.getCommands(resource, context)
+                commands
             }
         };
     }
@@ -441,12 +460,11 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
     }
 
     formatValue(peripheral: PeripheralFieldNodeDTO, value: number, format: NumberFormat, includeEnumeration = true): string {
-        if (peripheral.accessType === AccessType.WriteOnly) {
-            return '(Write Only)';
-        }
+        return peripheral.accessType === AccessType.WriteOnly ? '(Write Only)' : this.formatLabel(peripheral, value, format, includeEnumeration);
+    }
 
+    formatLabel(peripheral: PeripheralFieldNodeDTO, value: number, format: NumberFormat, includeEnumeration = true): string {
         let formatted = '';
-
         switch (format) {
             case NumberFormat.Decimal:
                 formatted = value.toString();
@@ -461,15 +479,14 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 formatted = peripheral.width >= 4 ? hexFormat(value, Math.ceil(peripheral.width / 4), true) : binaryFormat(value, peripheral.width);
                 break;
         }
-
         if (includeEnumeration && peripheral.enumeration) {
             if (peripheral.enumeration[value]) {
-                formatted = `${peripheral.enumeration[value].name} (${formatted})`;
+                const description = peripheral.enumeration[value].description;
+                formatted = `${peripheral.enumeration[value].name} (${formatted})${description ? ': ' + description : ''}`;
             } else {
                 formatted = `Unknown Enumeration (${formatted})`;
             }
         }
-
         return formatted;
     }
 

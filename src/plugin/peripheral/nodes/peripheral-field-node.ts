@@ -15,8 +15,6 @@ import { parseInteger } from '../../../utils';
 import { PeripheralBaseNode } from './base-node';
 import { PeripheralRegisterNode } from './peripheral-register-node';
 
-
-
 export class PeripheralFieldNode extends PeripheralBaseNode {
     public session: vscode.DebugSession | undefined;
     public readonly name: string;
@@ -94,9 +92,10 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return [];
     }
 
-    public performUpdate(value?: string): Thenable<boolean> {
-        return new Promise((resolve, reject) => {
-            if (this.enumeration) {
+    public async performUpdate(value?: string): Promise<boolean> {
+        if (this.enumeration) {
+            let numval = value && this.enumerationValues.includes(value) ? this.enumerationMap[value] : undefined;
+            if (numval === undefined) {
                 const items: vscode.QuickPickItem[] = [];
                 for (const eStr of this.enumerationValues) {
                     const numval = this.enumerationMap[eStr];
@@ -107,31 +106,30 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
                     };
                     items.push(item);
                 }
-                vscode.window.showQuickPick(items).then((val) => {
-                    if (val === undefined) {
-                        return false;
-                    }
-                    const numval = this.enumerationMap[val.label];
-                    this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
-                });
-            } else {
-                vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value }).then((val) => {
-                    if (typeof val === 'string') {
-                        const numval = parseInteger(val);
-                        if (numval === undefined) {
-                            return false;
-                        }
-                        this.parent.updateBits(this.offset, this.width, numval).then(resolve, reject);
-                    }
-                });
+                const val = await vscode.window.showQuickPick(items);
+                if (val === undefined) {
+                    return false;
+                }
+                numval = this.enumerationMap[val.label];
             }
-        });
+            return this.parent.updateBits(this.offset, this.width, numval);
+        } else {
+            const val = value ?? await vscode.window.showInputBox({ prompt: 'Enter new value: (prefix hex with 0x, binary with 0b)', value });
+            if (typeof val === 'string') {
+                const numval = parseInteger(val);
+                if (numval === undefined) {
+                    return false;
+                }
+                return this.parent.updateBits(this.offset, this.width, numval);
+            }
+        }
+        return false;
     }
 
-    public updateData(): Thenable<boolean> {
+    public async updateData(): Promise<boolean> {
         this.previousValue = this.currentValue;
         this.currentValue = this.getCurrentValue();
-        return Promise.resolve(true);
+        return true;
     }
 
     public saveState(path: string): NodeSetting[] {

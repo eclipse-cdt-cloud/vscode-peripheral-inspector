@@ -1,0 +1,117 @@
+/*********************************************************************
+ * Copyright (c) 2024 Arm Limited and others
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *********************************************************************/
+
+.ant-input.text-field-cell {
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text);
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-table-cell-font-size);
+  line-height: var(--ant-line-height);
+  padding: 1px;
+  padding-left: 3px;
+  border-radius: 0;
+  border-style: dotted;
+}
+
+.css-var-r0.ant-select-css-var {
+  --ant-control-height: auto;
+  --ant-color-text-placeholder: var(--vscode-sideBar-foreground);
+  --ant-select-show-arrow-padding-inline-end: 2em;
+  --ant-border-radius-sm: 0;
+  --ant-border-radius-lg: 0;
+  --ant-select-option-active-bg: var(--vscode-list-hoverBackground);
+  --ant-select-option-font-size: 12px;
+  --ant-select-option-selected-bg: var(--vscode-list-inactiveSelectionBackground);
+  --ant-select-option-selected-color: var(--vscode-sideBar-foreground);
+  --ant-select-option-height: auto;
+  --ant-select-option-padding: 3px 6px;
+}
+
+.enum-field-cell.ant-select-outlined:not(.ant-select-customize-input) .ant-select-selector {
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text);
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-table-cell-font-size);
+  line-height: var(--ant-line-height);
+  padding: 1px;
+  padding-left: 3px;
+  border-radius: 0;
+  border-style: dotted;
+}
+
+.ant-select-dropdown {
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text);
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-table-cell-font-size);
+  line-height: var(--ant-line-height);
+  padding: 1px;
+  padding-left: 3px;
+}
+
+.enum-field-cell.ant-select-outlined:not(.ant-select-customize-input) .ant-select-arrow {
+  color: var(--ant-color-text);
+}
+
+.editable-string-cell {
+  cursor: pointer;
+  display: contents;
+}
+
+.editable-string-cell .tree-label>span>span {
+  border-bottom: 1px dotted;
+}
+
+.edit-field-container,
+.editable-string-cell {
+  font-family: var(--ant-font-family-code);
+  font-style: normal;
+  filter: unset;
+  opacity: 1;
+}
+
+.ant-table-cell.value>.tree-cell {
+  font-family: var(--ant-font-family-code);
+  opacity: 0.8;
+}
+
+.edit-field-container {
+  display: contents;
+  flex-grow: 1;
+}
+
+.edit-field-container>* {
+  flex-grow: 1;
+}
+
+.edit-field-container .ant-select {
+  display: contents;
+  --ant-font-size-icon: 10px;
+}
+
+.ant-table-cell.value .tree-cell,
+.ant-table-cell.value .ant-checkbox-wrapper {
+  padding-left: 4px;
+}
+
+.ant-select-selector::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 4px;
+  /* Indent from the left */
+  width: calc(100% - 4px);
+  /* Make the dotted border span the remaining width */
+  border-bottom: 1px dotted;
+}
+
+.ant-select-selector {
+  border: 0 !important;
+}
