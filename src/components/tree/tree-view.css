@@ -10,7 +10,8 @@ body {
 }
 
 .markdown {
-  line-break: anywhere;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .markdown hr {

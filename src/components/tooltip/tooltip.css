@@ -22,7 +22,6 @@
   padding: 2px 8px;
   max-width: var(--vscode-hover-maxWidth, 500px);
   word-wrap: break-word;
-  white-space: unset;
   display: block;
   flex-direction: column;
 }
