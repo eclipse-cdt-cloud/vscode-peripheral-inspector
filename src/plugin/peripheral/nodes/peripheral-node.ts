@@ -12,7 +12,7 @@ import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
-import { PeripheralBaseNode } from './base-node';
+import { PeripheralBaseNode, UpdateDataContext } from './base-node';
 import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
 import { PeripheralRegisterNode } from './peripheral-register-node';
 import type { PeripheralTreeForSession } from '../tree/peripheral-session-tree';
@@ -30,6 +30,7 @@ export class PeripheralNode extends PeripheralBaseNode {
     public readonly resetValue: number;
     protected addrRanges: AddrRange[];
 
+    private previousValue: number[] = [];
     private currentValue: number[] = [];
 
     constructor(public gapThreshold: number, protected options: PeripheralOptions, parent: PeripheralTreeForSession) {
@@ -94,10 +95,11 @@ export class PeripheralNode extends PeripheralBaseNode {
         return this.format;
     }
 
-    public async updateData(): Promise<boolean> {
+    public async updateData(context?: UpdateDataContext): Promise<boolean> {
         if (!this.expanded) {
             return false;
         }
+
 
         try {
             const errors = await this.readMemory();
@@ -116,8 +118,12 @@ export class PeripheralNode extends PeripheralBaseNode {
             }
         }
 
+        if (this.previousValue !== this.currentValue) {
+            context?.changes?.push(this);
+        }
+
         try {
-            const promises = this.children.map((r) => r.updateData());
+            const promises = this.children.map((r) => r.updateData(context));
             await Promise.all(promises);
             return true;
         } catch (e) {
@@ -133,6 +139,8 @@ export class PeripheralNode extends PeripheralBaseNode {
     }
 
     protected readMemory(): Promise<Error[]> | [] {
+        this.previousValue = this.currentValue;
+
         if (!this.currentValue) {
             this.currentValue = new Array<number>(this.totalLength);
         }

@@ -202,12 +202,12 @@ export namespace PeripheralRegisterNodeDTO {
 
 export type PeripheralTreeNodeDTOs = PeripheralBaseTreeNodeDTO | PeripheralSessionNodeDTO | PeripheralNodeDTO | PeripheralRegisterNodeDTO | ClusterOrRegisterBaseNodeDTO | PeripheralClusterNodeDTO | PeripheralFieldNodeDTO;
 export namespace PeripheralTreeNodeDTOs {
-    export function getFormat(peripheralId: string | undefined, tree: Map<string, PeripheralTreeNodeDTOs>): NumberFormat {
+    export function getFormat(peripheralId: string | undefined, tree: Record<string, PeripheralTreeNodeDTOs | undefined>): NumberFormat {
         if (peripheralId === undefined) {
             return NumberFormat.Auto;
         }
 
-        const node = tree.get(peripheralId);
+        const node = tree[peripheralId];
         if (node === undefined) {
             return NumberFormat.Auto;
         }

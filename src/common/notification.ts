@@ -5,15 +5,7 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-export interface TreeNotificationContext {
-    /**
-     * If true or undefined, the tree will be resynced.
-     */
-    resync?: boolean;
-}
-
 export interface TreeNotification<T> {
-    context?: TreeNotificationContext;
     data: T;
 }
 

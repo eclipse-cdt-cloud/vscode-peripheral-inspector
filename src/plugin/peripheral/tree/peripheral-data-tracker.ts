@@ -18,7 +18,7 @@ import {
     PeripheralRegisterNode,
 } from '../nodes';
 import { PeripheralTreeForSession } from './peripheral-session-tree';
-import { TreeNotification, TreeNotificationContext, TreeTerminatedEvent } from '../../../common/notification';
+import { TreeNotification, TreeTerminatedEvent } from '../../../common/notification';
 import { PeripheralTreeDataProvider } from './peripheral-tree-data-provider';
 import * as xmlWriter from 'xmlbuilder2';
 import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
@@ -28,7 +28,7 @@ import { PeripheralConfigurationProvider } from './peripheral-configuration-prov
 export class PeripheralDataTracker {
     protected onDidTerminateEvent = new vscode.EventEmitter<TreeTerminatedEvent<PeripheralTreeForSession>>();
     public readonly onDidTerminate = this.onDidTerminateEvent.event;
-    protected onDidChangeEvent = new vscode.EventEmitter<void>();
+    protected onDidChangeEvent = new vscode.EventEmitter<PeripheralBaseNode[] | undefined>();
     public readonly onDidChange = this.onDidChangeEvent.event;
     protected onDidPeripheralChangeEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode>>();
     public readonly onDidPeripheralChange = this.onDidPeripheralChangeEvent.event;
@@ -100,14 +100,13 @@ export class PeripheralDataTracker {
     }
 
     public togglePin(
-        node: PeripheralBaseNode,
-        context?: TreeNotificationContext): void {
+        node: PeripheralBaseNode): void {
         const session = vscode.debug.activeDebugSession;
         if (session) {
             const peripheralTree = this.sessionPeripherals.get(session.id);
             if (peripheralTree) {
                 peripheralTree.togglePinPeripheral(node);
-                this.onDidPeripheralChangeEvent.fire({ data: node, context });
+                this.onDidPeripheralChangeEvent.fire({ data: node });
             }
         }
     }
@@ -211,8 +210,7 @@ export class PeripheralDataTracker {
 
     public async expandNode(
         node: PeripheralBaseNode,
-        emit = true,
-        context?: TreeNotificationContext): Promise<void> {
+        emit = true): Promise<void> {
         node.expanded = true;
 
 
@@ -221,22 +219,20 @@ export class PeripheralDataTracker {
             const peripheral = node.getPeripheral();
             if (peripheral) {
                 await peripheral.updateData();
-                this.fireOnDidChange();
             }
         }
 
         if (emit) {
-            this.onDidExpandEvent.fire({ data: node, context });
+            this.onDidExpandEvent.fire({ data: node });
         }
     }
 
     public collapseNode(
         node: PeripheralBaseNode,
-        emit = true,
-        context?: TreeNotificationContext): void {
+        emit = true): void {
         node.expanded = false;
         if (emit) {
-            this.onDidCollapseEvent.fire({ data: node, context });
+            this.onDidCollapseEvent.fire({ data: node });
         }
     }
 
@@ -250,12 +246,11 @@ export class PeripheralDataTracker {
 
     public toggleNode(
         node: PeripheralBaseNode,
-        emit = true,
-        context?: TreeNotificationContext): void {
+        emit = true): void {
         if (node.expanded) {
-            this.collapseNode(node, emit, context);
+            this.collapseNode(node, emit);
         } else {
-            this.expandNode(node, emit, context);
+            this.expandNode(node, emit);
         }
     }
 
@@ -299,8 +294,8 @@ export class PeripheralDataTracker {
         }
     }
 
-    public fireOnDidChange(): void {
-        this.onDidChangeEvent.fire();
+    public fireOnDidChange(changes?: PeripheralBaseNode[]): void {
+        this.onDidChangeEvent.fire(changes);
     }
 
     protected async onDebugSessionStarted(session: vscode.DebugSession): Promise<void> {
@@ -321,8 +316,8 @@ export class PeripheralDataTracker {
         if (expanded === undefined) {
             expanded = this.sessionPeripherals.size === 0 ? true : false;
         }
-        const peripheralTree = new PeripheralTreeForSession(session, this.api, this.config, expanded, () => {
-            this.fireOnDidChange();
+        const peripheralTree = new PeripheralTreeForSession(session, this.api, this.config, expanded, (changes) => {
+            this.fireOnDidChange(changes);
         });
 
         this.sessionPeripherals.set(session.id, peripheralTree);

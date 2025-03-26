@@ -13,7 +13,7 @@ import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
 import { readFromUrl } from '../../../utils';
-import { MessageNode, PeripheralBaseNode, PeripheralNode } from '../nodes';
+import { MessageNode, PeripheralBaseNode, PeripheralNode, UpdateDataContext } from '../nodes';
 import { PeripheralConfigurationProvider } from './peripheral-configuration-provider';
 import { DebugSessionStatus } from '../../../debug-tracker';
 import { clearTimeout, setTimeout } from 'timers';
@@ -54,7 +54,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         protected api: PeripheralInspectorAPI,
         protected config: PeripheralConfigurationProvider,
         expanded: boolean,
-        private fireRefresh: () => void) {
+        private fireRefresh: (changes?: PeripheralBaseNode[]) => void) {
         super();
         this.name = this.session.name;
         this.expanded = expanded;
@@ -273,8 +273,11 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     }
 
     public async updateData(): Promise<boolean> {
+        const context: UpdateDataContext = {
+            changes: [],
+        };
         if (this.loaded && this.sessionStatus !== DebugSessionStatus.Terminated) {
-            await Promise.all(this.peripherals.map(peripheral => peripheral.updateData())).finally(() => this.refresh());
+            await Promise.all(this.peripherals.map(peripheral => peripheral.updateData(context))).finally(() => this.refresh(context.changes));
         }
         return true;
     }
@@ -298,8 +301,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         return peripheral.findByPath(path.slice(1));
     }
 
-    public refresh(): void {
-        this.fireRefresh();
+    public refresh(changes?: PeripheralBaseNode[]): void {
+        this.fireRefresh(changes);
     }
 
     public getChildren(element?: PeripheralBaseNode): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {

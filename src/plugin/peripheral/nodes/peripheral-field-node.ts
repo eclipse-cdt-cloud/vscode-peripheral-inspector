@@ -12,7 +12,7 @@ import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralFieldNodeDTO } from '../../../common/peripheral-dto';
 import { parseInteger } from '../../../utils';
-import { PeripheralBaseNode } from './base-node';
+import { PeripheralBaseNode, UpdateDataContext } from './base-node';
 import { PeripheralRegisterNode } from './peripheral-register-node';
 
 export class PeripheralFieldNode extends PeripheralBaseNode {
@@ -126,9 +126,13 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return false;
     }
 
-    public async updateData(): Promise<boolean> {
+    public async updateData(context?: UpdateDataContext): Promise<boolean> {
         this.previousValue = this.currentValue;
         this.currentValue = this.getCurrentValue();
+
+        if (this.previousValue !== this.currentValue) {
+            context?.changes?.push(this);
+        }
         return true;
     }
 

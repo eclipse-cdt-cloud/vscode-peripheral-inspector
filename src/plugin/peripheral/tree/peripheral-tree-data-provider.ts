@@ -27,19 +27,19 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         this.dataTracker.onDidTerminate((event) => {
             this.onDidTerminateEvent.fire(event);
         });
-        this.dataTracker.onDidSelectionChange(() => {
-            this.onDidChangeTreeDataEvent.fire({ data: undefined });
-        });
-        this.dataTracker.onDidChange(async () => {
-            this.onDidChangeTreeDataEvent.fire({ data: undefined });
-        });
-        this.dataTracker.onDidPeripheralChange(async (event) => {
+        this.dataTracker.onDidSelectionChange((event) => {
             this.onDidChangeTreeDataEvent.fire(event);
         });
-        this.dataTracker.onDidExpand(async (event) => {
+        this.dataTracker.onDidChange((changes) => {
+            this.onDidChangeTreeDataEvent.fire({ data: changes });
+        });
+        this.dataTracker.onDidPeripheralChange((event) => {
             this.onDidChangeTreeDataEvent.fire(event);
         });
-        this.dataTracker.onDidCollapse(async (event) => {
+        this.dataTracker.onDidExpand((event) => {
+            this.onDidChangeTreeDataEvent.fire(event);
+        });
+        this.dataTracker.onDidCollapse((event) => {
             this.onDidChangeTreeDataEvent.fire(event);
         });
     }
@@ -52,11 +52,11 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
             }),
             webview.onDidExecuteCommand(async (event) => {
                 const node = this.getNodeByItemId(event.data.itemId);
-                vscode.commands.executeCommand(event.data.commandId, node, event.data.value, event.context);
+                vscode.commands.executeCommand(event.data.commandId, node, event.data.value);
             }),
             webview.onDidToggleNode((event) => {
                 const node = this.getNodeByItemId(event.data);
-                this.dataTracker.toggleNode(node, true, event.context);
+                this.dataTracker.toggleNode(node, true);
             })
         );
     }

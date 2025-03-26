@@ -13,7 +13,7 @@ import { NumberFormat } from '../../../common/format';
 import { PeripheralRegisterNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
 import { createMask, extractBits, hexFormat, parseInteger } from '../../../utils';
-import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './base-node';
+import { ClusterOrRegisterBaseNode, PeripheralBaseNode, UpdateDataContext } from './base-node';
 import { PeripheralClusterNode } from './peripheral-cluster-node';
 import { PeripheralFieldNode } from './peripheral-field-node';
 import { PeripheralNode } from './peripheral-node';
@@ -125,7 +125,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         return success;
     }
 
-    public async updateData(): Promise<boolean> {
+    public async updateData(context?: UpdateDataContext): Promise<boolean> {
         const bc = this.size / 8;
         const bytes = this.parent.getBytes(this.offset, bc);
         const buffer = Buffer.from(bytes);
@@ -145,7 +145,12 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
                 vscode.debug.activeDebugConsole.appendLine(`Register ${this.name} has invalid size: ${this.size}. Should be 8, 16 or 32.`);
                 break;
         }
-        await Promise.all(this.children.map(child => child.updateData()));
+
+        if (this.previousValue !== this.currentValue) {
+            context?.changes?.push(this);
+        }
+
+        await Promise.all(this.children.map(child => child.updateData(context)));
         return true;
     }
 

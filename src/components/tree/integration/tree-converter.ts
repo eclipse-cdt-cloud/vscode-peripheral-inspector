@@ -27,7 +27,11 @@ export interface TreeConverterContext<TResource extends CDTTreeItemResource = CD
      * This can be useful to access parent resources.
      * It is filled while converting the tree.
      */
-    resourceMap: Map<string, TResource>
+    assignedResources: Record<string, TResource | undefined>
+    /**
+     * A map of all items that are currently in the tree.
+     */
+    assignedItems: Record<string, CDTTreeItem<TResource> | undefined>
 }
 
 /**
