@@ -306,7 +306,13 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
         return props.action?.onAction?.(event, command, value, record);
     }, [props.action, props.pin?.onPin]);
 
-    const renderActionCell = useCallback((column: CDTTreeTableActionColumn, record: CDTTreeItem<T>) => (<ActionCell column={column} record={record} actions={getActions(record, column)} onAction={onAction} />), [props.pin, props.action]);
+    const renderActionCell = useCallback((column: CDTTreeTableActionColumn | undefined, record: CDTTreeItem<T>) => {
+        if (!column) {
+            return undefined;
+        }
+
+        return <ActionCell column={column} record={record} actions={getActions(record, column)} onAction={onAction} />;
+    }, [props.pin, props.action]);
 
     const onSubmitEdit = useCallback((record: CDTTreeItem<T>, value: string) => {
         setEditRowKey(undefined);
@@ -328,7 +334,11 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
 
     const isEditing = useCallback((column: CDTTreeTableStringColumn, record: CDTTreeItem<T>) => editRowKey === record.key || column.edit?.type === 'boolean' || column.edit?.type === 'enum', [editRowKey]);
 
-    const renderStringCell = useCallback((column: CDTTreeTableStringColumn, record: CDTTreeItem<T>) => {
+    const renderStringCell = useCallback((column: CDTTreeTableStringColumn | undefined, record: CDTTreeItem<T>) => {
+        if (!column) {
+            return undefined;
+        }
+
         return (<StringCell column={column} record={record} onSubmit={onSubmitEdit} onCancel={onSubmitCancel} onEdit={onEdit} editing={isEditing(column, record)} autoFocus={column.edit?.type === 'text'} />);
     }, [editRowKey]);
 
@@ -430,7 +440,8 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
     );
 
     const onRowClick = useClickHook<HTMLElement>({
-        onSingleClick: onRowSingleClick
+        onSingleClick: onRowSingleClick,
+        delay: 10 // We don't have a double click event for now
     });
 
     // ==== Return ====
