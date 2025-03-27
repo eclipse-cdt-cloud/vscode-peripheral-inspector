@@ -117,6 +117,10 @@ export class CDTTreeView extends React.Component<unknown, State> {
     }
 
     protected refreshPartial(items: PeripheralTreeNodeDTOs[]): void {
+        if (items.length === 0) {
+            return;
+        }
+
         this.setState(prev => {
             const context: TreeConverterContext<PeripheralTreeNodeDTOs> = {
                 expandedKeys: prev.viewModel.expandedKeys,

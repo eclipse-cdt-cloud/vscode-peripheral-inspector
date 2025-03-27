@@ -421,15 +421,17 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
     }, [autoSelectRowRef.current]);
 
     const onRowSingleClick = useCallback(
-        (record: CDTTreeItem<T>, _event: React.MouseEvent<HTMLElement>) => {
+        (_event: React.MouseEvent<HTMLElement>, record: CDTTreeItem<T>) => {
             const isExpanded = expandedRowKeys?.includes(record.id);
             handleExpand(!isExpanded, record);
             selectRow(record);
         },
-        [props.expansion]
+        [props.expansion?.expandedRowKeys]
     );
 
-    const onRowClick = (record: CDTTreeItem<T>) => useClickHook<HTMLElement>({ onSingleClick: event => onRowSingleClick(record, event) });
+    const onRowClick = useClickHook<HTMLElement>({
+        onSingleClick: onRowSingleClick
+    });
 
     // ==== Return ====
 
@@ -459,7 +461,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
                     rowClassName={(record) => classNames({ 'ant-table-row-selected': record.key === selection?.key, 'ant-table-row-matched': record.matching ?? false })}
                     onRow={(record) => ({
                         record,
-                        onClick: onRowClick(record),
+                        onClick: (event) => onRowClick(event, record)
                     })}
                     expandable={{
                         expandIcon: props => <ExpandIcon {...props} />,

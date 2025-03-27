@@ -182,9 +182,12 @@ export function getAncestors<T extends CDTTreeItemResource>(
     return ancestors;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ClickHookHandler<T> = (event: React.MouseEvent<T>, payload: any) => void;
+
 type UseClickHookProps<T> = {
-    onSingleClick?: MouseEventHandler<T>;
-    onDoubleClick?: MouseEventHandler<T>;
+    onSingleClick?: ClickHookHandler<T>;
+    onDoubleClick?: ClickHookHandler<T>;
     delay?: number;
 };
 
@@ -192,8 +195,9 @@ export function useClickHook<T = Element>({
     onSingleClick,
     onDoubleClick,
     delay = 250,
-}: UseClickHookProps<T>): MouseEventHandler<T> {
+}: UseClickHookProps<T>): ClickHookHandler<T> {
     const [clicks, setClicks] = useState(0);
+    const [payload, setPayload] = useState<unknown>(undefined);
     const eventRef = useRef<React.MouseEvent<T, MouseEvent> | null>(null);
 
     useEffect(() => {
@@ -203,14 +207,14 @@ export function useClickHook<T = Element>({
             // Trigger single-click after delay
             singleClickTimer = setTimeout(() => {
                 if (clicks === 1 && onSingleClick && eventRef.current) {
-                    onSingleClick(eventRef.current); // Trigger onClick
+                    onSingleClick(eventRef.current, payload); // Trigger onClick
                 }
                 setClicks(0); // Reset clicks after the delay
             }, delay);
         } else if (clicks === 2) {
             // Trigger double-click immediately
             if (onDoubleClick && eventRef.current) {
-                onDoubleClick(eventRef.current); // Trigger onDoubleClick
+                onDoubleClick(eventRef.current, payload); // Trigger onDoubleClick
             }
             setClicks(0); // Reset clicks immediately
         }
@@ -221,8 +225,9 @@ export function useClickHook<T = Element>({
         };
     }, [clicks, delay, onSingleClick, onDoubleClick]);
 
-    return (event) => {
+    return (event, payload) => {
         eventRef.current = event;
+        setPayload(payload);
         setClicks((prev) => prev + 1); // Increment the click count
     };
 }
