@@ -6,6 +6,7 @@
  ********************************************************************************/
 
 /* AntD Table Variables */
+
 .css-var-r0 {
   --ant-font-family: var(--vscode-font-family);
   --ant-color-text: var(--vscode-sideBar-foreground);
@@ -96,5 +97,18 @@
 
 /* The horizontal scrollbar is not necessary */
 .ant-table .ant-table-tbody-virtual-scrollbar-horizontal {
+  display: none;
+}
+
+.ant-table .resizable-handle {
+  border-left: var(--vscode-sideBarSectionHeader-border) 2px solid;
+}
+
+.ant-table .resizable-handle:hover,
+.ant-table .resizable-handle:active {
+  border-color: var(--vscode-sash-hoverBorder);
+}
+
+.ant-table .ant-table-row.ant-table-row-resizing .tree-actions {
   display: none;
 }

@@ -166,6 +166,12 @@ export interface CDTTreeTableColumnDefinition {
      * The field that is used to get the value for this column. See {@link CDTTreeItem.columns}.
      */
     field: string;
+    /**
+     * Whether the column is resizable. Default is false.
+     * The resize handle is display on the right side.
+     * That means the column after this column is also resized.
+     */
+    resizable?: boolean;
 }
 
 // ==== Model ====

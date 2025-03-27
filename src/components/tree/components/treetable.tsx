@@ -10,9 +10,11 @@ import './treetable.css';
 
 import { ConfigProvider, Table } from 'antd';
 import { ColumnType, ExpandableConfig } from 'antd/es/table/interface';
+import { Resizable } from 're-resizable';
 import { default as React, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { debounce } from 'throttle-debounce';
 import { CommandDefinition, findNestedValue } from '../../../common';
+import { Commands } from '../../../manifest';
 import { CDTTreeItem, CDTTreeItemResource, CDTTreeTableActionColumn, CDTTreeTableActionColumnCommand, CDTTreeTableColumnDefinition, CDTTreeTableStringColumn, CTDTreeWebviewContext } from '../types';
 import ActionCell from './cells/ActionCell';
 import StringCell from './cells/StringCell';
@@ -20,7 +22,9 @@ import { ExpandIcon } from './expand-icon';
 import { SearchOverlay } from './search-overlay';
 import { TreeNavigator } from './treetable-navigator';
 import { classNames, filterTree, getAncestors, traverseTree, useClickHook } from './utils';
-import { Commands } from '../../../manifest';
+
+const COLUMN_MIN_WIDTH = 50;
+const ACTION_COLUMN_WIDTH = 16 * 5;
 
 /**
  * Component to render a tree table.
@@ -81,6 +85,12 @@ export type ComponentTreeTableProps<T extends CDTTreeItemResource = CDTTreeItemR
     }
 };
 
+interface ResizeableCell {
+    resizeable?: boolean;
+    maxWidth?: number;
+    onDidColumnResize?: (event: MouseEvent | TouchEvent, width: number) => void;
+}
+
 interface BodyRowProps extends React.HTMLAttributes<HTMLDivElement> {
     'data-row-key': string;
     record: CDTTreeItem<CDTTreeItemResource>;
@@ -91,11 +101,78 @@ const BodyRow = React.forwardRef<HTMLDivElement, BodyRowProps>((props, ref) => {
     return (
         <div
             ref={ref}
+            data-test
             tabIndex={0}
             key={props['data-row-key']}
             {...props}
             {...CTDTreeWebviewContext.create({ webviewSection: 'tree-item', cdtTreeItemId: props['data-row-key'], cdtTreeItemType: props.record.resource.__type })}
         />
+    );
+});
+
+
+interface BodyCellProps extends React.HTMLAttributes<HTMLDivElement>, ResizeableCell {
+}
+
+const BodyCell = React.forwardRef<HTMLDivElement, BodyCellProps>((props, ref) => {
+    const { resizeable, onDidColumnResize, maxWidth, className, onResize, style, ...rest } = props;
+    const [width, setWidth] = useState<string | number | undefined>(props.style?.width);
+
+    useEffect(() => {
+        if (resizeable) {
+            setWidth(props.style?.width);
+        }
+    }, [props.style?.width]);
+
+    const cell = <div
+        ref={ref}
+        style={{ minWidth: '50px', ...style }}
+        {...rest}
+        className={className}
+        onResize={onResize}
+    />;
+
+    if (!resizeable) {
+        return cell;
+    }
+
+    return (
+        <Resizable
+            minWidth={50}
+            maxWidth={maxWidth}
+            className={classNames('ant-table-cell-resizable', className ?? '')}
+            size={{
+                width,
+            }}
+            onResizeStart={(_event, _direction, ref) => {
+                const row = ref.closest('.ant-table-row');
+                row?.classList.add('ant-table-row-resizing');
+            }}
+            onResize={(event, _direction, ref, _delta) => {
+                onDidColumnResize?.(event, ref.clientWidth);
+
+            }}
+            onResizeStop={(event, _direction, ref, _delta) => {
+                onDidColumnResize?.(event, ref.clientWidth);
+                const row = ref.closest('.ant-table-row');
+                row?.classList.remove('ant-table-row-resizing');
+            }}
+            handleClasses={{
+                right: 'resizable-handle',
+            }}
+            enable={{
+                bottom: false,
+                bottomLeft: false,
+                bottomRight: false,
+                left: false,
+                right: true,
+                top: false,
+                topLeft: false,
+                topRight: false
+            }}
+            {...rest}
+        >
+        </Resizable>
     );
 });
 
@@ -279,6 +356,32 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
 
 
     // ==== Columns ====
+    const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+    const [prevWindowWidth, setPrevWindowWidth] = useState(width);
+    const availableWidth = useMemo(() => width - ACTION_COLUMN_WIDTH - COLUMN_MIN_WIDTH * (props.columnDefinitions?.filter(c => c.resizable).length ?? 0), [width, props.columnDefinitions]);
+
+    const handleResize = (field: string) =>
+        (_: MouseEvent | TouchEvent, width: number) => {
+            setColumnWidths((prev) => ({ ...prev, [field]: width }));
+        };
+
+    useEffect(() => {
+        const delta = width - prevWindowWidth;
+        if (delta < 0) {
+            // Shrink columns that are too wide
+            setColumnWidths((prev) => {
+                const newWidths = { ...prev };
+                for (const key in newWidths) {
+                    const currentWidth = newWidths[key];
+                    if (currentWidth > availableWidth) {
+                        newWidths[key] = Math.max(currentWidth + delta, COLUMN_MIN_WIDTH);
+                    }
+                }
+                return newWidths;
+            });
+        }
+        setPrevWindowWidth(width);
+    }, [width]);
 
     const getActions = useCallback((record: CDTTreeItem<T>, column: CDTTreeTableActionColumn) => {
         const actions: CDTTreeTableActionColumnCommand[] = [];
@@ -344,19 +447,30 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
 
     const columns = useMemo(() => {
         return props.columnDefinitions?.map<ColumnType<CDTTreeItem<T>>>(colDef => {
+            const resizeable: ResizeableCell = {
+                resizeable: colDef.resizable,
+                maxWidth: availableWidth,
+                onDidColumnResize: handleResize(colDef.field)
+            };
+
             if (colDef.type === 'string') {
                 return {
                     title: colDef.field,
                     dataIndex: ['columns', colDef.field],
-                    width: 0,
+                    width: columnWidths[colDef.field] ?? 0,
                     ellipsis: true,
                     render: renderStringCell,
                     className: colDef.field,
                     onCell: (record) => {
                         const column = findNestedValue<CDTTreeTableStringColumn>(record, ['columns', colDef.field]);
+
                         return !column || !column.colSpan
-                            ? {}
+                            ? {
+                                ...resizeable,
+                            } as React.HTMLAttributes<unknown> & React.TdHTMLAttributes<unknown>
                             : {
+                                ...resizeable,
+                                resizeable: column.colSpan !== 'fill',
                                 colSpan: column.colSpan === 'fill' ? props.columnDefinitions?.length : column.colSpan,
                                 style: { zIndex: 1 }
                             };
@@ -367,17 +481,18 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
                 return {
                     title: colDef.field,
                     dataIndex: ['columns', colDef.field],
-                    width: 16 * 5,
+                    width: ACTION_COLUMN_WIDTH,
                     render: renderActionCell,
                 };
             }
             return {
+                ...resizeable,
                 title: colDef.field,
                 dataIndex: ['columns', colDef.field, 'label'],
                 width: 200,
             };
         }) ?? [];
-    }, [props.columnDefinitions, renderStringCell, renderActionCell]);
+    }, [props.columnDefinitions, columnWidths, renderStringCell, renderActionCell]);
 
     // ==== Handlers ====
 
@@ -464,7 +579,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
                     ref={tblRef}
                     columns={columns}
                     dataSource={filteredData}
-                    components={{ body: { row: BodyRow } }}
+                    components={{ body: { row: BodyRow, cell: BodyCell } }}
                     virtual
                     scroll={{ x: width, y: height - 2 }}
                     showHeader={false}
