@@ -470,6 +470,7 @@ export const AntDComponentTreeTable = <T extends CDTTreeItemResource,>(props: Co
                             } as React.HTMLAttributes<unknown> & React.TdHTMLAttributes<unknown>
                             : {
                                 ...resizeable,
+                                resizeable: column.colSpan !== 'fill',
                                 colSpan: column.colSpan === 'fill' ? props.columnDefinitions?.length : column.colSpan,
                                 style: { zIndex: 1 }
                             };
