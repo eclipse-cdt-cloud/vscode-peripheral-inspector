@@ -51,7 +51,7 @@ export class DebugTracker {
     public readonly onDidStopDebug: vscode.Event<vscode.DebugSession> = this._onDidStopDebug.event;
 
     private _onDidContinueDebug: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
-    public readonly onDidContinueDebug: vscode.Event<vscode.DebugSession> = this._onDidStopDebug.event;
+    public readonly onDidContinueDebug: vscode.Event<vscode.DebugSession> = this._onDidContinueDebug.event;
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         const debugtracker = await this.getTracker();
