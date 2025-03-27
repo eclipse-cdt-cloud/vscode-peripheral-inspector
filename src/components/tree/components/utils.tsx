@@ -4,7 +4,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
-import React, { MouseEventHandler, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip/tooltip';

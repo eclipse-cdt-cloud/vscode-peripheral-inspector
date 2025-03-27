@@ -336,7 +336,7 @@
     "submenus": [
       {
         "id": "peripheral-inspector.svd.periodicRefresh",
-        "label": "Periodic Refresh  (Workspace)",
+        "label": "Periodic Refresh (Workspace)",
         "icon": "$(refresh)"
       }
     ],
