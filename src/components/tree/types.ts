@@ -184,9 +184,12 @@ export interface CDTTreeExtensionModel<TItems = unknown> {
  * It is the actual model that is used to render the tree view.
  */
 export interface CDTTreeViewModel<TItem extends CDTTreeItemResource = CDTTreeItemResource> {
+    root: CDTTreeItem<CDTTreeItemResource>;
     items: CDTTreeItem<TItem>[];
     expandedKeys: string[];
     pinnedKeys: string[];
+    references: Record<string, CDTTreeItem<TItem> | undefined>
+    resources: Record<string, TItem | undefined>
 }
 
 
@@ -212,8 +215,19 @@ export interface CDTTreeExecuteCommand {
     value?: unknown;
 }
 
+export interface CDTTreePartialUpdate<TItem = unknown> {
+    items?: TItem[];
+}
+
 export namespace CTDTreeMessengerType {
+    /**
+     * Replace the current state with the given state.
+     */
     export const updateState: NotificationType<CDTTreeExtensionModel> = { method: 'updateState' };
+    /**
+     * Update the nodes with the given nodes.
+     */
+    export const updatePartial: NotificationType<CDTTreePartialUpdate> = { method: 'updatePartial' };
     export const ready: NotificationType<void> = { method: 'ready' };
 
     export const executeCommand: NotificationType<TreeNotification<CDTTreeExecuteCommand>> = { method: 'executeCommand' };

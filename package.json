@@ -157,6 +157,16 @@
         "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
         "title": "Clear Ignored Peripherals (Workspace)",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "peripheral-inspector.svd.periodicRefreshMode",
+        "title": "Set Periodic Refresh Mode",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "peripheral-inspector.svd.periodicRefreshInterval",
+        "title": "Set Periodic Refresh Interval",
+        "icon": "$(calendar)"
       }
     ],
     "menus": {
@@ -278,69 +288,141 @@
           "group": "navigation@4"
         },
         {
+          "command": "peripheral-inspector.svd.periodicRefreshMode",
+          "when": "view =~ /peripheral-inspector.peripheral-*/",
+          "group": "more@1"
+        },
+        {
+          "command": "peripheral-inspector.svd.periodicRefreshInterval",
+          "when": "view =~ /peripheral-inspector.peripheral-*/",
+          "group": "more@2"
+        },
+        {
           "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
           "when": "view =~ /peripheral-inspector.peripheral-*/ && debugState == stopped && peripheral-inspector.ignoredPeripheralsLength > 0",
-          "group": "more"
+          "group": "more@3"
         }
       ],
       "webview/context": [
         {
           "command": "peripheral-inspector.svd.setFormat",
           "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType !== peripheral-session-node",
-          "group": "navigation"
+          "group": "navigation@0.1"
+        },
+        {
+          "submenu": "peripheral-inspector.svd.periodicRefresh",
+          "when": "webviewId =~ /peripheral-inspector.peripheral-*/",
+          "group": "navigation@0.2"
         },
         {
           "command": "peripheral-inspector.svd.ignorePeripheral",
           "when": "webviewId =~ /peripheral-inspector.peripheral-*/ && webviewSection == tree-item && cdtTreeItemType === peripheral-node",
-          "group": "navigation"
+          "group": "navigation@0.3"
+        }
+      ],
+      "peripheral-inspector.svd.periodicRefresh": [
+        {
+          "command": "peripheral-inspector.svd.periodicRefreshMode",
+          "when": "true",
+          "group": "navigation@1"
+        },
+        {
+          "command": "peripheral-inspector.svd.periodicRefreshInterval",
+          "when": "true",
+          "group": "navigation@2"
         }
       ]
     },
-    "configuration": {
-      "title": "Peripheral Inspector",
-      "properties": {
-        "peripheral-inspector.definitionPathConfig": {
-          "type": "string",
-          "default": "definitionPath",
-          "description": "Debug configuration key to use to get the path for the definition file"
-        },
-        "peripheral-inspector.deviceConfig": {
-          "type": "string",
-          "default": "deviceName",
-          "description": "Debug configuration key to use to get the device name"
-        },
-        "peripheral-inspector.processorConfig": {
-          "type": "string",
-          "default": "processorName",
-          "description": "Debug configuration key to use to get the processor name"
-        },
-        "peripheral-inspector.packAssetUrl": {
-          "type": "string",
-          "default": "https://pack-content.cmsis.io",
-          "description": "Base URL for CMSIS pack assets"
-        },
-        "peripheral-inspector.svdAddrGapThreshold": {
-          "type": "number",
-          "default": 16,
-          "multipleOf": 1,
-          "minimum": -1,
-          "maximum": 32,
-          "description": "If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow"
-        },
-        "peripheral-inspector.saveLayout": {
-          "type": "boolean",
-          "default": true,
-          "description": "Save layout of peripheral view between sessions"
-        },
-        "peripheral-inspector.ignorePeripherals": {
-          "type": "array",
-          "items": {
-            "type": "string"
+    "submenus": [
+      {
+        "id": "peripheral-inspector.svd.periodicRefresh",
+        "label": "Periodic Refresh (Workspace)",
+        "icon": "$(refresh)"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Peripheral Inspector"
+      },
+      {
+        "title": "Keys",
+        "properties": {
+          "peripheral-inspector.definitionPathConfig": {
+            "type": "string",
+            "default": "definitionPath",
+            "description": "Debug configuration key to use to get the path for the definition file"
           },
-          "description": "List of case insensitive peripheral names to ignore"
+          "peripheral-inspector.deviceConfig": {
+            "type": "string",
+            "default": "deviceName",
+            "description": "Debug configuration key to use to get the device name"
+          },
+          "peripheral-inspector.processorConfig": {
+            "type": "string",
+            "default": "processorName",
+            "description": "Debug configuration key to use to get the processor name"
+          }
+        }
+      },
+      {
+        "title": "General",
+        "properties": {
+          "peripheral-inspector.packAssetUrl": {
+            "type": "string",
+            "default": "https://pack-content.cmsis.io",
+            "description": "Base URL for CMSIS pack assets"
+          },
+          "peripheral-inspector.svdAddrGapThreshold": {
+            "type": "number",
+            "default": 16,
+            "multipleOf": 1,
+            "minimum": -1,
+            "maximum": 32,
+            "description": "If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow"
+          },
+          "peripheral-inspector.saveLayout": {
+            "type": "boolean",
+            "default": true,
+            "description": "Save layout of peripheral view between sessions"
+          },
+          "peripheral-inspector.ignorePeripherals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of case insensitive peripheral names to ignore"
+          }
+        }
+      },
+      {
+        "title": "Periodic Refresh",
+        "properties": {
+          "peripheral-inspector.periodicRefreshMode": {
+            "type": "string",
+            "enum": [
+              "always",
+              "while running",
+              "off"
+            ],
+            "markdownEnumDescriptions": [
+              "Always refresh automatically after the configured `#peripheral-inspector.periodicRefreshInterval#`",
+              "Refresh automatically after the configured `#peripheral-inspector.periodicRefreshInterval#` while the CPU is running",
+              "Do not automatically refresh after the configured delay"
+            ],
+            "default": "off",
+            "markdownDescription": "Refresh Peripheral Inspectors after the configured `#peripheral-inspector.periodicRefreshInterval#`.",
+            "order": 0
+          },
+          "peripheral-inspector.periodicRefreshInterval": {
+            "type": "number",
+            "default": 500,
+            "minimum": 500,
+            "markdownDescription": "Controls the delay in milliseconds after which a Peripheral Inspector is refreshed automatically. Only applies when `#peripheral-inspector.periodicRefreshMode#` is enabled.",
+            "order": 1
+          }
         }
       }
-    }
+    ]
   },
   "activationEvents": [
     "onDebug",

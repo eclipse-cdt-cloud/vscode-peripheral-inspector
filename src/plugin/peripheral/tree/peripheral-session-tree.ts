@@ -13,7 +13,10 @@ import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
 import { readFromUrl } from '../../../utils';
-import { MessageNode, PeripheralBaseNode, PeripheralNode } from '../nodes';
+import { MessageNode, PeripheralBaseNode, PeripheralNode, UpdateDataContext } from '../nodes';
+import { PeripheralConfigurationProvider } from './peripheral-configuration-provider';
+import { DebugSessionStatus } from '../../../debug-tracker';
+import { clearTimeout, setTimeout } from 'timers';
 
 const pathToUri = (path: string): vscode.Uri => {
     try {
@@ -42,11 +45,16 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     private errMessage = 'No SVD file loaded';
     private svdUri: vscode.Uri | undefined;
 
+    private sessionStatus: DebugSessionStatus = DebugSessionStatus.Unknown;
+    private onSessionTerminated: vscode.Disposable[] = [];
+    private sessionRefreshTimer?: NodeJS.Timeout;
+
     constructor(
         public session: vscode.DebugSession,
         protected api: PeripheralInspectorAPI,
+        protected config: PeripheralConfigurationProvider,
         expanded: boolean,
-        private fireRefresh: () => void) {
+        private fireRefresh: (changes?: PeripheralBaseNode[]) => void) {
         super();
         this.name = this.session.name;
         this.expanded = expanded;
@@ -62,7 +70,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     }
 
     private async loadSvdState(context: vscode.ExtensionContext): Promise<NodeSetting[]> {
-        const saveLayout = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<boolean>(manifest.CONFIG_SAVE_LAYOUT, manifest.DEFAULT_SAVE_LAYOUT);
+        const saveLayout = this.config.saveLayout();
         if (!saveLayout) {
             return [];
         }
@@ -73,7 +81,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     }
 
     private async saveSvdState(state: NodeSetting[], context: vscode.ExtensionContext): Promise<void> {
-        const saveLayout = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<boolean>(manifest.CONFIG_SAVE_LAYOUT, manifest.DEFAULT_SAVE_LAYOUT);
+        const saveLayout = this.config.saveLayout();
         if (saveLayout && this.session) {
             const propName = PeripheralTreeForSession.getStatePropName(this.session);
             context.workspaceState.update(propName, state);
@@ -128,7 +136,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         let parsedConfiguration: PeripheralsConfiguration | undefined;
         let parsedPeripherals: PeripheralNode[] | undefined;
 
-        const ignoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
+        const ignoredPeripherals = this.config.ignorePeripherals();
 
         try {
             let contents: ArrayBuffer | undefined;
@@ -234,7 +242,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             return;
         }
 
-        const newIgnoredPeripherals = vscode.workspace.getConfiguration(manifest.PACKAGE_NAME).get<string[]>(manifest.IGNORE_PERIPHERALS) ?? [];
+        const newIgnoredPeripherals = this.config.ignorePeripherals();
         const addPeripherals = this.peripheralsConfiguration.ignoredPeripherals.filter(p => !manifest.IgnorePeripherals.includes(newIgnoredPeripherals, p));
         this.peripheralsConfiguration.ignoredPeripherals = newIgnoredPeripherals;
 
@@ -265,8 +273,11 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     }
 
     public async updateData(): Promise<boolean> {
-        if (this.loaded) {
-            await Promise.all(this.peripherals.map(peripheral => peripheral.updateData())).finally(() => this.refresh());
+        const context: UpdateDataContext = {
+            changes: [],
+        };
+        if (this.loaded && this.sessionStatus !== DebugSessionStatus.Terminated) {
+            await Promise.all(this.peripherals.map(peripheral => peripheral.updateData(context))).finally(() => this.refresh(context.changes));
         }
         return true;
     }
@@ -290,8 +301,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         return peripheral.findByPath(path.slice(1));
     }
 
-    public refresh(): void {
-        this.fireRefresh();
+    public refresh(changes?: PeripheralBaseNode[]): void {
+        this.fireRefresh(changes);
     }
 
     public getChildren(element?: PeripheralBaseNode): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
@@ -319,6 +330,12 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         this.peripherals = [];
         this.refresh();
 
+        this.onSessionTerminated.forEach(disposable => disposable.dispose());
+        this.onSessionTerminated = [];
+        this.onSessionTerminated.push(this.config.onDidChangePeriodicRefreshMode(() => this.updatePeriodicRefresh()));
+        this.onSessionTerminated.push(this.config.onDidChangePeriodicRefreshInterval(() => this.updatePeriodicRefresh()));
+        this.setSessionStatus(DebugSessionStatus.Started);
+
         try {
             await this.createPeripherals(svdPath, thresh);
 
@@ -335,8 +352,8 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             });
             this.peripherals.sort(PeripheralNodeSort.compare);
             this.refresh();
-        } catch (e) {
-            this.errMessage = `Unable to parse definition file ${svdPath}: ${(e as Error).message}`;
+        } catch (error) {
+            this.errMessage = `Unable to parse definition file ${svdPath}: ${(error as Error).message}`;
             vscode.debug.activeDebugConsole.appendLine(this.errMessage);
             if (vscode.debug.activeDebugConsole) {
                 vscode.debug.activeDebugConsole.appendLine(this.errMessage);
@@ -348,6 +365,50 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
     public sessionTerminated(context: vscode.ExtensionContext): void {
         const state = this.saveState();
         this.saveSvdState(state, context);
+        this.setSessionStatus(DebugSessionStatus.Terminated);
+        this.onSessionTerminated.forEach(disposable => disposable.dispose());
+        this.onSessionTerminated = [];
+    }
+
+    public debugStopped(_context: vscode.ExtensionContext): void {
+        this.setSessionStatus(DebugSessionStatus.Stopped);
+        // We are stopped for many reasons very briefly where we cannot even execute any queries
+        // reliably and get errors. Programs stop briefly to set breakpoints, during startup/reset/etc.
+        // Also give VSCode some time to finish it's updates (Variables, Stacktraces, etc.)
+        setTimeout(() => {
+            if (this.sessionStatus !== DebugSessionStatus.Terminated) {
+                this.updateData(); // We are called even before the session has started, as part of reset
+            }
+        }, 100);
+    }
+
+    public debugContinued(_context: vscode.ExtensionContext): void {
+        this.setSessionStatus(DebugSessionStatus.Running);
+    }
+
+    protected setSessionStatus(status: DebugSessionStatus): void {
+        this.sessionStatus = status;
+        this.updatePeriodicRefresh();
+    }
+
+    protected isSessionRunning(): boolean {
+        return this.sessionStatus === DebugSessionStatus.Started || this.sessionStatus === DebugSessionStatus.Running;
+    }
+
+    protected updatePeriodicRefresh(): void {
+        if (this.sessionRefreshTimer) {
+            clearTimeout(this.sessionRefreshTimer);
+        }
+
+        const refresh = this.config.periodicRefreshMode();
+        const interval = this.config.periodicRefreshInterval();
+        if (interval <= 0 || this.sessionStatus === DebugSessionStatus.Terminated) {
+            return;
+        }
+        if (refresh === 'always' || (refresh === 'while running' && this.isSessionRunning()) || (refresh === 'while stopped' && !this.isSessionRunning())) {
+            const scheduleRefresh = () => this.updateData().finally(() => this.updatePeriodicRefresh());
+            this.sessionRefreshTimer = setTimeout(scheduleRefresh, interval);
+        }
     }
 
     public togglePinPeripheral(node: PeripheralBaseNode): void {

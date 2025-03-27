@@ -12,6 +12,7 @@ import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { ClusterOrRegisterBaseNodeDTO, PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO, PeripheralBaseTreeNodeDTO } from '../../../common/peripheral-dto';
 
+
 export abstract class BaseTreeNode {
     get id(): string {
         return this.getId();
@@ -47,6 +48,11 @@ export abstract class BaseTreeNode {
     }
 }
 
+export interface UpdateDataContext {
+    reason?: string;
+    changes?: PeripheralBaseNode[];
+}
+
 export abstract class PeripheralBaseNode extends BaseTreeNode {
     public format: NumberFormat;
     public pinned: boolean;
@@ -72,7 +78,7 @@ export abstract class PeripheralBaseNode extends BaseTreeNode {
     }
 
     public abstract performUpdate(args?: unknown): Promise<boolean>;
-    public abstract updateData(): Promise<boolean>;
+    public abstract updateData(context?: UpdateDataContext): Promise<boolean>;
 
     public abstract getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]>;
     public abstract getPeripheral(): PeripheralBaseNode | undefined;

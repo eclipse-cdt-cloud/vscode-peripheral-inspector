@@ -32,8 +32,15 @@ export class PeripheralTreeConverter implements TreeResourceConverter<Peripheral
     convert(resource: PeripheralTreeNodeDTOs, context: TreeConverterContext<PeripheralTreeNodeDTOs>): CDTTreeItem<PeripheralTreeNodeDTOs> {
         const converter = this.converters.find(c => c.canHandle(resource));
         if (converter) {
-            context.resourceMap.set(resource.id, resource);
+            context.assignedResources[resource.id] = resource;
             const item = converter.convert(resource, context);
+            context.assignedItems[item.id] = item;
+            if (item.expanded) {
+                context.expandedKeys.push(item.id);
+            }
+            if (item.pinned) {
+                context.pinnedKeys.push(item.id);
+            }
 
             if (resource.children) {
                 const items: CDTTreeItem<PeripheralTreeNodeDTOs>[] = [];
@@ -66,7 +73,7 @@ export class PeripheralBaseNodeConverter implements TreeResourceConverter<Periph
             key: resource.id,
             parent: context.parent,
             resource,
-            expanded: context.expandedKeys.includes(resource.id),
+            expanded: resource.expanded,
             columns: this.getColumns(resource),
         });
     }
@@ -95,7 +102,7 @@ export class PeripheralSessionNodeConverter implements TreeResourceConverter<Per
             key: resource.id,
             parent: context.parent,
             resource,
-            expanded: context.expandedKeys.includes(resource.id),
+            expanded: resource.expanded,
             columns: this.getColumns(resource),
         });
     }
@@ -124,21 +131,21 @@ export class PeripheralNodeConverter implements TreeResourceConverter<Peripheral
             key: resource.id,
             parent: context.parent,
             resource,
-            expanded: context.expandedKeys.includes(resource.id),
-            pinned: context.pinnedKeys.includes(resource.id),
+            expanded: resource.expanded,
+            pinned: resource.pinned,
             columns: this.getColumns(resource, context),
         });
     }
 
     // ==== Rendering ====
 
-    private getColumns(resource: PeripheralNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
+    private getColumns(resource: PeripheralNodeDTO, _context: TreeConverterContext<PeripheralTreeNodeDTOs>): Record<string, CDTTreeTableColumn> {
         const value = formatValue(resource.baseAddress, 8, resource.format);
 
         return {
             'title': {
                 type: 'string',
-                icon: context.pinnedKeys.includes(resource.id) ? 'codicon codicon-pinned' : undefined,
+                icon: resource.pinned ? 'codicon codicon-pinned' : undefined,
                 label: resource.name,
                 tooltip: resource.description,
             },
@@ -166,7 +173,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
             key: resource.id,
             parent: context.parent,
             resource,
-            expanded: context.expandedKeys.includes(resource.id),
+            expanded: resource.expanded,
             columns: this.getColumns(resource, context),
         });
     }
@@ -193,7 +200,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
     }
 
     private getValue(resource: PeripheralRegisterNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): string {
-        return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
+        return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources));
     }
 
     private isEditable(contextValue: PeripheralRegisterNodeContextValue): boolean {
@@ -244,14 +251,14 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
         let mds = '';
 
         const address = `${hexFormat(resource.address)}`;
-        const formattedValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
+        const formattedValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources));
         const roLabel = resource.accessType === AccessType.ReadOnly ? '(Read Only)' : undefined;
 
         mds += `**${resource.name}@${address}**${roLabel ? ` ${roLabel}` : ''}\n\n`;
         mds += `**Value:** ${formattedValue}\n\n`;
 
         if (resource.accessType !== AccessType.WriteOnly) {
-            const resetValue = this.formatValue(resource, resource.resetValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
+            const resetValue = this.formatValue(resource, resource.resetValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources));
             mds += `**Reset Value:** ${resetValue}\n`;
         }
 
@@ -289,7 +296,7 @@ export class PeripheralRegisterNodeConverter implements TreeResourceConverter<Pe
             const format =
                 field.format !== NumberFormat.Auto ? field.format
                     : resource.format !== NumberFormat.Auto ? resource.format
-                        : field.format !== NumberFormat.Auto ? field.format : PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap);
+                        : field.format !== NumberFormat.Auto ? field.format : PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources);
             const value = fieldFormatter.formatValue(field, field.currentValue, format, true);
 
             mds += `| ${field.name} | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ${range} | `
@@ -311,7 +318,7 @@ export class PeripheralClusterNodeConverter {
             key: resource.id,
             parent: context.parent,
             resource,
-            expanded: context.expandedKeys.includes(resource.id),
+            expanded: resource.expanded,
             columns: this.getColumns(resource, context),
         });
     }
@@ -397,7 +404,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
     }
 
     private getValue(resource: PeripheralFieldNodeDTO, context: TreeConverterContext<PeripheralTreeNodeDTOs>): string {
-        return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap));
+        return this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources));
     }
 
     private isCopyable(contextValue: PeripheralFieldNodeContextValue): boolean {
@@ -414,7 +421,7 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
                 type: 'enum',
                 options: Object.values(resource.enumeration ?? {}).map<EditableEnumDataOption>((value: IEnumeratedValue) => ({
                     value: value.name,
-                    label: this.formatLabel(resource, value.value, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap))
+                    label: this.formatLabel(resource, value.value, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources))
                 })),
                 value: resource.enumeration[resource.currentValue]?.name ?? value
             };
@@ -500,14 +507,14 @@ export class PeripheralFieldNodeConverter implements TreeResourceConverter<Perip
             return mds;
         }
 
-        const formattedValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap), true);
+        const formattedValue = this.formatValue(resource, resource.currentValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources), true);
         const roLabel = resource.accessType === AccessType.ReadOnly ? '(Read Only)' : undefined;
 
         mds += `**${resource.name}@${address}**${roLabel ? ` ${roLabel}` : ''}\n\n`;
         mds += `**Value:** ${formattedValue}\n\n`;
 
         if (resource.accessType !== AccessType.WriteOnly) {
-            const resetValue = this.formatValue(resource, resource.resetValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.resourceMap), true);
+            const resetValue = this.formatValue(resource, resource.resetValue, PeripheralTreeNodeDTOs.getFormat(resource.id, context.assignedResources), true);
             mds += `**Reset Value:** ${resetValue}\n`;
         }
 

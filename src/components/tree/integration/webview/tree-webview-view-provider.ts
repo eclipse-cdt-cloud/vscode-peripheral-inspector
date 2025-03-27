@@ -99,12 +99,18 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
         const disposables = [
             this.dataProvider.onDidTerminate(async (event) => {
                 if (event.remaining > 0) {
-                    this.refresh();
+                    this.refreshFull();
                 }
             }),
             this.dataProvider.onDidChangeTreeData(async (event) => {
-                if (event.context?.resync !== false) {
-                    this.refresh();
+                if (event.data) {
+                    if (Array.isArray(event.data)) {
+                        await this.refreshPartial(event.data);
+                    } else {
+                        await this.refreshPartial([event.data]);
+                    }
+                } else {
+                    this.refreshFull();
                 }
             }),
             this.messenger.onNotification(CTDTreeMessengerType.ready, () => this.onReady(), { sender: participant }),
@@ -117,10 +123,10 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
     }
 
     protected async onReady(): Promise<void> {
-        await this.refresh();
+        await this.refreshFull();
     }
 
-    protected async refresh(): Promise<void> {
+    protected async refreshFull(): Promise<void> {
         if (!this.participant) {
             return;
         }
@@ -129,6 +135,16 @@ export abstract class CDTTreeWebviewViewProvider<TNode> implements vscode.Webvie
         const items = await this.dataProvider.getSerializedRoots();
 
         this.sendNotification(CTDTreeMessengerType.updateState, { columnFields, items });
+    }
+
+    protected async refreshPartial(nodes: TNode[]): Promise<void> {
+        if (!this.participant) {
+            return;
+        }
+
+        const items = await Promise.all(nodes.map(async node => this.dataProvider.getSerializedData(node)));
+
+        this.sendNotification(CTDTreeMessengerType.updatePartial, { items });
     }
 
     sendNotification<P>(type: NotificationType<P>, params?: P): void {

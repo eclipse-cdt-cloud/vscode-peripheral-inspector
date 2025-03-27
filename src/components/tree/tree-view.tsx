@@ -20,6 +20,7 @@ import { TreeConverterContext } from './integration/tree-converter';
 import {
     CDTTreeExtensionModel,
     CDTTreeItem,
+    CDTTreePartialUpdate,
     CDTTreeViewModel,
     CTDTreeMessengerType
 } from './types';
@@ -40,7 +41,10 @@ export class CDTTreeView extends React.Component<unknown, State> {
             viewModel: {
                 items: [],
                 expandedKeys: [],
-                pinnedKeys: []
+                pinnedKeys: [],
+                references: {},
+                resources: {},
+                root: CDTTreeItem.createRoot(),
             },
         };
     }
@@ -50,11 +54,10 @@ export class CDTTreeView extends React.Component<unknown, State> {
             this.setState(prev => ({
                 ...prev, extensionModel: state,
             }));
-            this.refreshModel(state.items, {
-                resourceMap: new Map<string, PeripheralTreeNodeDTOs>(),
-                expandedKeys: PeripheralTreeNodeDTOs.extractExpandedKeys(state.items),
-                pinnedKeys: PeripheralTreeNodeDTOs.extractPinnedKeys(state.items)
-            });
+            this.refreshFull(state.items);
+        });
+        messenger.onNotification(CTDTreeMessengerType.updatePartial, (message: CDTTreePartialUpdate<PeripheralTreeNodeDTOs>) => {
+            this.refreshPartial(message.items ?? []);
         });
         messenger.onNotification(CTDTreeMessengerType.openSearch, () => {
             const elements = document.getElementsByClassName('search-overlay visible');
@@ -81,25 +84,89 @@ export class CDTTreeView extends React.Component<unknown, State> {
         messenger.sendNotification(CTDTreeMessengerType.ready, HOST_EXTENSION, undefined);
     }
 
-    protected refreshModel(items: PeripheralTreeNodeDTOs[] | undefined, context: TreeConverterContext<PeripheralTreeNodeDTOs>): void {
+    protected refreshFull(items: PeripheralTreeNodeDTOs[] | undefined): void {
+        const context: TreeConverterContext<PeripheralTreeNodeDTOs> = {
+            assignedItems: {},
+            assignedResources: {},
+            expandedKeys: [],
+            pinnedKeys: []
+        };
         const converter = new PeripheralTreeConverter();
         const toConvert = items ?? this.state.extensionModel.items ?? [];
-        const parent = CDTTreeItem.createRoot();
+        // Create a root item
+        // Allows the items to be siblings
+        const root = CDTTreeItem.createRoot();
         const convertedItems = toConvert.map(c => converter.convert(c,
             {
                 ...context,
-                parent
+                parent: root
             }
         ));
-        parent.children = convertedItems;
+        root.children = convertedItems;
 
         this.setState(prev => ({
             ...prev, viewModel: {
+                references: context.assignedItems,
+                resources: context.assignedResources,
                 expandedKeys: context.expandedKeys,
                 pinnedKeys: context.pinnedKeys,
                 items: convertedItems,
+                root
             },
         }));
+    }
+
+    protected refreshPartial(items: PeripheralTreeNodeDTOs[]): void {
+        if (items.length === 0) {
+            return;
+        }
+
+        this.setState(prev => {
+            const context: TreeConverterContext<PeripheralTreeNodeDTOs> = {
+                expandedKeys: prev.viewModel.expandedKeys,
+                pinnedKeys: prev.viewModel.pinnedKeys,
+                assignedItems: prev.viewModel.references,
+                assignedResources: prev.viewModel.resources
+            };
+            const converter = new PeripheralTreeConverter();
+
+            const convertedItems = items.map(item => {
+                let parent = prev.viewModel.root;
+                if (item.parentId) {
+                    parent = context.assignedItems[item.parentId] ?? parent;
+                }
+
+                return converter.convert(item,
+                    {
+                        ...context,
+                        parent
+                    }
+                );
+
+            });
+
+            convertedItems.forEach(item => {
+                // Replace the old item with the new one
+                const childrenToUpdate = item.parent ? item.parent.children ?? [] : prev.viewModel.items;
+                const index = childrenToUpdate.findIndex(c => c.id === item.id);
+                if (index >= 0) {
+                    childrenToUpdate[index] = item;
+                } else {
+                    childrenToUpdate.push(item);
+                }
+            });
+
+            return {
+                ...prev, viewModel: {
+                    expandedKeys: context.expandedKeys,
+                    pinnedKeys: context.pinnedKeys,
+                    references: context.assignedItems,
+                    resources: context.assignedResources,
+                    items: prev.viewModel.items,
+                    root: prev.viewModel.root
+                },
+            };
+        });
     }
 
     protected notify<TNotification extends NotificationType<unknown>>(
@@ -125,29 +192,22 @@ export class CDTTreeView extends React.Component<unknown, State> {
                     onExpand: (expanded, record) => {
                         this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, expandedKeys: updateKeys(this.state.viewModel.expandedKeys, record.id, expanded) } }));
                         this.notify(CTDTreeMessengerType.toggleNode,
-                            { data: record.id, context: { resync: false } },
+                            { data: record.id },
                         );
                     }
                 }}
                 pin={{
                     pinnedRowKeys: this.state.viewModel.pinnedKeys,
                     onPin: (event, pinned, record) => {
-                        this.refreshModel(
-                            undefined,
-                            {
-                                resourceMap: new Map<string, PeripheralTreeNodeDTOs>(),
-                                expandedKeys: this.state.viewModel.expandedKeys,
-                                pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned)
-                            }
-                        );
+                        this.setState(prev => ({ ...prev, viewModel: { ...prev.viewModel, pinnedKeys: updateKeys(this.state.viewModel.pinnedKeys, record.id, pinned) } }));
 
                         if (pinned) {
                             this.notify(CTDTreeMessengerType.executeCommand,
-                                { data: { commandId: Commands.UNPIN_COMMAND.commandId, itemId: record.id }, context: { resync: false } },
+                                { data: { commandId: Commands.UNPIN_COMMAND.commandId, itemId: record.id } },
                             );
                         } else {
                             this.notify(CTDTreeMessengerType.executeCommand,
-                                { data: { commandId: Commands.PIN_COMMAND.commandId, itemId: record.id }, context: { resync: false } },
+                                { data: { commandId: Commands.PIN_COMMAND.commandId, itemId: record.id } },
                             );
                         }
 

@@ -14,17 +14,19 @@ import { PeripheralDataTracker } from '../../plugin/peripheral/tree/peripheral-d
 import { SvdResolver } from '../../svd-resolver';
 import { PeripheralTreeDataProvider } from '../../plugin/peripheral/tree/peripheral-tree-data-provider';
 import { PeripheralsTreeTableWebView } from '../../plugin/peripheral/webview/peripheral-tree-webview-main';
+import { PeripheralConfigurationProvider } from '../../plugin/peripheral/tree/peripheral-configuration-provider';
 export * as api from '../../api-types';
 
 export const activate = async (context: vscode.ExtensionContext): Promise<IPeripheralInspectorAPI> => {
     const tracker = new DebugTracker();
+    const config = new PeripheralConfigurationProvider(tracker);
     const api = new PeripheralInspectorAPI();
-    const resolver = new SvdResolver(api);
+    const resolver = new SvdResolver(api, config);
 
-    const peripheralDataTracker = new PeripheralDataTracker(tracker, resolver, api, context);
+    const peripheralDataTracker = new PeripheralDataTracker(tracker, resolver, api, config, context);
     const dataProvider = new PeripheralTreeDataProvider(peripheralDataTracker, context);
     const webView = new PeripheralsTreeTableWebView(dataProvider, context);
-    const commands = new PeripheralCommands(peripheralDataTracker, webView);
+    const commands = new PeripheralCommands(peripheralDataTracker, config, webView);
 
     await tracker.activate(context);
     await commands.activate(context);

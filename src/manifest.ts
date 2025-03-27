@@ -15,12 +15,22 @@ export const DEFAULT_DEVICE = 'deviceName';
 export const CONFIG_PROCESSOR = 'processorConfig';
 export const DEFAULT_PROCESSOR = 'processorName';
 export const CONFIG_ADDRGAP = 'svdAddrGapThreshold';
-export const IGNORE_PERIPHERALS = 'ignorePeripherals';
 export const DEFAULT_ADDRGAP = 16;
 export const CONFIG_ASSET_PATH = 'packAssetUrl';
 export const DEFAULT_ASSET_PATH = 'https://pack-content.cmsis.io';
 export const CONFIG_SAVE_LAYOUT = 'saveLayout';
 export const DEFAULT_SAVE_LAYOUT = true;
+export const CONFIG_IGNORE_PERIPHERALS = 'ignorePeripherals';
+export const DEFAULT_IGNORE_PERIPHERALS: string[] = [];
+
+// Periodic Refresh
+export const CONFIG_PERIODIC_REFRESH_MODE = 'periodicRefreshMode';
+export const PERIODIC_REFRESH_MODE_CHOICES = ['always', 'while stopped', 'while running', 'off'] as const;
+export type PeriodicRefreshMode = (typeof PERIODIC_REFRESH_MODE_CHOICES)[number];
+export const DEFAULT_PERIODIC_REFRESH_MODE: PeriodicRefreshMode = 'always';
+
+export const CONFIG_PERIODIC_REFRESH_INTERVAL = 'periodicRefreshInterval';
+export const DEFAULT_PERIODIC_REFRESH_INTERVAL = 500;
 
 // Commands
 export namespace Commands {
@@ -32,6 +42,8 @@ export namespace Commands {
     export const EXPORT_ALL_COMMAND_ID = `${PACKAGE_NAME}.svd.exportAll`;
     export const IGNORE_PERIPHERAL_ID = `${PACKAGE_NAME}.svd.ignorePeripheral`;
     export const CLEAR_IGNORED_PERIPHERAL_ID = `${PACKAGE_NAME}.svd.clearIgnoredPeripherals`;
+    export const PERIODIC_REFRESH_ID = `${PACKAGE_NAME}.svd.periodicRefreshMode`;
+    export const PERIODIC_REFRESH_INTERVAL_ID = `${PACKAGE_NAME}.svd.periodicRefreshInterval`;
 
     // Commands used in the UI. They are manually inserted into the DOM.
     export const UPDATE_NODE_COMMAND: CommandDefinition = {
