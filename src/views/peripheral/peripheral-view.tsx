@@ -5,7 +5,6 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
-import 'primeflex/primeflex.css';
 import './peripheral-view.css';
 
 import {
