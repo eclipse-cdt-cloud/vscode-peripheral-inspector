@@ -9,5 +9,4 @@ export * from './format';
 export * from './notification';
 export * from './peripheral-sort';
 export * from './peripheral-dto';
-export * from './utils';
 export * from './vscode';

@@ -12,7 +12,7 @@ import { PeripheralInspectorAPI } from './peripheral-inspector-api';
 import { parsePackString, pdscFromPack, fileFromPack, Pack } from './cmsis-pack/pack-utils';
 import { PDSC, Device, DeviceVariant, getDevices, getSvdPath, getProcessors } from './cmsis-pack/pdsc';
 import { readFromUrl } from './utils';
-import { PeripheralConfigurationProvider } from './plugin/peripheral/tree/peripheral-configuration-provider';
+import { PeripheralConfigurationProvider } from './model/peripheral/tree/peripheral-configuration-provider';
 
 export class SvdResolver {
     public constructor(protected api: PeripheralInspectorAPI, protected readonly config: PeripheralConfigurationProvider) {

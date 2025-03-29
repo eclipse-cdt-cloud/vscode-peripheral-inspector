@@ -1,17 +1,17 @@
 {
-    "compilerOptions": {
-        "target": "ES2020",
-        "module": "commonjs",
-        "strict": true,
-        "sourceMap": true,
-        "esModuleInterop": true,
-        "jsx": "react",
-        "lib": [
-            "es2020",
-            "dom"
-        ]
-    },
-    "include": [
-        "src"
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "jsx": "react",
+    "lib": [
+      "es2020",
+      "dom"
     ]
+  },
+  "include": [
+    "src"
+  ]
 }

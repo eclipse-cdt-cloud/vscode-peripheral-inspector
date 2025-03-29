@@ -5,17 +5,17 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
+import { CDTTreeMessengerType, CDTTreeWebviewContext } from '@eclipse-cdt-cloud/vscode-ui-components';
 import * as vscode from 'vscode';
 import { NumberFormat } from './common/format';
 import { PERIPHERAL_ID_SEP } from './common/peripheral-dto';
 import { VSCodeContextKeys } from './common/vscode-context';
-import { CTDTreeMessengerType, CTDTreeWebviewContext } from './components/tree/types';
 import { getFilePath } from './fileUtils';
 import { Commands } from './manifest';
-import { PeripheralBaseNode } from './plugin/peripheral/nodes';
-import { PeripheralConfigurationProvider } from './plugin/peripheral/tree/peripheral-configuration-provider';
-import { PeripheralDataTracker } from './plugin/peripheral/tree/peripheral-data-tracker';
-import { PeripheralsTreeTableWebView } from './plugin/peripheral/webview/peripheral-tree-webview-main';
+import { PeripheralBaseNode } from './model/peripheral/nodes';
+import { PeripheralConfigurationProvider } from './model/peripheral/tree/peripheral-configuration-provider';
+import { PeripheralDataTracker } from './model/peripheral/tree/peripheral-data-tracker';
+import { PeripheralsTreeTableWebView } from './views/peripheral/peripheral-view-provider';
 
 export class PeripheralCommands {
     public constructor(
@@ -98,7 +98,7 @@ export class PeripheralCommands {
         this.dataTracker.collapseAll();
     }
 
-    private async peripheralsSetFormat(context: PeripheralBaseNode | CTDTreeWebviewContext): Promise<void> {
+    private async peripheralsSetFormat(context: PeripheralBaseNode | CDTTreeWebviewContext): Promise<void> {
         const result = await vscode.window.showQuickPick([
             { label: 'Auto', description: 'Automatically choose format (Inherits from parent)', value: NumberFormat.Auto },
             { label: 'Hex', description: 'Format value in hexadecimal', value: NumberFormat.Hexadecimal },
@@ -110,7 +110,7 @@ export class PeripheralCommands {
         }
 
         let node: PeripheralBaseNode;
-        if (CTDTreeWebviewContext.is(context)) {
+        if (CDTTreeWebviewContext.is(context)) {
             node = this.dataTracker.getNodeByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP));
         } else {
             node = context;
@@ -121,7 +121,7 @@ export class PeripheralCommands {
     }
 
     private async find(): Promise<void> {
-        this.webview.sendNotification(CTDTreeMessengerType.openSearch);
+        this.webview.sendNotification(CDTTreeMessengerType.openSearch);
     }
 
     private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {
@@ -141,7 +141,7 @@ export class PeripheralCommands {
         this.dataTracker.togglePin(node);
     }
 
-    private ignorePeripheral(context: CTDTreeWebviewContext): void {
+    private ignorePeripheral(context: CDTTreeWebviewContext): void {
         const node = this.dataTracker.getNodeByPath(context.cdtTreeItemId.split(PERIPHERAL_ID_SEP));
         if (node.name) {
             this.config.addIgnorePeripherals(node.name);
@@ -152,11 +152,11 @@ export class PeripheralCommands {
         this.config.setIgnorePeripherals();
     }
 
-    private periodicRefreshMode(_context?: CTDTreeWebviewContext): void {
+    private periodicRefreshMode(_context?: CDTTreeWebviewContext): void {
         this.config.queryPeriodicRefreshMode();
     }
 
-    private periodicRefreshInterval(_context?: CTDTreeWebviewContext): void {
+    private periodicRefreshInterval(_context?: CDTTreeWebviewContext): void {
         this.config.queryPeriodicRefreshInterval();
     }
 }
