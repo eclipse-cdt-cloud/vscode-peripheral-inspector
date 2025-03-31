@@ -82,22 +82,18 @@ module.exports = [
         ...common,
         target: 'web',
         entry: {
-            treeWebView: './src/components/tree/tree-view.tsx'
+            treeWebView: './src/views/peripheral/peripheral-view.tsx',
         },
         output: {
             filename: '[name].js',
-            path: path.resolve(__dirname, 'dist', 'views')
+            path: path.resolve(__dirname, 'dist', 'views'),
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.js', '.css'],
-            fallback: {
-                buffer: require.resolve('buffer')
+            alias: {
+                react: path.resolve('./node_modules/react'),
+                'react-dom': path.resolve('./node_modules/react-dom'),
             }
-        },
-        plugins: [
-            new webpack.ProvidePlugin({
-                Buffer: ['buffer', 'Buffer']
-            })
-        ]
+        }
     }
 ];

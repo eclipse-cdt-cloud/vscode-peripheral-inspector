@@ -5,10 +5,10 @@
  * terms of the MIT License as outlined in the LICENSE File
  ********************************************************************************/
 
+import { CDTTreeItem } from '@eclipse-cdt-cloud/vscode-ui-components';
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
 import { NodeSetting, PeripheralBaseNodeDTO } from '../../../common';
-import { CDTTreeItem } from '../../../components/tree/types';
 import { PeripheralBaseNode } from './base-node';
 
 export class MessageNode extends PeripheralBaseNode {

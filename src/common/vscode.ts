@@ -7,32 +7,9 @@
 
 import { NumberFormat } from './format';
 
-export interface VSCodeContext {
-    'data-vscode-context': string;
-}
-
-export namespace VSCodeContext {
-    export function create(context: object): VSCodeContext {
-        return {
-            'data-vscode-context': JSON.stringify({
-                ...context,
-            })
-        };
-    }
-}
-
 export interface NodeSetting {
     node: string;
     expanded?: boolean;
     format?: NumberFormat;
     pinned?: boolean;
-}
-
-/**
- * A command definition that is manually inserted into the DOM and not by VSCode.
- */
-export interface CommandDefinition {
-    commandId: string;
-    icon: string;
-    title?: string;
 }
