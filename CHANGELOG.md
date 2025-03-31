@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.7.0] - 2025-03-31
+
+### New Features
+
+- [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/16): Allow inline editing of values. ([Martin Fleck](https://github.com/martin-fleck-at))
+- [#22](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/22): Allow controls like checkboxes or dropdowns for peripheral register (bit field) types. ([Martin Fleck](https://github.com/martin-fleck-at))
+- [#36](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/36): Allow periodic updates (running and stopped CPU). ([Martin Fleck](https://github.com/martin-fleck-at), [Haydar Metin](https://github.com/haydar-metin))
+- [#45](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/45): Consider monospace font for values. ([Martin Fleck](https://github.com/martin-fleck-at))
+- [#53](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/53): Allow resizable columns in refurbished Peripheral Inspector view. ([Haydar Metin](https://github.com/haydar-metin))
+
+### Bug Fixes
+
+- [#29](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/29): Tooltip formatting after introduction of new UI library. ([Haydar Metin](https://github.com/haydar-metin))
+- [#54](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/54): Regression (v1.6.0) - View actions only work during first debug connection after IDE launch. ([Haydar Metin](https://github.com/haydar-metin))
+
 ## [v1.6.0] - 2025-02-06
 
 ### New Features
