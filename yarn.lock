@@ -198,9 +198,22 @@
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz#1d572bfbbe14b7704e0ba0f39b74815b84870d70"
   integrity sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==
 
-"@eclipse-cdt-cloud/vscode-ui-components@link:../vscode-ui-components":
-  version "0.0.0"
-  uid ""
+"@eclipse-cdt-cloud/vscode-ui-components@0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@eclipse-cdt-cloud/vscode-ui-components/-/vscode-ui-components-0.0.1.tgz#40b5026f6c3649263ed2e144fcc42e6f0d4342d8"
+  integrity sha512-2gNkyedlQeRvsAK5PGsXLqI7uhgxaDCx8A3ObpLEfwxwGwgsH89ETGEZBKY6pdMWvK9lGhfNlJx0EFLrr4Eheg==
+  dependencies:
+    "@floating-ui/react" "^0.26.17"
+    "@vscode/codicons" "0.0.20"
+    "@vscode/webview-ui-toolkit" "^1.4.0"
+    antd "^5.22.1"
+    re-resizable "^6.11.2"
+    react-markdown "^9.0.1"
+    remark-gfm "^4.0.0"
+    throttle-debounce "5.0.2"
+    vscode-messenger "^0.4.5"
+    vscode-messenger-common "^0.4.5"
+    vscode-messenger-webview "^0.4.5"
 
 "@emotion/hash@^0.8.0":
   version "0.8.0"
