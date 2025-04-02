@@ -20,6 +20,20 @@ export class AddrRange {
     }
 }
 
+export class BitRange {
+    constructor(public offs: number, public width: number) {
+    }
+
+    /** return next address after this addr. range */
+    public mask(): number {
+        if (this.offs + this.width >= 32) { // handle uint32, could be error is > 32
+            return 0xffffffff;
+        } else {
+            return ((1 << this.width) - 1) << this.offs;
+        }
+    }
+}
+
 export class AddressRangesUtils {
     /**
      * Returns a set of address ranges that have 0 < length <= maxBytes
