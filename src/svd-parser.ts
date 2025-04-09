@@ -33,7 +33,7 @@ const readActionFromString = (type: string): ReadActionType | undefined => {
     switch (type) {
         case 'clear':
             return ReadActionType.Clear;
-        case 'se':
+        case 'set':
             return ReadActionType.Set;
         case 'modify':
             return ReadActionType.Modify;
