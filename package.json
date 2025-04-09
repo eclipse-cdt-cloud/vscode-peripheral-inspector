@@ -366,7 +366,7 @@
           },
           "peripheral-inspector.svdAddrGapThreshold": {
             "type": "number",
-            "default": 16,
+            "default": 0,
             "multipleOf": 1,
             "minimum": -1,
             "maximum": 32,

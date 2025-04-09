@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { AddrRange } from '../../../addrranges';
-import { AccessType, EnumerationMap, PeripheralRegisterOptions } from '../../../api-types';
+import { AccessType, EnumerationMap, PeripheralRegisterOptions, ReadActionType } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralRegisterNodeDTO } from '../../../common/peripheral-dto';
@@ -27,6 +27,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     public readonly accessType: AccessType;
     public readonly size: number;
     public readonly resetValue: number;
+    public readonly readAction?: ReadActionType;
 
     private maxValue: number;
     private hexLength: number;
@@ -43,6 +44,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         this.size = options.size || parent.size;
         this.resetValue = options.resetValue !== undefined ? options.resetValue : parent.resetValue;
         this.currentValue = this.resetValue;
+        this.readAction = options.readAction;
 
         this.hexLength = Math.ceil(this.size / 4);
 
@@ -185,7 +187,24 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
 
     public collectRanges(addrs: AddrRange[]): void {
         const finalOffset = this.parent.getOffset(this.offset);
-        addrs.push(new AddrRange(finalOffset, this.size / 8));
+        let readAction = this.readAction;
+        let accessType = this.accessType;
+
+        // If remaining bytes should be read, analyze via BitRange type
+        for (const child of this.children) {
+            if (child.readAction) {
+                readAction = child.readAction;
+            }
+            if (child.accessType == AccessType.WriteOnly) {
+                accessType = child.accessType;
+            }
+        }
+
+        // a read action modifies the content of a register during read (e.g. pop FIFO),
+        // see https://arm-software.github.io/CMSIS_5/SVD/html/elem_registers.html
+        if (!readAction && accessType != AccessType.WriteOnly) {
+            addrs.push(new AddrRange(finalOffset, this.size / 8));
+        }
     }
 
     public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
