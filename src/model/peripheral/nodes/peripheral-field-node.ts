@@ -6,8 +6,8 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { AddrRange } from '../../../addrranges';
-import { AccessType, EnumerationMap, FieldOptions } from '../../../api-types';
+import { AddrRange, BitRange } from '../../../addrranges';
+import { AccessType, EnumerationMap, FieldOptions, ReadActionType } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralFieldNodeDTO } from '../../../common/peripheral-dto';
@@ -22,6 +22,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     public readonly offset: number;
     public readonly width: number;
     public readonly accessType: AccessType;
+    public readonly readAction?: ReadActionType;
 
     private enumeration: EnumerationMap | undefined;
     private enumerationValues: string[] = [];
@@ -37,6 +38,7 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         this.description = options.description;
         this.offset = options.offset;
         this.width = options.width;
+        this.readAction = options.readAction;
 
         if (!options.accessType) {
             this.accessType = parent.accessType;
@@ -159,6 +161,11 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     public collectRanges(_a: AddrRange[]): void {
         throw new Error('Method not implemented.');
     }
+
+    public collectBitRanges(addrs: BitRange[]): void {
+        addrs.push(new BitRange(this.offset, this.width));
+    }
+
 
     public resolveDeferedEnums(enumTypeValuesMap: { [key: string]: EnumerationMap; }) {
         if (this.options.derivedFrom) {
