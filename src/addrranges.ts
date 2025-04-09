@@ -9,7 +9,7 @@ export class AddrRange {
     constructor(public base: number, public length: number) {
     }
 
-    /** return next address after this addr. range */
+    /** return next address after this address range */
     public nxtAddr(): number {
         return this.base + this.length;
     }
