@@ -334,15 +334,18 @@ export class PeripheralDataTracker {
         this.refreshContext();
     }
 
-    protected onDebugSessionTerminated(session: vscode.DebugSession): void {
-        if (!this.sessionPeripherals.get(session.id)) {
+    protected onDebugSessionTerminated(session: string | vscode.DebugSession): void {
+        const isSessionId = typeof session === 'string';
+        const sessionId = isSessionId ? session : session.id;
+        if (!this.sessionPeripherals.get(sessionId)) {
             return;
         }
-        const regs = this.sessionPeripherals.get(session.id);
+        const regs = this.sessionPeripherals.get(sessionId);
 
         if (regs) {
-            this.oldState.set(session.name, regs.expanded);
-            this.sessionPeripherals.delete(session.id);
+            const sessionName = isSessionId ? regs.name : session.name;
+            this.oldState.set(sessionName, regs.expanded);
+            this.sessionPeripherals.delete(sessionId);
             regs.sessionTerminated(this.context);
             this.onDidTerminateEvent.fire({
                 data: regs,
