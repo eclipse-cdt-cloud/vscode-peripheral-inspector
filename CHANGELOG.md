@@ -4,7 +4,8 @@
 
 ### Bug Fixes
 
-- [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/60): Rework peripheral read strategy and peripheral-inspector.svdAddrGapThreshold
+- [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/60): Rework peripheral read strategy and peripheral-inspector.svdAddrGapThreshold ([Thorsten de Buhr](https://github.com/thorstendb-ARM/))
+- [#63](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/63): Peripheral Inspector does not clear on disconnect if using debug-tracker-vscode ([Jens Reinecke](https://github.com/jreineckearm))
 
 ## [v1.7.0] - 2025-03-31
 
