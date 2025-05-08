@@ -66,8 +66,11 @@ export class DebugTracker {
                         if (event.event === DebugSessionStatus.Initializing && event.session) {
                             this.handleOnWillStartSession(event.session);
                         }
-                        if (event.event === DebugSessionStatus.Terminated && event.sessionId) {
-                            this.handleOnWillStopSession(event.sessionId);
+                        if (event.event === DebugSessionStatus.Terminated) {
+                            const terminatedEventInfo = event.session ?? event.sessionId;
+                            if (terminatedEventInfo) {
+                                this.handleOnWillStopSession(terminatedEventInfo);
+                            }
                         }
                         if (event.event === DebugSessionStatus.Stopped && event.session) {
                             this.handleOnDidStopDebug(event.session);
