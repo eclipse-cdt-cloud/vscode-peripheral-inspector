@@ -24,7 +24,7 @@ export class BitRange {
     constructor(public offs: number, public width: number) {
     }
 
-    /** return next address after this addr. range */
+    /** return mask for offset & width */
     public mask(): number {
         if (this.offs + this.width >= 32) { // handle uint32, could be error is > 32
             return 0xffffffff;

@@ -95,7 +95,7 @@ The following list outlines the setting names and default values:
 - `peripheral-inspector.deviceConfig` - Debug configuration key to use to get the device name (default: `deviceName`)
 - `peripheral-inspector.processorConfig` - Debug configuration key to use to get the processor name (default: `processorName`)
 - `peripheral-inspector.packAssetUrl` - Base URL for CMSIS pack assets (default: `https://pack-content.cmsis.io`)
-- `peripheral-inspector.svdAddrGapThreshold`- If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow (default: `16`)
+- `peripheral-inspector.svdAddrGapThreshold`- If the gap between registers is less than this threshold (multiple of 8), combine into a single read from device. -1 means never combine registers and is very slow (default: `0`, means combine but no gaps)
 
 Additionally the following settings can be used to customize the Peripheral Inspector:
 

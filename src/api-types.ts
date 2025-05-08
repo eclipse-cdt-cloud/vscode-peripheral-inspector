@@ -87,6 +87,7 @@ export enum ReadActionType {
     Modify = 3,
     ModifyExternal = 4
 }
+
 export interface EnumerationMap {
     [value: number]: IEnumeratedValue;
 }

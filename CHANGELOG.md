@@ -1,5 +1,11 @@
 # Change Log
 
+## [unreleased]
+
+### Bug Fixes
+
+- [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/60): Rework peripheral read strategy and peripheral-inspector.svdAddrGapThreshold
+
 ## [v1.7.0] - 2025-03-31
 
 ### New Features
