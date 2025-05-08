@@ -8,7 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { parseStringPromise } from 'xml2js';
-import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration } from './api-types';
+import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration, ReadActionType } from './api-types';
 import { EnumeratedValue } from './enumerated-value';
 import { parseDimIndex, parseInteger } from './utils';
 
@@ -27,6 +27,21 @@ const accessTypeFromString = (type: string): AccessType => {
             return AccessType.ReadOnly;
         }
     }
+};
+
+const readActionFromString = (type: string): ReadActionType | undefined => {
+    switch (type) {
+        case 'clear':
+            return ReadActionType.Clear;
+        case 'set':
+            return ReadActionType.Set;
+        case 'modify':
+            return ReadActionType.Modify;
+        case 'modifyExternal':
+            return ReadActionType.ModifyExternal;
+    }
+
+    return undefined;
 };
 
 export interface Peripheral {
@@ -203,6 +218,9 @@ export class SVDParser {
             if (f.access) {
                 baseOptions.accessType = accessTypeFromString(f.access[0]);
             }
+            if (f.readAction) {
+                baseOptions.readAction = readActionFromString(f.readAction[0]);
+            }
 
             if (f.dim) {
                 const count = parseInteger(f.dim[0]);
@@ -284,6 +302,9 @@ export class SVDParser {
             }
             if (r.resetValue) {
                 baseOptions.resetValue = parseInteger(r.resetValue[0]) ?? 0;
+            }
+            if (r.readAction) {
+                baseOptions.readAction = readActionFromString(r.readAction[0]);
             }
 
             if (r.dim) {

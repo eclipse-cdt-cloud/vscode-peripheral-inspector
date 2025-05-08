@@ -34,6 +34,7 @@ export interface PeripheralRegisterOptions {
     accessType?: AccessType;
     size?: number;
     resetValue?: number;
+    readAction?: ReadActionType;
     fields?: FieldOptions[];
 }
 
@@ -56,6 +57,7 @@ export interface FieldOptions {
     enumeration?: EnumerationMap;
     derivedFrom?: string;           // Set this if unresolved
     accessType?: AccessType;
+    readAction?: ReadActionType;
 }
 
 export interface IGetPeripheralsArguments {
@@ -77,6 +79,13 @@ export enum AccessType {
     ReadOnly = 1,
     ReadWrite = 2,
     WriteOnly = 3
+}
+
+export enum ReadActionType {
+    Clear = 1,
+    Set = 2,
+    Modify = 3,
+    ModifyExternal = 4
 }
 
 export interface EnumerationMap {

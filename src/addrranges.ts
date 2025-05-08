@@ -9,7 +9,7 @@ export class AddrRange {
     constructor(public base: number, public length: number) {
     }
 
-    /** return next address after this addr. range */
+    /** return next address after this address range */
     public nxtAddr(): number {
         return this.base + this.length;
     }
@@ -17,6 +17,20 @@ export class AddrRange {
     /** return last address in this range */
     public endAddr(): number {
         return this.nxtAddr() - 1;
+    }
+}
+
+export class BitRange {
+    constructor(public offs: number, public width: number) {
+    }
+
+    /** return mask for offset & width */
+    public mask(): number {
+        if (this.offs + this.width >= 32) { // handle uint32, could be error is > 32
+            return 0xffffffff;
+        } else {
+            return ((1 << this.width) - 1) << this.offs;
+        }
     }
 }
 
