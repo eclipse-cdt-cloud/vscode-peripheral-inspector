@@ -13,12 +13,13 @@ export class PeripheralConfigurationProvider {
             this.sessionConfigurationEmitter.set(session.id, {});
         });
         tracker.onWillStopSession(session => {
-            this.sessionConfiguration.delete(session.id);
-            const sessionConfigurationPropertyEmitters = this.sessionConfigurationEmitter.get(session.id);
+            const sessionId = typeof session === 'string' ? session : session.id;
+            this.sessionConfiguration.delete(sessionId);
+            const sessionConfigurationPropertyEmitters = this.sessionConfigurationEmitter.get(sessionId);
             if (sessionConfigurationPropertyEmitters) {
                 Object.keys(sessionConfigurationPropertyEmitters).forEach(key => sessionConfigurationPropertyEmitters[key].dispose());
             }
-            this.sessionConfigurationEmitter.delete(session.id);
+            this.sessionConfigurationEmitter.delete(sessionId);
         });
     }
 

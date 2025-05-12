@@ -12,6 +12,7 @@ const DEBUG_TRACKER_EXTENSION = 'mcu-debug.debug-tracker-vscode';
 interface IDebuggerTrackerEvent {
     event: DebugSessionStatus;
     session?: vscode.DebugSession;
+    sessionId?: string;
 }
 
 interface IDebuggerTrackerSubscribeArgBodyV1 {
@@ -44,8 +45,8 @@ export class DebugTracker {
     private _onWillStartSession: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
     public readonly onWillStartSession: vscode.Event<vscode.DebugSession> = this._onWillStartSession.event;
 
-    private _onWillStopSession: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
-    public readonly onWillStopSession: vscode.Event<vscode.DebugSession> = this._onWillStopSession.event;
+    private _onWillStopSession: vscode.EventEmitter<string | vscode.DebugSession> = new vscode.EventEmitter<string | vscode.DebugSession>();
+    public readonly onWillStopSession: vscode.Event<string | vscode.DebugSession> = this._onWillStopSession.event;
 
     private _onDidStopDebug: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
     public readonly onDidStopDebug: vscode.Event<vscode.DebugSession> = this._onDidStopDebug.event;
@@ -65,8 +66,11 @@ export class DebugTracker {
                         if (event.event === DebugSessionStatus.Initializing && event.session) {
                             this.handleOnWillStartSession(event.session);
                         }
-                        if (event.event === DebugSessionStatus.Terminated && event.session) {
-                            this.handleOnWillStopSession(event.session);
+                        if (event.event === DebugSessionStatus.Terminated) {
+                            const terminatedEventInfo = event.session ?? event.sessionId;
+                            if (terminatedEventInfo) {
+                                this.handleOnWillStopSession(terminatedEventInfo);
+                            }
                         }
                         if (event.event === DebugSessionStatus.Stopped && event.session) {
                             this.handleOnDidStopDebug(event.session);
@@ -104,7 +108,7 @@ export class DebugTracker {
         this._onWillStartSession.fire(session);
     }
 
-    private handleOnWillStopSession(session: vscode.DebugSession): void {
+    private handleOnWillStopSession(session: string | vscode.DebugSession): void {
         this._onWillStopSession.fire(session);
     }
 
