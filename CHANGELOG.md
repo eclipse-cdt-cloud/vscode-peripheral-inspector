@@ -5,7 +5,7 @@
 ### Bug Fixes
 
 - Partly addresses [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/60): Refine register range calculations and change `peripheral-inspector.svdAddrGapThreshold` default from `16` to `0`. ([Thorsten de Buhr](https://github.com/thorstendb-ARM/))
-- [#63](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/63): Peripheral Inspector does not clear on disconnect if using debug-tracker-vscode ([Jens Reinecke](https://github.com/jreineckearm))
+- [#63](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/63): Peripheral Inspector does not clear on disconnect if using debug-tracker-vscode. ([Jens Reinecke](https://github.com/jreineckearm))
 
 ### Other Changes
 
