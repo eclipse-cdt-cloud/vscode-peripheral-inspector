@@ -1,6 +1,23 @@
-# Embedded Peripheral Inspector
+# Peripheral Inspector
 
-Standalone SVD Viewer extension extracted from [cortex-debug](https://github.com/Marus/cortex-debug)
+This standalone SVD Viewer extension is extracted from [cortex-debug](https://github.com/Marus/cortex-debug) and allows
+you to view and change on-chip peripheral settings.
+
+## Usage
+
+The **Peripheral Inspector** displays information about peripheral registers.
+
+![Peripheral Inspector](./media/peripheral-inspector.png)
+
+Depending on the context, the following icons may be visible:
+
+| Icon | Use it to |
+|------|-----------|
+| ![Collapse](./media/CollapseAll.png) | Collapse currently viewed peripherals |
+| ![Search](./media/Search.png) | Open search bar to find specific properties |
+| ![Refresh](./media/Reload.png) | Refresh the current view |
+| ![Export](./media/Export.png) | Export peripheral registers |
+| ![Edit](./media/Edit.png) | Update the register value |
 
 ## Specifying SVD Files
 
