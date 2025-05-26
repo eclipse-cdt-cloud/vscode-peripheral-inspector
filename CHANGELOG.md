@@ -1,11 +1,16 @@
 # Change Log
 
-## [unreleased]
+## [v1.8.0] - 2025-05-26
 
 ### Bug Fixes
 
-- [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/60): Rework peripheral read strategy and peripheral-inspector.svdAddrGapThreshold ([Thorsten de Buhr](https://github.com/thorstendb-ARM/))
+- Partly addresses [#16](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/60): Refine register range calculations and change `peripheral-inspector.svdAddrGapThreshold` default from `16` to `0`. ([Thorsten de Buhr](https://github.com/thorstendb-ARM/))
 - [#63](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/63): Peripheral Inspector does not clear on disconnect if using debug-tracker-vscode ([Jens Reinecke](https://github.com/jreineckearm))
+
+### Other Changes
+
+- Makes use of [Tree](https://github.com/eclipse-cdt-cloud/vscode-ui-components/tree/main/src/tree) component from Eclipse CDT.cloud [UI Components for Visual Studio Code Extensions](https://github.com/eclipse-cdt-cloud/vscode-ui-components). ([Haydar Metin](https://github.com/haydar-metin))
+- Documentation updates in `README`. ([Jens Reinecke](https://github.com/jreineckearm) on behalf of [Christopher Seidl](https://github.com/KeilChris))
 
 ## [v1.7.0] - 2025-03-31
 
@@ -39,8 +44,8 @@
 ### Known Issue
 
 - As a side effect of moving to a custom Webview implementation, the Peripheral Inspector may show the following message when launched after update from a previous version:<br>
-`There is no data provider registered that can provide view data.`<br>
-***Solution***: Please restart your IDE after the update installation to overcome this problem. Restarting the extension may not be sufficient.
+  `There is no data provider registered that can provide view data.`<br>
+  **_Solution_**: Please restart your IDE after the update installation to overcome this problem. Restarting the extension may not be sufficient.
 
 ## [v1.5.1] - 2023-12-13
 
