@@ -48,11 +48,11 @@ export class DebugTracker {
     private _onWillStopSession: vscode.EventEmitter<string | vscode.DebugSession> = new vscode.EventEmitter<string | vscode.DebugSession>();
     public readonly onWillStopSession: vscode.Event<string | vscode.DebugSession> = this._onWillStopSession.event;
 
-    private _onDidStopDebug: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
-    public readonly onDidStopDebug: vscode.Event<vscode.DebugSession> = this._onDidStopDebug.event;
+    private _onDidStopDebug: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
+    public readonly onDidStopDebug: vscode.Event<string> = this._onDidStopDebug.event;
 
-    private _onDidContinueDebug: vscode.EventEmitter<vscode.DebugSession> = new vscode.EventEmitter<vscode.DebugSession>();
-    public readonly onDidContinueDebug: vscode.Event<vscode.DebugSession> = this._onDidContinueDebug.event;
+    private _onDidContinueDebug: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
+    public readonly onDidContinueDebug: vscode.Event<string> = this._onDidContinueDebug.event;
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         const debugtracker = await this.getTracker();
@@ -63,20 +63,18 @@ export class DebugTracker {
                 body: {
                     debuggers: '*',
                     handler: async event => {
+                        const sessionId = event.session?.id ?? event.sessionId;
                         if (event.event === DebugSessionStatus.Initializing && event.session) {
                             this.handleOnWillStartSession(event.session);
                         }
-                        if (event.event === DebugSessionStatus.Terminated) {
-                            const terminatedEventInfo = event.session ?? event.sessionId;
-                            if (terminatedEventInfo) {
-                                this.handleOnWillStopSession(terminatedEventInfo);
-                            }
+                        if (event.event === DebugSessionStatus.Terminated && sessionId) {
+                            this.handleOnWillStopSession(sessionId);
                         }
-                        if (event.event === DebugSessionStatus.Stopped && event.session) {
-                            this.handleOnDidStopDebug(event.session);
+                        if (event.event === DebugSessionStatus.Stopped && sessionId) {
+                            this.handleOnDidStopDebug(sessionId);
                         }
-                        if (event.event === DebugSessionStatus.Running && event.session) {
-                            this.handleOnDidContinueDebug(event.session);
+                        if (event.event === DebugSessionStatus.Running && sessionId) {
+                            this.handleOnDidContinueDebug(sessionId);
                         }
                     }
                 }
@@ -89,10 +87,10 @@ export class DebugTracker {
                     onWillStopSession: () => this.handleOnWillStopSession(session),
                     onDidSendMessage: message => {
                         if (message.type === 'event' && message.event === 'stopped') {
-                            this.handleOnDidStopDebug(session);
+                            this.handleOnDidStopDebug(session.id);
                         }
                         if (message.type === 'event' && message.event === 'continued') {
-                            this.handleOnDidContinueDebug(session);
+                            this.handleOnDidContinueDebug(session.id);
                         }
                     }
                 };
@@ -112,11 +110,11 @@ export class DebugTracker {
         this._onWillStopSession.fire(session);
     }
 
-    private handleOnDidStopDebug(session: vscode.DebugSession): void {
+    private handleOnDidStopDebug(session: string): void {
         this._onDidStopDebug.fire(session);
     }
 
-    private handleOnDidContinueDebug(session: vscode.DebugSession): void {
+    private handleOnDidContinueDebug(session: string): void {
         this._onDidContinueDebug.fire(session);
     }
 
