@@ -356,12 +356,12 @@ export class PeripheralDataTracker {
         this.refreshContext();
     }
 
-    protected onDebugStopped(session: vscode.DebugSession): void {
-        this.sessionPeripherals.get(session.id)?.debugStopped(this.context);
+    protected onDebugStopped(sessionId: string): void {
+        this.sessionPeripherals.get(sessionId)?.debugStopped(this.context);
     }
 
-    protected onDebugContinued(session: vscode.DebugSession): void {
-        this.sessionPeripherals.get(session.id)?.debugContinued(this.context);
+    protected onDebugContinued(sessionId: string): void {
+        this.sessionPeripherals.get(sessionId)?.debugContinued(this.context);
     }
 
     protected refreshContext(): void {
