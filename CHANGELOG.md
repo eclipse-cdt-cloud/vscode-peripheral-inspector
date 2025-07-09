@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.8.1] - 2025-07-09
+
+### Bug Fixes
+
+- [#68](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/68): No peripheral updates on 'stopped' event if using debug-tracker-vscode. ([Jens Reinecke](https://github.com/jreineckearm))
+
 ## [v1.8.0] - 2025-05-26
 
 ### Bug Fixes
