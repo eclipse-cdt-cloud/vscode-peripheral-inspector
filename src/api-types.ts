@@ -4,6 +4,7 @@ export interface IPeripheralInspectorAPI {
     getSVDFile: (device: string) => string | undefined;
     getSVDFileFromCortexDebug: (device: string) => Promise<string | undefined>;
     registerPeripheralsProvider: (fileExtension: string, provider: IPeripheralsProvider) => void;
+    getInterruptTable?: (svdPath: string) => InterruptTable | undefined;
 }
 
 export interface IPeripheralsProvider {
@@ -25,6 +26,7 @@ export interface PeripheralOptions {
     resetValue?: number;
     registers?: PeripheralRegisterOptions[];
     clusters?: ClusterOptions[];
+    interrupt?: InterruptOptions[];
 }
 
 export interface PeripheralRegisterOptions {
@@ -49,6 +51,12 @@ export interface ClusterOptions {
     clusters?: ClusterOptions[];
 }
 
+export interface InterruptOptions {
+    name: string;
+    description?: string;
+    value: number;
+}
+
 export interface FieldOptions {
     name: string;
     description: string;
@@ -58,14 +66,6 @@ export interface FieldOptions {
     derivedFrom?: string;           // Set this if unresolved
     accessType?: AccessType;
     readAction?: ReadActionType;
-}
-
-export interface IGetPeripheralsArguments {
-    gapThreshold: number;
-}
-
-export interface IPeripheralsProvider {
-    getPeripherals: (data: string, options: IGetPeripheralsArguments) => Promise<PeripheralOptions[]>;
 }
 
 export interface PeripheralsConfiguration {
@@ -96,4 +96,25 @@ export interface IEnumeratedValue {
     name: string;
     description: string;
     value: number;
+}
+
+/**
+ * Interrupt table structure to represent the interrupts defined in the SVD file
+ * <peripheral> elements.
+ */
+export interface InterruptTable {
+    /**
+     * Number of interrupts as defined for the optional <cpu> element, i.e. the highest
+     * supported interrupt number plus one.
+     */
+    numInterrupts?: number;
+    /**
+     * Mapping of interrupt numbers to their corresponding interrupt information.
+     * The keys are the interrupt numbers, and the values are objects containing
+     * the name, value, and optional description of each interrupt.
+     *
+     * Note: The size of entries can be less than `numInterrupts` if there are
+     * gaps in the interrupt numbering.
+     */
+    interrupts: Record<number, InterruptOptions>;
 }

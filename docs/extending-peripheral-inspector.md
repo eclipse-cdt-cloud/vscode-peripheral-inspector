@@ -21,7 +21,8 @@ yarn add github:eclipse-cdt-cloud/vscode-peripheral-inspector
 
 ### Developing your extension
 
-To provide the peripherals information to Peripheral Inspector on debug session time, you need register your command which is going to construct the peripherals information. The command will receive `DebugSession` object as an input parameter and expects to return array of type `PeripheralOptions[]`.
+To provide the peripherals information to Peripheral Inspector on debug session time, you need register your command which is going to construct the peripherals information.
+The command will receive `DebugSession` object as an input parameter and expects to return array of type `PeripheralOptions[]`.
 
 You can find the example command implementation below:
 
@@ -52,6 +53,36 @@ export async function activate(context: ExtensionContext) {
         peripheralInspectorAPI.registerPeripheralsProvider('myext', new MyExtensionProvider());
     }
     ...
+}
+```
+
+Alternatively, you also use the extension API to extract information from parsed SVD files.
+
+```js
+import { ExtensionContext } from 'vscode';
+import type * as api from "peripheral-inspector/api";
+export async function activate(context: ExtensionContext) {
+    ...
+    // Get the eclipse-cdt.peripheral-inspector extension
+    const peripheralInspectorExtention = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
+
+    // Check if the eclipse-cdt.peripheral-inspector extension is installed
+    if (peripheralInspectorExtention) {
+        const peripheralInspectorAPI = await peripheralInspectorExtention.activate();
+    }
+    ...
+}
+
+export async function getInterruptDescriptor(device: string, interruptNumber: number): Promise<IInterruptDescriptor | undefined> => {
+    // Get the eclipse-cdt.peripheral-inspector extension
+    const peripheralInspectorExtention = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
+    if (peripheralInspectorExtention?.getInterruptTable) {
+        const interruptTable = await peripheralInspectorExtention.getInterruptTable(device);
+        if (interruptTable) {
+            return interruptTable[interruptNumber];
+        }
+    }
+    return undefined;
 }
 ```
 
