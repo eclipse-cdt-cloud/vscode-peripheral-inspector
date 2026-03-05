@@ -11,7 +11,7 @@ import * as vscode from 'vscode';
 import { TreeNotification, TreeTerminatedEvent } from '../../common/notification';
 import { PERIPHERAL_ID_SEP, PeripheralBaseNodeDTO } from '../../common/peripheral-dto';
 import * as manifest from '../../manifest';
-import { PeripheralBaseNode } from '../../model/peripheral/nodes';
+import { PeripheralBaseNode, PeripheralRegisterNode } from '../../model/peripheral/nodes';
 import { PeripheralDataTracker } from '../../model/peripheral/tree/peripheral-data-tracker';
 
 export class PeripheralTreeDataProvider implements CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO> {
@@ -21,6 +21,10 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
     readonly onDidTerminate = this.onDidTerminateEvent.event;
     protected onDidChangeTreeDataEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode | PeripheralBaseNode[] | undefined>>();
     readonly onDidChangeTreeData = this.onDidChangeTreeDataEvent.event;
+
+    private includeIds?: Set<string>;
+    private defaultExpandedIds?: Set<string>;
+    private searchSequence = 0;
 
     constructor(protected readonly dataTracker: PeripheralDataTracker, protected context: vscode.ExtensionContext) {
         this.dataTracker.onDidTerminate((event) => {
@@ -56,6 +60,10 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
             webview.onDidToggleNode((event) => {
                 const node = this.getNodeByItemId(event.data);
                 this.dataTracker.toggleNode(node, true);
+            }),
+            webview.onDidSearchChanged((event) => {
+                const text = event.data?.text ?? '';
+                this.handleSearchText(text);
             })
         );
     }
@@ -76,9 +84,71 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
     async getSerializedData(element: PeripheralBaseNode): Promise<PeripheralBaseNodeDTO> {
         const item = await element.serialize();
 
-        const children = await this.getChildren(element);
-        if (children && children?.length > 0) {
-            item.children = await Promise.all(children.map(c => this.getSerializedData(c)));
+        // ===== SEARCH MODE =====
+        if (this.includeIds) {
+            const includeIds = this.includeIds;
+
+            if (!includeIds.has(element.getId())) {
+                return item;
+            }
+
+            const children = (await this.getChildren(element)) ?? [];
+
+            if (element instanceof PeripheralRegisterNode) {
+                item.expanded =
+                    element.expanded ||
+                    this.defaultExpandedIds?.has(element.getId()) === true;
+
+                if (children.length > 0) {
+                    item.children = await Promise.all(
+                        children.map(child => this.getSerializedData(child))
+                    );
+                }
+
+                return item;
+            }
+
+            const visibleChildren = children.filter(child =>
+                includeIds.has(child.getId())
+            );
+
+            if (visibleChildren.length > 0) {
+                item.expanded =
+                    element.expanded ||
+                    this.defaultExpandedIds?.has(element.getId()) === true;
+
+                item.children = await Promise.all(
+                    visibleChildren.map(child => this.getSerializedData(child))
+                );
+            }
+
+            return item;
+        }
+
+        // ===== NORMAL LAZY MODE =====
+
+        if (element instanceof PeripheralRegisterNode) {
+            const children = (await this.getChildren(element)) ?? [];
+
+            if (children.length > 0) {
+                item.children = await Promise.all(
+                    children.map(child => this.getSerializedData(child))
+                );
+            }
+
+            return item;
+        }
+
+        if (!element.expanded) {
+            return item;
+        }
+
+        const children = (await this.getChildren(element)) ?? [];
+
+        if (children.length > 0) {
+            item.children = await Promise.all(
+                children.map(child => this.getSerializedData(child))
+            );
         }
 
         return item;
@@ -99,6 +169,46 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         }
 
         return node;
+    }
+
+    private handleSearchText(text: string): void {
+        const sequence = ++this.searchSequence;
+        const normalized = (text ?? '').trim();
+
+        if (!normalized) {
+            this.searchSequence++;
+            this.includeIds = undefined;
+            this.defaultExpandedIds = undefined;
+            this.onDidChangeTreeDataEvent.fire({ data: undefined });
+            return;
+        }
+
+        void (async () => {
+            const matches = await this.dataTracker.findNodesByText(normalized);
+
+            if (sequence !== this.searchSequence) {
+                return; // Ignore stale results
+            }
+
+            const include = new Set<string>();
+            const expand = new Set<string>();
+
+            for (const node of matches) {
+                include.add(node.getId());
+
+                let parent = node.getParent?.() as PeripheralBaseNode | undefined;
+                while (parent) {
+                    include.add(parent.getId());
+                    expand.add(parent.getId());
+                    parent = parent.getParent?.() as PeripheralBaseNode | undefined;
+                }
+            }
+
+            this.includeIds = include;
+            this.defaultExpandedIds = expand;
+
+            this.onDidChangeTreeDataEvent.fire({ data: undefined });
+        })();
     }
 
 }

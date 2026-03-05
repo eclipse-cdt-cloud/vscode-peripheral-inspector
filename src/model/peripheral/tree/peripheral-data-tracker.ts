@@ -367,4 +367,61 @@ export class PeripheralDataTracker {
     protected refreshContext(): void {
         vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
     }
+
+    public async findNodesByText(query: string): Promise<PeripheralBaseNode[]> {
+        const normalized = (query ?? '').trim().toLowerCase();
+        if (!normalized) {
+            return [];
+        }
+
+        const allowGlobalSubstring = normalized.length > 2;
+
+        const visited = new Set<string>();
+        const fieldMatches: PeripheralBaseNode[] = [];
+        const registerMatches: PeripheralBaseNode[] = [];
+        const otherMatches: PeripheralBaseNode[] = [];
+
+        const roots = Array.from(this.sessionPeripherals.values());
+        const stack: PeripheralBaseNode[] = [...roots];
+
+        while (stack.length > 0) {
+            const node = stack.pop();
+            if (!node) continue;
+
+            const id = node.getId();
+            if (visited.has(id)) continue;
+            visited.add(id);
+
+            const name = (node.name ?? '').toLowerCase();
+            const isField = node instanceof PeripheralFieldNode;
+            const isRegister = node instanceof PeripheralRegisterNode;
+
+            const exactOrPrefix =
+                name === normalized ||
+                name.startsWith(normalized);
+
+            const substringAllowed =
+                allowGlobalSubstring || isField;
+
+            const substringMatch =
+                substringAllowed && name.includes(normalized);
+
+            if (exactOrPrefix || substringMatch) {
+                if (isField) {
+                    fieldMatches.push(node);
+                } else if (isRegister) {
+                    registerMatches.push(node);
+                } else {
+                    otherMatches.push(node);
+                }
+            }
+
+            const children = await node.getChildren();
+            for (const child of children) {
+                stack.push(child);
+            }
+        }
+
+        return [...fieldMatches, ...registerMatches, ...otherMatches];
+    }
 }
