@@ -14,6 +14,12 @@ import * as manifest from '../../manifest';
 import { PeripheralBaseNode, PeripheralRegisterNode } from '../../model/peripheral/nodes';
 import { PeripheralDataTracker } from '../../model/peripheral/tree/peripheral-data-tracker';
 
+type SearchState = {
+    includeIds: Set<string>;
+    directMatchIds: Set<string>;
+    defaultExpandedIds: Set<string>;
+};
+
 export class PeripheralTreeDataProvider implements CDTTreeDataProvider<PeripheralBaseNode, PeripheralBaseNodeDTO> {
     public static viewName = `${manifest.PACKAGE_NAME}.svd`;
 
@@ -22,8 +28,7 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
     protected onDidChangeTreeDataEvent = new vscode.EventEmitter<TreeNotification<PeripheralBaseNode | PeripheralBaseNode[] | undefined>>();
     readonly onDidChangeTreeData = this.onDidChangeTreeDataEvent.event;
 
-    private includeIds?: Set<string>;
-    private defaultExpandedIds?: Set<string>;
+    private searchState?: SearchState;
     private searchSequence = 0;
 
     constructor(protected readonly dataTracker: PeripheralDataTracker, protected context: vscode.ExtensionContext) {
@@ -61,7 +66,7 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
                 const node = this.getNodeByItemId(event.data);
                 this.dataTracker.toggleNode(node, true);
             }),
-            webview.onDidSearchChanged((event) => {
+            webview.onDidSearchChange((event) => {
                 const text = event.data?.text ?? '';
                 this.handleSearchText(text);
             })
@@ -84,74 +89,11 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
     async getSerializedData(element: PeripheralBaseNode): Promise<PeripheralBaseNodeDTO> {
         const item = await element.serialize();
 
-        // ===== SEARCH MODE =====
-        if (this.includeIds) {
-            const includeIds = this.includeIds;
-
-            if (!includeIds.has(element.getId())) {
-                return item;
-            }
-
-            const children = (await this.getChildren(element)) ?? [];
-
-            if (element instanceof PeripheralRegisterNode) {
-                item.expanded =
-                    element.expanded ||
-                    this.defaultExpandedIds?.has(element.getId()) === true;
-
-                if (children.length > 0) {
-                    item.children = await Promise.all(
-                        children.map(child => this.getSerializedData(child))
-                    );
-                }
-
-                return item;
-            }
-
-            const visibleChildren = children.filter(child =>
-                includeIds.has(child.getId())
-            );
-
-            if (visibleChildren.length > 0) {
-                item.expanded =
-                    element.expanded ||
-                    this.defaultExpandedIds?.has(element.getId()) === true;
-
-                item.children = await Promise.all(
-                    visibleChildren.map(child => this.getSerializedData(child))
-                );
-            }
-
-            return item;
+        if (!this.searchState) {
+            return this.serializeLazyNode(element, item);
         }
 
-        // ===== NORMAL LAZY MODE =====
-
-        if (element instanceof PeripheralRegisterNode) {
-            const children = (await this.getChildren(element)) ?? [];
-
-            if (children.length > 0) {
-                item.children = await Promise.all(
-                    children.map(child => this.getSerializedData(child))
-                );
-            }
-
-            return item;
-        }
-
-        if (!element.expanded) {
-            return item;
-        }
-
-        const children = (await this.getChildren(element)) ?? [];
-
-        if (children.length > 0) {
-            item.children = await Promise.all(
-                children.map(child => this.getSerializedData(child))
-            );
-        }
-
-        return item;
+        return this.serializeSearchNode(element, item);
     }
 
     getChildren(element?: PeripheralBaseNode): vscode.ProviderResult<PeripheralBaseNode[]> {
@@ -173,42 +115,145 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
 
     private handleSearchText(text: string): void {
         const sequence = ++this.searchSequence;
-        const normalized = (text ?? '').trim();
+        const normalized = text.trim();
 
         if (!normalized) {
-            this.searchSequence++;
-            this.includeIds = undefined;
-            this.defaultExpandedIds = undefined;
-            this.onDidChangeTreeDataEvent.fire({ data: undefined });
+            this.clearSearchState();
             return;
         }
 
-        void (async () => {
-            const matches = await this.dataTracker.findNodesByText(normalized);
+        void this.updateSearchState(normalized, sequence);
+    }
 
-            if (sequence !== this.searchSequence) {
-                return; // Ignore stale results
+    private clearSearchState(): void {
+        this.searchSequence++;
+        this.searchState = undefined;
+        this.onDidChangeTreeDataEvent.fire({ data: undefined });
+    }
+
+    private async updateSearchState(query: string, sequence: number): Promise<void> {
+        const matches = await this.dataTracker.findNodesByText(query);
+
+        if (sequence !== this.searchSequence) {
+            return;
+        }
+
+        this.searchState = this.buildSearchState(matches);
+        this.onDidChangeTreeDataEvent.fire({ data: undefined });
+    }
+
+    private buildSearchState(matches: PeripheralBaseNode[]): SearchState {
+        const includeIds = new Set<string>();
+        const directMatchIds = new Set<string>();
+        const defaultExpandedIds = new Set<string>();
+
+        for (const node of matches) {
+            const nodeId = node.getId();
+            directMatchIds.add(nodeId);
+            includeIds.add(nodeId);
+
+            let parent = node.getParent?.() as PeripheralBaseNode | undefined;
+            while (parent) {
+                includeIds.add(parent.getId());
+                defaultExpandedIds.add(parent.getId());
+                parent = parent.getParent?.() as PeripheralBaseNode | undefined;
+            }
+        }
+
+        return { includeIds, directMatchIds, defaultExpandedIds };
+    }
+
+    private async serializeSearchNode(
+        element: PeripheralBaseNode,
+        item: PeripheralBaseNodeDTO
+    ): Promise<PeripheralBaseNodeDTO> {
+        const searchState = this.searchState;
+        if (!searchState) {
+            return this.serializeLazyNode(element, item);
+        }
+
+        const isIncluded = searchState.includeIds.has(element.getId());
+        const isDirectMatch = searchState.directMatchIds.has(element.getId());
+        const isDescendantOfDirectMatch = this.isDescendantOfDirectMatch(element, searchState.directMatchIds);
+
+        if (!isIncluded && !isDescendantOfDirectMatch) {
+            return item;
+        }
+
+        if (isDirectMatch || isDescendantOfDirectMatch) {
+            return this.serializeLazyNode(element, item);
+        }
+
+        return this.serializeAncestorNode(element, item, searchState);
+    }
+
+    private isDescendantOfDirectMatch(
+        node: PeripheralBaseNode,
+        directMatchIds: Set<string>
+    ): boolean {
+        let parent = node.getParent?.() as PeripheralBaseNode | undefined;
+
+        while (parent) {
+            if (directMatchIds.has(parent.getId())) {
+                return true;
             }
 
-            const include = new Set<string>();
-            const expand = new Set<string>();
+            parent = parent.getParent?.() as PeripheralBaseNode | undefined;
+        }
 
-            for (const node of matches) {
-                include.add(node.getId());
+        return false;
+    }
 
-                let parent = node.getParent?.() as PeripheralBaseNode | undefined;
-                while (parent) {
-                    include.add(parent.getId());
-                    expand.add(parent.getId());
-                    parent = parent.getParent?.() as PeripheralBaseNode | undefined;
-                }
-            }
+    private async serializeAncestorNode(
+        element: PeripheralBaseNode,
+        item: PeripheralBaseNodeDTO,
+        searchState: SearchState
+    ): Promise<PeripheralBaseNodeDTO> {
+        const children = (await this.getChildren(element)) ?? [];
 
-            this.includeIds = include;
-            this.defaultExpandedIds = expand;
+        item.expanded =
+            element.expanded ||
+            searchState.defaultExpandedIds.has(element.getId());
 
-            this.onDidChangeTreeDataEvent.fire({ data: undefined });
-        })();
+        const visibleChildren = children.filter(child => searchState.includeIds.has(child.getId()));
+
+        if (visibleChildren.length > 0) {
+            item.children = await Promise.all(
+                visibleChildren.map(child => this.getSerializedData(child))
+            );
+        }
+
+        return item;
+    }
+
+    private async serializeLazyNode(
+        element: PeripheralBaseNode,
+        item: PeripheralBaseNodeDTO
+    ): Promise<PeripheralBaseNodeDTO> {
+        if (element instanceof PeripheralRegisterNode) {
+            return this.serializeAllChildren(element, item);
+        }
+
+        if (!element.expanded) {
+            return item;
+        }
+
+        return this.serializeAllChildren(element, item);
+    }
+
+    private async serializeAllChildren(
+        element: PeripheralBaseNode,
+        item: PeripheralBaseNodeDTO
+    ): Promise<PeripheralBaseNodeDTO> {
+        const children = (await this.getChildren(element)) ?? [];
+
+        if (children.length > 0) {
+            item.children = await Promise.all(
+                children.map(child => this.getSerializedData(child))
+            );
+        }
+
+        return item;
     }
 
 }
