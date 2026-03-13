@@ -6,7 +6,11 @@
  ********************************************************************************/
 
 import * as vscode from 'vscode';
-import { IPeripheralsProvider, IPeripheralInspectorAPI } from './api-types';
+import {
+    IPeripheralsProvider,
+    IPeripheralInspectorAPI,
+    InterruptTable
+} from './api-types';
 
 const CORTEX_EXTENSION = 'marus25.cortex-debug';
 
@@ -15,9 +19,16 @@ interface SVDInfo {
     path: string;
 }
 
+interface LoadedSVDInfo {
+    interruptTable?: InterruptTable;
+}
+
 export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
     private SVDDirectory: SVDInfo[] = [];
     private PeripheralProviders: Record<string, IPeripheralsProvider> = {};
+    private LoadedSVDInfos: Record<string, LoadedSVDInfo> = {};
+
+    /** IPeripheralInspectorAPI implementation */
 
     public registerSVDFile(expression: RegExp | string, path: string): void {
         if (typeof expression === 'string') {
@@ -58,8 +69,25 @@ export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
         this.PeripheralProviders[fileExtension] = provider;
     }
 
+    public getInterruptTable(svdPath: string): InterruptTable | undefined {
+        return this.LoadedSVDInfos[svdPath]?.interruptTable;
+    }
+
+    /** Locally used methods */
+
     public getPeripheralsProvider(svdPath: string): IPeripheralsProvider | undefined {
         const ext = Object.keys(this.PeripheralProviders).filter((extension) => svdPath.endsWith(`.${extension}`))[0];
         return ext ? this.PeripheralProviders[ext] : undefined;
+    }
+
+    public updateLoadedSVDInfo(svdPath: string, svdInfo?: LoadedSVDInfo): void {
+        // Implementation for building the loaded SVD info
+        // eslint-disable-next-line no-console
+        console.log(`Building loaded SVD info for SVD path: ${svdPath}`);
+        if (svdInfo) {
+            this.LoadedSVDInfos[svdPath] = svdInfo;
+        } else {
+            delete this.LoadedSVDInfos[svdPath];
+        }
     }
 }
