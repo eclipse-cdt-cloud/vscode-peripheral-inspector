@@ -8,7 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { parseStringPromise } from 'xml2js';
-import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration, ReadActionType } from './api-types';
+import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, InterruptOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration, ReadActionType } from './api-types';
 import { EnumeratedValue } from './enumerated-value';
 import { parseDimIndex, parseInteger } from './utils';
 
@@ -446,6 +446,24 @@ export class SVDParser {
         return options;
     }
 
+    private parseInterruptOptions(interruptInfo: any): InterruptOptions[] {
+        const options: InterruptOptions[] = [];
+
+        if (!interruptInfo) { return []; }
+
+        interruptInfo.forEach((interrupt: any) => {
+            const option: InterruptOptions = {
+                name: interrupt.name[0],
+                description: this.cleanupDescription(interrupt.description ? interrupt.description[0] : ''),
+                value: parseInteger(interrupt.value[0]) ?? -1
+            };
+
+            options.push(option);
+        });
+
+        return options;
+    }
+
     // ==== Create Peripherals ====
 
     private parsePeripheralOptions(p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralOptions {
@@ -479,6 +497,10 @@ export class SVDParser {
             if (p.registers[0].cluster) {
                 option.clusters = this.parseClusterOptions(p.registers[0].cluster);
             }
+        }
+
+        if (p.interrupt) {
+            option.interrupt = this.parseInterruptOptions(p.interrupt);
         }
 
         return option;
