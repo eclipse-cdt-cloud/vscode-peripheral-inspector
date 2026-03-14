@@ -139,7 +139,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         const ignoredPeripherals = this.config.ignorePeripherals();
 
         try {
-            let contents: ArrayBuffer | undefined;
+            let contents: ArrayBuffer | Uint8Array | undefined;
 
             if (svdPath.startsWith('http')) {
                 contents = await readFromUrl(svdPath);
