@@ -83,4 +83,4 @@ jobs:
           node-version: 22.x
       - name: Publish
         run: |
-          npx vsce publish -i artifacts/*/*.vsix -p ${{secrets.VS_MARKETPLACE_TOKEN}}
+          npx @vscode/vsce publish -i artifacts/*/*.vsix -p ${{secrets.VS_MARKETPLACE_TOKEN}}
