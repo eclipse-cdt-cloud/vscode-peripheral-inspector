@@ -13,7 +13,9 @@ export default [
     {
         ignores: [
             'node_modules',
-            'dist'
+            'dist',
+            "*.config.{ts,js,mjs}",
+            "*.setup.{ts,js}",
         ],
     },
     eslint.configs.recommended,
@@ -62,6 +64,16 @@ export default [
             typescript: tseslint
         },
         rules: {
+            '@typescript-eslint/no-this-alias': 'off',
+            '@typescript-eslint/no-namespace': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_'
+                }
+            ],
+            // To enable in with separate PR, it requires larger code changes
+            /*
             '@typescript-eslint/explicit-member-accessibility': [
                 'error',
                 {
@@ -71,14 +83,7 @@ export default [
                     }
                 }
             ],
-            '@typescript-eslint/no-this-alias': 'off',
-            '@typescript-eslint/no-namespace': 'off',
-            '@typescript-eslint/no-unused-vars': [
-                'warn',
-                {
-                    argsIgnorePattern: '^_'
-                }
-            ]
+            */
         }
     }
 ];

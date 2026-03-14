@@ -65,7 +65,6 @@ export class SVDParser {
     private enumTypeValues: { [key: string]: EnumerationMap } = {};
     private peripheralRegisterMap: { [key: string]: any } = {};
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     constructor() { }
 
     public async parseSVD(

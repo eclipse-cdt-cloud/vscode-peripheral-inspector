@@ -468,7 +468,7 @@ export class PeripheralFieldNodeConverter implements CDTTreeResourceConverter<Pe
     }
 
     formatLabel(peripheral: PeripheralFieldNodeDTO, value: number, format: NumberFormat, includeEnumeration = true): string {
-        let formatted = '';
+        let formatted;
         switch (format) {
             case NumberFormat.Decimal:
                 formatted = value.toString();

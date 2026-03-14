@@ -78,7 +78,7 @@ export class PeripheralNode extends PeripheralBaseNode {
     public getBytes(offset: number, size: number): Uint8Array {
         try {
             return new Uint8Array(this.currentValue.slice(offset, offset + size));
-        } catch (e) {
+        } catch {
             return new Uint8Array(0);
         }
     }

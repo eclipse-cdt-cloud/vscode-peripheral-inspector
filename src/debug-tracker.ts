@@ -124,7 +124,7 @@ export class DebugTracker {
             if (trackerExtension) {
                 return trackerExtension.activate();
             }
-        } catch (_e) {
+        } catch {
             // Ignore error
         }
 

@@ -21,7 +21,7 @@ import { clearTimeout, setTimeout } from 'timers';
 const pathToUri = (path: string): vscode.Uri => {
     try {
         return vscode.Uri.file(path);
-    } catch (e) {
+    } catch {
         return vscode.Uri.parse(path);
     }
 };
