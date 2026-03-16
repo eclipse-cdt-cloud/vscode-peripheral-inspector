@@ -42,11 +42,11 @@ class MyExtensionProvider implements api.IPeripheralsProvider {
 export async function activate(context: ExtensionContext) {
     ...
     // Get the eclipse-cdt.peripheral-inspector extension
-    const peripheralInspectorExtention = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
+    const peripheralInspectorExtension = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
 
     // Check if the eclipse-cdt.peripheral-inspector extension is installed
-    if (peripheralInspectorExtention) {
-        const peripheralInspectorAPI = await peripheralInspectorExtention.activate();
+    if (peripheralInspectorExtension) {
+        const peripheralInspectorAPI = await peripheralInspectorExtension.activate();
 
         // Invoke registerPeripheralsProvider method in eclipse-cdt.peripheral-inspector extension api
         // Register 'MyExtensionProvider' for files *.myext
@@ -64,20 +64,20 @@ import type * as api from "peripheral-inspector/api";
 export async function activate(context: ExtensionContext) {
     ...
     // Get the eclipse-cdt.peripheral-inspector extension
-    const peripheralInspectorExtention = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
+    const peripheralInspectorExtension = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
 
     // Check if the eclipse-cdt.peripheral-inspector extension is installed
-    if (peripheralInspectorExtention) {
-        const peripheralInspectorAPI = await peripheralInspectorExtention.activate();
+    if (peripheralInspectorExtension) {
+        const peripheralInspectorAPI = await peripheralInspectorExtension.activate();
     }
     ...
 }
 
-export async function getInterruptDescriptor(device: string, interruptNumber: number): Promise<IInterruptDescriptor | undefined> => {
+export async function getInterruptDescriptor(svdPath: string, interruptNumber: number): Promise<IInterruptDescriptor | undefined> => {
     // Get the eclipse-cdt.peripheral-inspector extension
-    const peripheralInspectorExtention = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
-    if (peripheralInspectorExtention?.getInterruptTable) {
-        const interruptTable = await peripheralInspectorExtention.getInterruptTable(device);
+    const peripheralInspectorExtension = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
+    if (peripheralInspectorExtension?.getInterruptTable) {
+        const interruptTable = await peripheralInspectorExtension.getInterruptTable(svdPath);
         if (interruptTable) {
             return interruptTable[interruptNumber];
         }
