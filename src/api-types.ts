@@ -4,6 +4,13 @@ export interface IPeripheralInspectorAPI {
     getSVDFile: (device: string) => string | undefined;
     getSVDFileFromCortexDebug: (device: string) => Promise<string | undefined>;
     registerPeripheralsProvider: (fileExtension: string, provider: IPeripheralsProvider) => void;
+    /**
+     * Get interrupt table for provided SVD file path.
+     * IMPORTANT: The input path must be absolute and normalized on desktop.
+     *
+     * @param svdPath The SVD file path.
+     * @returns The interrupt table for the SVD file, or undefined if the file was not loaded.
+     */
     getInterruptTable?: (svdPath: string) => InterruptTable | undefined;
 }
 
