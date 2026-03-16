@@ -5556,11 +5556,6 @@ vscode-messenger-common@^0.4.5:
   resolved "https://registry.yarnpkg.com/vscode-messenger-common/-/vscode-messenger-common-0.4.5.tgz#bc49a25d28808db9cc322cde029fed518c8fa382"
   integrity sha512-opA+BEYTWdy1fFC3oOw30b0zc/KEuMtw+1pOiH5fEp+BGeA5xff7omSQTZeZJSDJszM471Vi+YY/ipRdRglAlQ==
 
-vscode-messenger-common@^0.6, vscode-messenger-common@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/vscode-messenger-common/-/vscode-messenger-common-0.6.0.tgz#bfc466417ee06d558481a08b87d998ed0ac8a7dd"
-  integrity sha512-sAURSygF74TV0jEH4CnwdkDoLhy0OldxzD8lEUKMprNPkWccboGJTwKhhYRNONJPUuKK8/242sILw8EEzXQ25Q==
-
 vscode-messenger-webview@^0.4.5:
   version "0.4.5"
   resolved "https://registry.yarnpkg.com/vscode-messenger-webview/-/vscode-messenger-webview-0.4.5.tgz#89767aee50038acb6a706f5427e0fc72d5aec7f5"
@@ -5574,13 +5569,6 @@ vscode-messenger@^0.4.5:
   integrity sha512-a6e54dpPRi/ITmVex49LGU6YXlqcuxGPlDPauvZig20G1D1/QD2E8GfhtvlTj3ml5aU/QV3LHghyepq3riy7sw==
   dependencies:
     vscode-messenger-common "^0.4.5"
-
-vscode-messenger@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/vscode-messenger/-/vscode-messenger-0.6.0.tgz#ed4cff62dc387e05fcad637aa8d97db8b99768d8"
-  integrity sha512-yUbFCE4FFr1kTr/EaZ1zSjucbs4yCCe8oVS/+dkeaFnLyNKhPQ2xWEM+YdElvdJuJrhmfIwzu4v5qTj79gJWOg==
-  dependencies:
-    vscode-messenger-common "^0.6"
 
 watchpack@^2.5.1:
   version "2.5.1"
