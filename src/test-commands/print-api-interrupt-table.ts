@@ -10,7 +10,7 @@ import { PACKAGE_NAME, PUBLISHER_NAME } from '../manifest';
 import { IPeripheralInspectorAPI } from '../api-types';
 
 export class PrintApiInterruptTable {
-    public static readonly COMMAND_ID = `${PACKAGE_NAME}.test.printInterruptTable`;
+    public static readonly COMMAND_ID = `${PACKAGE_NAME}.printInterruptTable`;
 
     public async activate(context: vscode.ExtensionContext): Promise<void> {
         context.subscriptions.push(
@@ -45,6 +45,9 @@ export class PrintApiInterruptTable {
             vscode.debug.activeDebugConsole.appendLine('Interrupt Table: Not available');
             return;
         }
-        vscode.debug.activeDebugConsole.appendLine(`Interrupt Table: ${JSON.stringify(interruptTable, null, 2)}`);
+        vscode.debug.activeDebugConsole.appendLine('Interrupt Table:');
+        Object.values(interruptTable.interrupts).forEach(interrupt => vscode.debug.activeDebugConsole.appendLine(
+            `\tInterrupt #${interrupt.value}: '${interrupt.name}' ${interrupt.description ?? ''}`
+        ));
     }
 };

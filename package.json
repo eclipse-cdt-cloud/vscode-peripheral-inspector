@@ -164,9 +164,10 @@
         "icon": "$(calendar)"
       },
       {
-        "command": "peripheral-inspector.test.printInterruptTable",
+        "command": "peripheral-inspector.printInterruptTable",
         "title": "Print Interrupt Table (Extension API)",
-        "category": "SVD-TEST"
+        "category": "Peripherals",
+        "enablement": "inDebugMode && config.peripheral-inspector.testCommandsEnabled"
       }
     ],
     "menus": {
@@ -220,8 +221,8 @@
           "when": "false"
         },
         {
-          "command": "peripheral-inspector.test.printInterruptTable",
-          "when": "config.peripheral-inspector.testCommandsEnabled"
+          "command": "peripheral-inspector.printInterruptTable",
+          "when": "inDebugMode && config.peripheral-inspector.testCommandsEnabled"
         }
       ],
       "touchBar": [
