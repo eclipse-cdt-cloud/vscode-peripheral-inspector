@@ -367,4 +367,37 @@ export class PeripheralDataTracker {
     protected refreshContext(): void {
         vscode.commands.executeCommand('setContext', `${PeripheralTreeDataProvider.viewName}.hasData`, this.sessionPeripherals.size > 0);
     }
+
+    public async findNodesByText(query: string): Promise<PeripheralBaseNode[]> {
+        const normalized = (query ?? '').trim().toLowerCase();
+        if (!normalized) {
+            return [];
+        }
+
+        const matches: PeripheralBaseNode[] = [];
+        const roots = Array.from(this.sessionPeripherals.values());
+        const stack: PeripheralBaseNode[] = [...roots];
+
+        while (stack.length > 0) {
+            const node = stack.pop();
+            if (!node) {
+                continue;
+            }
+            const name = (node.name ?? '').toLowerCase();
+            const exactOrPrefix =
+                name === normalized ||
+                name.startsWith(normalized);
+            const substringMatch = name.includes(normalized);
+            if (exactOrPrefix || substringMatch) {
+                matches.push(node);
+            }
+
+            const children = await node.getChildren();
+            for (const child of children) {
+                stack.push(child);
+            }
+        }
+
+        return matches;
+    }
 }

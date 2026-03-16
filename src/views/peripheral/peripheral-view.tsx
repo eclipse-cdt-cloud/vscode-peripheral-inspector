@@ -192,6 +192,7 @@ export class CDTTreeView extends React.Component<unknown, State> {
             <CDTTree<PeripheralTreeNodeDTOs>
                 dataSource={this.state.viewModel.items}
                 dataSourceSorter={(dataSource) => this.dataSourceSorter(dataSource)}
+                search={{ mode: 'backend' }}
                 columnDefinitions={this.state.extensionModel.columnFields}
                 expansion={{
                     expandedRowKeys: this.state.viewModel.expandedKeys,

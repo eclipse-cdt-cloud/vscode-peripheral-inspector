@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@vscode/codicons": "0.0.45",
-    "@eclipse-cdt-cloud/vscode-ui-components": "0.0.1",
+    "@eclipse-cdt-cloud/vscode-ui-components": "^0.1.0",
     "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",
