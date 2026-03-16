@@ -162,6 +162,11 @@
         "command": "peripheral-inspector.svd.periodicRefreshInterval",
         "title": "Set Periodic Refresh Interval",
         "icon": "$(calendar)"
+      },
+      {
+        "command": "peripheral-inspector.test.printInterruptTable",
+        "title": "Print Interrupt Table (Extension API)",
+        "category": "SVD-TEST"
       }
     ],
     "menus": {
@@ -213,6 +218,10 @@
         {
           "command": "peripheral-inspector.svd.clearIgnoredPeripherals",
           "when": "false"
+        },
+        {
+          "command": "peripheral-inspector.test.printInterruptTable",
+          "when": "config.peripheral-inspector.testCommandsEnabled"
         }
       ],
       "touchBar": [

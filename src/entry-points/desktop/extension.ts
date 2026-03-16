@@ -15,6 +15,8 @@ import { SvdResolver } from '../../svd-resolver';
 import { PeripheralConfigurationProvider } from '../../model/peripheral/tree/peripheral-configuration-provider';
 import { PeripheralTreeDataProvider } from '../../views/peripheral/peripheral-data-provider';
 import { PeripheralsTreeTableWebView } from '../../views/peripheral/peripheral-view-provider';
+import { CONFIG_ENABLE_TEST_COMMANDS } from '../../manifest';
+import { PrintApiInterruptTable } from '../../test-commands/print-api-interrupt-table';
 export * as api from '../../api-types';
 
 export const activate = async (context: vscode.ExtensionContext): Promise<IPeripheralInspectorAPI> => {
@@ -32,6 +34,12 @@ export const activate = async (context: vscode.ExtensionContext): Promise<IPerip
     await commands.activate(context);
     await dataProvider.activate(webView);
     await webView.activate(context);
+
+    const enableTestCommands = vscode.workspace.getConfiguration().get<boolean>(CONFIG_ENABLE_TEST_COMMANDS, false);
+    if (enableTestCommands) {
+        const printApiInterruptTable = new PrintApiInterruptTable();
+        await printApiInterruptTable.activate(context);
+    }
 
     return api;
 };
