@@ -14,3 +14,11 @@ export async function getFilePath(): Promise<vscode.Uri | undefined> {
     });
     return fileUri;
 }
+
+export const pathToUri = (path: string): vscode.Uri => {
+    try {
+        return vscode.Uri.file(path);
+    } catch {
+        return vscode.Uri.parse(path);
+    }
+};

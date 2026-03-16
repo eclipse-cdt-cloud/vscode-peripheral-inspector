@@ -11,6 +11,7 @@ import {
     IPeripheralInspectorAPI,
     InterruptTable
 } from './api-types';
+import { pathToUri } from './fileUtils';
 
 const CORTEX_EXTENSION = 'marus25.cortex-debug';
 
@@ -70,7 +71,8 @@ export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
     }
 
     public getInterruptTable(svdPath: string): InterruptTable | undefined {
-        return this.LoadedSVDInfos[svdPath]?.interruptTable;
+        const normalizedPath = pathToUri(svdPath).toString();
+        return this.LoadedSVDInfos[normalizedPath]?.interruptTable;
     }
 
     /** Locally used methods */
@@ -80,14 +82,14 @@ export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
         return ext ? this.PeripheralProviders[ext] : undefined;
     }
 
-    public updateLoadedSVDInfo(svdPath: string, svdInfo?: LoadedSVDInfo): void {
-        // Implementation for building the loaded SVD info
-        // eslint-disable-next-line no-console
-        console.log(`Building loaded SVD info for SVD path: ${svdPath}`);
+    public updateLoadedSVDInfo(svdPath: string | vscode.Uri, svdInfo?: LoadedSVDInfo): void {
+        // Normalize path by converting to URI and back to string.
+        const svdUri = typeof svdPath === 'string' ? pathToUri(svdPath) : svdPath;
+        const svdUriString = svdUri.toString();
         if (svdInfo) {
-            this.LoadedSVDInfos[svdPath] = svdInfo;
+            this.LoadedSVDInfos[svdUriString] = svdInfo;
         } else {
-            delete this.LoadedSVDInfos[svdPath];
+            delete this.LoadedSVDInfos[svdUriString];
         }
     }
 }

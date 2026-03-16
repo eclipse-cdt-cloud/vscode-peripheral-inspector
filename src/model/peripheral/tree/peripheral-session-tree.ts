@@ -13,18 +13,11 @@ import * as manifest from '../../../manifest';
 import { PeripheralInspectorAPI } from '../../../peripheral-inspector-api';
 import { SVDParser } from '../../../svd-parser';
 import { readFromUrl } from '../../../utils';
+import { pathToUri } from '../../../fileUtils';
 import { MessageNode, PeripheralBaseNode, PeripheralNode, UpdateDataContext } from '../nodes';
 import { PeripheralConfigurationProvider } from './peripheral-configuration-provider';
 import { DebugSessionStatus } from '../../../debug-tracker';
 import { clearTimeout, setTimeout } from 'timers';
-
-const pathToUri = (path: string): vscode.Uri => {
-    try {
-        return vscode.Uri.file(path);
-    } catch {
-        return vscode.Uri.parse(path);
-    }
-};
 
 interface CachedSVDFile {
     svdUri: vscode.Uri;
@@ -157,7 +150,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                 this.svdUri = pathToUri(svdPath);
                 const cached = await PeripheralTreeForSession.getFromCache(this.svdUri);
                 if (!cached) {
-                    this.api.updateLoadedSVDInfo(this.svdUri.toString(), undefined);
+                    this.api.updateLoadedSVDInfo(this.svdUri, undefined);
                 }
                 if (cached && manifest.IgnorePeripherals.isEqual(cached.configuration.ignoredPeripherals, ignoredPeripherals)) {
                     this.peripherals = cached.peripherals;
@@ -221,7 +214,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             await this.setSession(this.session);
             if (this.svdUri) {
                 const cachedSvd = await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration, this.interruptTable);
-                this.api.updateLoadedSVDInfo(this.svdUri.toString(), cachedSvd ? { interruptTable: cachedSvd.interruptTable } : undefined);
+                this.api.updateLoadedSVDInfo(this.svdUri, cachedSvd ? { interruptTable: cachedSvd.interruptTable } : undefined);
             }
         } catch (e) {
             this.peripherals = [];
@@ -288,7 +281,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
         if (this.svdUri) {
             const cachedSvd = await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration, this.interruptTable);
-            this.api.updateLoadedSVDInfo(this.svdUri.toString(), cachedSvd ? { interruptTable: cachedSvd.interruptTable } : undefined);
+            this.api.updateLoadedSVDInfo(this.svdUri, cachedSvd ? { interruptTable: cachedSvd.interruptTable } : undefined);
         }
     }
 
