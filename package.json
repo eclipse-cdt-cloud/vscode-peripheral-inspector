@@ -38,16 +38,16 @@
     "serve": "serve --cors -p 9000"
   },
   "dependencies": {
-    "@vscode/codicons": "0.0.20",
+    "@vscode/codicons": "0.0.45",
     "@eclipse-cdt-cloud/vscode-ui-components": "0.0.1",
     "jszip": "^3.10.1",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "vscode-messenger": "^0.4.5",
-    "vscode-messenger-common": "^0.4.5",
-    "xml2js": "^0.4.23",
-    "xmlbuilder2": "^3.0.0"
+    "vscode-messenger": "^0.6.0",
+    "vscode-messenger-common": "^0.6.0",
+    "xml2js": "^0.6.2",
+    "xmlbuilder2": "^3.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
