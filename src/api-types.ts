@@ -99,22 +99,14 @@ export interface IEnumeratedValue {
 }
 
 /**
- * Interrupt table structure to represent the interrupts defined in the SVD file
+ * Interrupt table structure to represent the interrupts defined in the SVD file's
  * <peripheral> elements.
  */
 export interface InterruptTable {
     /**
-     * Number of interrupts as defined for the optional <cpu> element, i.e. the highest
-     * supported interrupt number plus one.
-     */
-    numInterrupts?: number;
-    /**
      * Mapping of interrupt numbers to their corresponding interrupt information.
      * The keys are the interrupt numbers, and the values are objects containing
      * the name, value, and optional description of each interrupt.
-     *
-     * Note: The size of entries can be less than `numInterrupts` if there are
-     * gaps in the interrupt numbering.
      */
     interrupts: Record<number, InterruptOptions>;
 }
