@@ -374,35 +374,20 @@ export class PeripheralDataTracker {
             return [];
         }
 
-        const visited = new Set<string>();
         const matches: PeripheralBaseNode[] = [];
-
         const roots = Array.from(this.sessionPeripherals.values());
         const stack: PeripheralBaseNode[] = [...roots];
 
         while (stack.length > 0) {
             const node = stack.pop();
-
             if (!node) {
                 continue;
             }
-
-            const id = node.getId();
-
-            if (visited.has(id)) {
-                continue;
-            }
-
-            visited.add(id);
-
             const name = (node.name ?? '').toLowerCase();
-
             const exactOrPrefix =
                 name === normalized ||
                 name.startsWith(normalized);
-
             const substringMatch = name.includes(normalized);
-
             if (exactOrPrefix || substringMatch) {
                 matches.push(node);
             }

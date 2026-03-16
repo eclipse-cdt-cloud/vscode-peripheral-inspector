@@ -81,7 +81,12 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
     }
 
     async getSerializedRoots(): Promise<PeripheralBaseNodeDTO[]> {
-        const children = await this.getChildren() ?? [];
+        let children = await this.getChildren() ?? [];
+
+        const searchState = this.searchState;
+        if (searchState) {
+            children = children.filter(child => this.shouldIncludeInSearchTree(child, searchState));
+        }
 
         return Promise.all(children.map(c => this.getSerializedData(c)));
     }
@@ -256,5 +261,14 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
         return item;
     }
 
+    private shouldIncludeInSearchTree(
+        node: PeripheralBaseNode,
+        searchState: SearchState
+    ): boolean {
+        return (searchState.includeIds.has(
+            node.getId()) ||
+            this.isDescendantOfDirectMatch(node, searchState.directMatchIds)
+        );
+    }
 }
 
