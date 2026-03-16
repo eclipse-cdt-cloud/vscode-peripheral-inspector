@@ -47,7 +47,7 @@ export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
                     return cdbg.getSVDFile(device);
                 }
             }
-        } catch(_e) {
+        } catch {
             // Ignore error
         }
 
@@ -58,7 +58,7 @@ export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
         this.PeripheralProviders[fileExtension] = provider;
     }
 
-    public getPeripheralsProvider(svdPath: string) : IPeripheralsProvider | undefined {
+    public getPeripheralsProvider(svdPath: string): IPeripheralsProvider | undefined {
         const ext = Object.keys(this.PeripheralProviders).filter((extension) => svdPath.endsWith(`.${extension}`))[0];
         return ext ? this.PeripheralProviders[ext] : undefined;
     }
