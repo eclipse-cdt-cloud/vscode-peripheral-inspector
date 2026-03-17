@@ -34,7 +34,7 @@ export class PrintApiInterruptTable {
         }
 
         // Get loaded files from local API
-        const svdPath = await vscode.window.showInputBox({ prompt: 'Enter the path to the SVD file', ignoreFocusOut: true });
+        const svdPath = await vscode.window.showInputBox({ prompt: 'Enter the absolute and normalized path to the SVD file', ignoreFocusOut: true });
         if (!svdPath) {
             vscode.window.showInformationMessage('No SVD file path provided');
             return;
@@ -47,7 +47,7 @@ export class PrintApiInterruptTable {
         }
         vscode.debug.activeDebugConsole.appendLine('Interrupt Table:');
         Object.values(interruptTable.interrupts).forEach(interrupt => vscode.debug.activeDebugConsole.appendLine(
-            `\tInterrupt #${interrupt.value}: '${interrupt.name}' ${interrupt.description ?? ''}`
+            `  Interrupt #${interrupt.value}: '${interrupt.name}' ${interrupt.description ?? ''}`
         ));
     }
 };

@@ -33,7 +33,7 @@ export interface PeripheralOptions {
     resetValue?: number;
     registers?: PeripheralRegisterOptions[];
     clusters?: ClusterOptions[];
-    interrupt?: InterruptOptions[];
+    interrupt?: InterruptEntry[];
 }
 
 export interface PeripheralRegisterOptions {
@@ -58,7 +58,7 @@ export interface ClusterOptions {
     clusters?: ClusterOptions[];
 }
 
-export interface InterruptOptions {
+export interface InterruptEntry {
     name: string;
     description?: string;
     value: number;
@@ -115,5 +115,5 @@ export interface InterruptTable {
      * The keys are the interrupt numbers, and the values are objects containing
      * the name, value, and optional description of each interrupt.
      */
-    interrupts: Record<number, InterruptOptions>;
+    interrupts: Record<number, InterruptEntry>;
 }

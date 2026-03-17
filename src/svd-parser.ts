@@ -8,7 +8,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { parseStringPromise } from 'xml2js';
-import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, InterruptOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration, ReadActionType } from './api-types';
+import {
+    AccessType,
+    ClusterOptions,
+    EnumerationMap,
+    FieldOptions,
+    InterruptEntry,
+    PeripheralOptions,
+    PeripheralRegisterOptions,
+    PeripheralsConfiguration,
+    ReadActionType
+} from './api-types';
 import { EnumeratedValue } from './enumerated-value';
 import { parseDimIndex, parseInteger } from './utils';
 
@@ -446,19 +456,24 @@ export class SVDParser {
         return options;
     }
 
-    private parseInterruptOptions(interruptInfo: any): InterruptOptions[] {
-        const options: InterruptOptions[] = [];
+    private parseInterruptEntries(interruptInfo: any): InterruptEntry[] {
+        const options: InterruptEntry[] = [];
 
         if (!interruptInfo) { return []; }
 
         interruptInfo.forEach((interrupt: any) => {
-            const option: InterruptOptions = {
-                name: interrupt.name[0],
-                description: this.cleanupDescription(interrupt.description ? interrupt.description[0] : ''),
-                value: parseInteger(interrupt.value[0]) ?? -1
+            const value = parseInteger(interrupt.value[0]);
+            if (value === undefined || isNaN(value)) {
+                return;  // Invalid entry, skip it
+            }
+            const name = interrupt.name[0];
+            const description = interrupt.description ? this.cleanupDescription(interrupt.description[0]) : undefined;
+            const entry: InterruptEntry = {
+                name,
+                description,
+                value
             };
-
-            options.push(option);
+            options.push(entry);
         });
 
         return options;
@@ -500,7 +515,7 @@ export class SVDParser {
         }
 
         if (p.interrupt) {
-            option.interrupt = this.parseInterruptOptions(p.interrupt);
+            option.interrupt = this.parseInterruptEntries(p.interrupt);
         }
 
         return option;

@@ -56,35 +56,9 @@ export async function activate(context: ExtensionContext) {
 }
 ```
 
-Alternatively, you also use the extension API to extract information from parsed SVD files.
-
-```js
-import { ExtensionContext } from 'vscode';
-import type * as api from "peripheral-inspector/api";
-export async function activate(context: ExtensionContext) {
-    ...
-    // Get the eclipse-cdt.peripheral-inspector extension
-    const peripheralInspectorExtension = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
-
-    // Check if the eclipse-cdt.peripheral-inspector extension is installed
-    if (peripheralInspectorExtension) {
-        const peripheralInspectorAPI = await peripheralInspectorExtension.activate();
-    }
-    ...
-}
-
-export async function getInterruptDescriptor(svdPath: string, interruptNumber: number): Promise<IInterruptDescriptor | undefined> => {
-    // Get the eclipse-cdt.peripheral-inspector extension
-    const peripheralInspectorExtension = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
-    if (peripheralInspectorExtension?.getInterruptTable) {
-        const interruptTable = await peripheralInspectorExtension.getInterruptTable(svdPath);
-        if (interruptTable) {
-            return interruptTable[interruptNumber];
-        }
-    }
-    return undefined;
-}
-```
+Alternatively, you also use the extension API to extract information from parsed SVD files:
+- See the implementation of the [Print Interrupt Table (Extension API)](../src/test-commands/print-api-interrupt-table.ts) test command for an example how to get the
+interrupt table for an SVD.
 
 For further information about the api definitions, review the [Peripheral Inspector API Definitions](../src/api-types.ts).
 
