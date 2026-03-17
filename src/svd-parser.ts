@@ -457,7 +457,7 @@ export class SVDParser {
     }
 
     private parseInterruptEntries(interruptInfo: any): InterruptEntry[] {
-        const options: InterruptEntry[] = [];
+        const entries: InterruptEntry[] = [];
 
         if (!interruptInfo) { return []; }
 
@@ -473,10 +473,10 @@ export class SVDParser {
                 description,
                 value
             };
-            options.push(entry);
+            entries.push(entry);
         });
 
-        return options;
+        return entries;
     }
 
     // ==== Create Peripherals ====
