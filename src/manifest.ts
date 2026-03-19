@@ -7,6 +7,7 @@
 
 import { CommandDefinition } from '@eclipse-cdt-cloud/vscode-ui-components/lib/vscode/webview-types';
 
+export const PUBLISHER_NAME = 'eclipse-cdt';
 export const PACKAGE_NAME = 'peripheral-inspector';
 export const CONFIG_SVD_PATH = 'definitionPathConfig';
 export const DEFAULT_SVD_PATH = 'definitionPath';
@@ -31,6 +32,9 @@ export const DEFAULT_PERIODIC_REFRESH_MODE: PeriodicRefreshMode = 'always';
 
 export const CONFIG_PERIODIC_REFRESH_INTERVAL = 'periodicRefreshInterval';
 export const DEFAULT_PERIODIC_REFRESH_INTERVAL = 500;
+
+// Hidden configs, not exposed to users via package.json
+export const CONFIG_ENABLE_TEST_COMMANDS = `${PACKAGE_NAME}.testCommandsEnabled`;
 
 // Commands
 export namespace Commands {

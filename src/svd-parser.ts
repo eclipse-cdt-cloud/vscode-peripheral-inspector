@@ -8,7 +8,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { parseStringPromise } from 'xml2js';
-import { AccessType, ClusterOptions, EnumerationMap, FieldOptions, PeripheralOptions, PeripheralRegisterOptions, PeripheralsConfiguration, ReadActionType } from './api-types';
+import {
+    AccessType,
+    ClusterOptions,
+    EnumerationMap,
+    FieldOptions,
+    InterruptEntry,
+    PeripheralOptions,
+    PeripheralRegisterOptions,
+    PeripheralsConfiguration,
+    ReadActionType
+} from './api-types';
 import { EnumeratedValue } from './enumerated-value';
 import { parseDimIndex, parseInteger } from './utils';
 
@@ -446,6 +456,29 @@ export class SVDParser {
         return options;
     }
 
+    private parseInterruptEntries(interruptInfo: any): InterruptEntry[] {
+        const entries: InterruptEntry[] = [];
+
+        if (!interruptInfo) { return []; }
+
+        interruptInfo.forEach((interrupt: any) => {
+            const value = parseInteger(interrupt.value[0]);
+            const name = interrupt.name?.[0];
+            const description = interrupt.description?.[0] ? this.cleanupDescription(interrupt.description[0]) : undefined;
+            if (name === undefined || value === undefined || isNaN(value)) {
+                return;  // Invalid entry, skip it
+            }
+            const entry: InterruptEntry = {
+                name,
+                description,
+                value
+            };
+            entries.push(entry);
+        });
+
+        return entries;
+    }
+
     // ==== Create Peripherals ====
 
     private parsePeripheralOptions(p: any, _defaults: { accessType: AccessType, size: number, resetValue: number }): PeripheralOptions {
@@ -479,6 +512,10 @@ export class SVDParser {
             if (p.registers[0].cluster) {
                 option.clusters = this.parseClusterOptions(p.registers[0].cluster);
             }
+        }
+
+        if (p.interrupt) {
+            option.interrupt = this.parseInterruptEntries(p.interrupt);
         }
 
         return option;

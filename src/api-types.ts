@@ -4,6 +4,14 @@ export interface IPeripheralInspectorAPI {
     getSVDFile: (device: string) => string | undefined;
     getSVDFileFromCortexDebug: (device: string) => Promise<string | undefined>;
     registerPeripheralsProvider: (fileExtension: string, provider: IPeripheralsProvider) => void;
+    /**
+     * Get interrupt table for provided SVD file path.
+     * IMPORTANT: The input path must be absolute and normalized on desktop.
+     *
+     * @param svdPath The SVD file path.
+     * @returns The interrupt table for the SVD file, or undefined if the file was not loaded.
+     */
+    getInterruptTable?: (svdPath: string) => InterruptTable | undefined;
 }
 
 export interface IPeripheralsProvider {
@@ -25,6 +33,7 @@ export interface PeripheralOptions {
     resetValue?: number;
     registers?: PeripheralRegisterOptions[];
     clusters?: ClusterOptions[];
+    interrupt?: InterruptEntry[];
 }
 
 export interface PeripheralRegisterOptions {
@@ -49,6 +58,12 @@ export interface ClusterOptions {
     clusters?: ClusterOptions[];
 }
 
+export interface InterruptEntry {
+    name: string;
+    description?: string;
+    value: number;
+}
+
 export interface FieldOptions {
     name: string;
     description: string;
@@ -58,14 +73,6 @@ export interface FieldOptions {
     derivedFrom?: string;           // Set this if unresolved
     accessType?: AccessType;
     readAction?: ReadActionType;
-}
-
-export interface IGetPeripheralsArguments {
-    gapThreshold: number;
-}
-
-export interface IPeripheralsProvider {
-    getPeripherals: (data: string, options: IGetPeripheralsArguments) => Promise<PeripheralOptions[]>;
 }
 
 export interface PeripheralsConfiguration {
@@ -96,4 +103,17 @@ export interface IEnumeratedValue {
     name: string;
     description: string;
     value: number;
+}
+
+/**
+ * Interrupt table structure to represent the interrupts defined in the SVD file's
+ * <peripheral> elements.
+ */
+export interface InterruptTable {
+    /**
+     * Mapping of interrupt numbers to their corresponding interrupt information.
+     * The keys are the interrupt numbers, and the values are objects containing
+     * the name, value, and optional description of each interrupt.
+     */
+    interrupts: Record<number, InterruptEntry>;
 }

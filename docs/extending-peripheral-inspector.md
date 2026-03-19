@@ -21,7 +21,8 @@ yarn add github:eclipse-cdt-cloud/vscode-peripheral-inspector
 
 ### Developing your extension
 
-To provide the peripherals information to Peripheral Inspector on debug session time, you need register your command which is going to construct the peripherals information. The command will receive `DebugSession` object as an input parameter and expects to return array of type `PeripheralOptions[]`.
+To provide the peripherals information to Peripheral Inspector on debug session time, you need register your command which is going to construct the peripherals information.
+The command will receive `DebugSession` object as an input parameter and expects to return array of type `PeripheralOptions[]`.
 
 You can find the example command implementation below:
 
@@ -41,11 +42,11 @@ class MyExtensionProvider implements api.IPeripheralsProvider {
 export async function activate(context: ExtensionContext) {
     ...
     // Get the eclipse-cdt.peripheral-inspector extension
-    const peripheralInspectorExtention = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
+    const peripheralInspectorExtension = extensions.getExtension<api.IPeripheralInspectorAPI>('eclipse-cdt.peripheral-inspector');
 
     // Check if the eclipse-cdt.peripheral-inspector extension is installed
-    if (peripheralInspectorExtention) {
-        const peripheralInspectorAPI = await peripheralInspectorExtention.activate();
+    if (peripheralInspectorExtension) {
+        const peripheralInspectorAPI = await peripheralInspectorExtension.activate();
 
         // Invoke registerPeripheralsProvider method in eclipse-cdt.peripheral-inspector extension api
         // Register 'MyExtensionProvider' for files *.myext
@@ -54,6 +55,10 @@ export async function activate(context: ExtensionContext) {
     ...
 }
 ```
+
+Alternatively, you also use the extension API to extract information from parsed SVD files:
+- See the implementation of the [Print Interrupt Table (Extension API)](../src/test-commands/print-api-interrupt-table.ts) test command for an example how to get the
+interrupt table for an SVD.
 
 For further information about the api definitions, review the [Peripheral Inspector API Definitions](../src/api-types.ts).
 
