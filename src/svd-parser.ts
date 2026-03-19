@@ -463,11 +463,11 @@ export class SVDParser {
 
         interruptInfo.forEach((interrupt: any) => {
             const value = parseInteger(interrupt.value[0]);
-            if (value === undefined || isNaN(value)) {
+            const name = interrupt.name?.[0];
+            const description = interrupt.description?.[0] ? this.cleanupDescription(interrupt.description[0]) : undefined;
+            if (name === undefined || value === undefined || isNaN(value)) {
                 return;  // Invalid entry, skip it
             }
-            const name = interrupt.name[0];
-            const description = interrupt.description ? this.cleanupDescription(interrupt.description[0]) : undefined;
             const entry: InterruptEntry = {
                 name,
                 description,
