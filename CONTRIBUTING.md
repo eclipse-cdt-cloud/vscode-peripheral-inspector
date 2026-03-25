@@ -48,24 +48,14 @@ electronically sign the Eclipse Contributor Agreement (ECA).
 
 * http://www.eclipse.org/legal/ECA.php
 
-Commits that are provided by non-committers must have a Signed-off-by field in
-the footer indicating that the author is aware of the terms by which the
-contribution has been provided to the project. The non-committer must
-additionally have an Eclipse Foundation account and must have a signed Eclipse
+Non-committers must have an Eclipse Foundation account and must have a signed Eclipse
 Contributor Agreement (ECA) on file.
 
 For more information, please see the Eclipse Committer Handbook:
 https://www.eclipse.org/projects/handbook/#resources-commit
 
-## Sign your work
+## Contact
 
-The sign-off is a simple line at the end of the explanation for the patch. Your
-signature certifies that you wrote the patch or otherwise have the right to
-pass it on as an open-source patch.
+Contact the project developers via the project's "dev" list.
 
-    Signed-off-by: Joe Smith <joe.smith@email.com>
-
-Use your real name (sorry, no pseudonyms or anonymous contributions.)
-
-If you set your `user.name` and `user.email` git configs, you can sign your
-commit automatically with `git commit -s`.
+- https://dev.eclipse.org/mailman/listinfo/cdt-cloud-dev

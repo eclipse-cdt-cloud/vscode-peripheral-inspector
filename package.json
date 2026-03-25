@@ -2,7 +2,7 @@
   "name": "peripheral-inspector",
   "displayName": "Peripheral Inspector",
   "description": "Standalone Peripheral Inspector extension extracted from cortex-debug",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "publisher": "eclipse-cdt",
   "author": "marus25",
   "contributors": [
@@ -38,8 +38,8 @@
     "serve": "serve --cors -p 9000"
   },
   "dependencies": {
-    "@vscode/codicons": "0.0.45",
     "@eclipse-cdt-cloud/vscode-ui-components": "^0.1.0",
+    "@vscode/codicons": "0.0.45",
     "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",
@@ -47,7 +47,7 @@
     "vscode-messenger": "^0.4.5",
     "vscode-messenger-common": "^0.4.5",
     "xml2js": "^0.6.2",
-    "xmlbuilder2": "^3.1.1"
+    "xmlbuilder2": "^4.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -64,6 +64,7 @@
     "buffer": "^6.0.3",
     "css-loader": "^6.9.0",
     "eslint": "^10.0.3",
+    "events": "^3.3.0",
     "globals": "^17.4.0",
     "path-browserify": "1.0.1",
     "serve": "^14.2.6",
@@ -73,6 +74,7 @@
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0",
+    "url": "^0.11.4",
     "webpack": "^5.105.4",
     "webpack-cli": "^7.0.0"
   },
