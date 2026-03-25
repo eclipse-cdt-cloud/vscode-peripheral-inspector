@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.9.0] - 2026-03-25
+
+### New Features
+
+- Extension API allows to get interrupt tables from SVD files. ([#76](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/76), [Jens Reinecke](https://github.com/jreineckearm))
+
+### Bug Fixes
+
+- VS Code freezes/crashes when loading a large register set (~500K lines). ([#71](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/71), [phongtrinh1234](https://github.com/phongtrinh1234))
+- `dimIndex` range starting with zero expands to `UNDEFINED`. ([#72](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/72), [Thorsten de Buhr](https://github.com/thorstendb-ARM/))
+
+### Other Changes
+
+- chore: Dependency updates
+
 ## [v1.8.1] - 2025-07-09
 
 ### Bug Fixes
