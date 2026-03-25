@@ -83,7 +83,7 @@ export function parseDimIndex(spec: string, count: number): string[] {
         const start = parts[0];
         const end = parts[1];
 
-        if (!start || !end) {
+        if (start === undefined || end === undefined) {
             return [];
         }
 
