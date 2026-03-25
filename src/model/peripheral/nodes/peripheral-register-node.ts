@@ -174,7 +174,8 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         if (path.length === 0) {
             return this;
         } else if (path.length === 1) {
-            const child = this.children.find((c) => c.name === path[0]);
+            const child = this.children.find((c) => c.idSegment === path[0])
+                ?? this.children.find((c) => c.name === path[0]);
             return child;
         } else {
             return undefined;
