@@ -22,7 +22,6 @@ import { clearTimeout, setTimeout } from 'timers';
 interface CachedSVDFile {
     svdUri: vscode.Uri;
     mtime: number;
-    peripherals: PeripheralNode[],
     configuration: PeripheralsConfiguration;
     interruptTable?: InterruptTable;
 }
@@ -94,7 +93,6 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
 
     private static async addToCache(
         uri: vscode.Uri,
-        peripherals: PeripheralNode[],
         configuration: PeripheralsConfiguration,
         interruptTable?: InterruptTable
     ): Promise<CachedSVDFile | undefined> {
@@ -104,7 +102,6 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                 const tmp: CachedSVDFile = {
                     svdUri: uri,
                     mtime: stat.mtime,
-                    peripherals,
                     configuration,
                     interruptTable
                 };
@@ -153,39 +150,35 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
                     this.api.updateLoadedSVDInfo(this.svdUri, undefined);
                 }
                 if (cached && manifest.IgnorePeripherals.isEqual(cached.configuration.ignoredPeripherals, ignoredPeripherals)) {
-                    this.peripherals = cached.peripherals;
-                    this.peripheralsConfiguration = cached.configuration;
-                    this.loaded = true;
-                    this.errMessage = '';
-
-                    // Update peripherals to use new session
-                    this.peripherals.forEach((p) => p.setParent(this));
-                    await this.setSession(this.session);
-                    return;
+                    parsedConfiguration = cached.configuration;
+                    parsedInterruptTable.interrupts = { ...cached.interruptTable?.interrupts };
+                } else {
+                    contents = await vscode.workspace.fs.readFile(this.svdUri);
                 }
-                contents = await vscode.workspace.fs.readFile(this.svdUri);
             }
 
-            if (!contents) {
+            if (!parsedConfiguration && !contents) {
                 return;
             }
 
-            const decoder = new TextDecoder();
-            const data = decoder.decode(contents);
-            const provider = this.api.getPeripheralsProvider(svdPath);
+            if (!parsedConfiguration) {
+                const decoder = new TextDecoder();
+                const data = decoder.decode(contents);
+                const provider = this.api.getPeripheralsProvider(svdPath);
 
-            if (provider) {
-                parsedConfiguration = await this.parseWithProvider(provider, data, gapThreshold, ignoredPeripherals);
-            } else {
-                parsedConfiguration = await this.parseWithSVDParser(data, gapThreshold, ignoredPeripherals);
-            }
+                if (provider) {
+                    parsedConfiguration = await this.parseWithProvider(provider, data, gapThreshold, ignoredPeripherals);
+                } else {
+                    parsedConfiguration = await this.parseWithSVDParser(data, gapThreshold, ignoredPeripherals);
+                }
 
-            // Ignored peripherals not applied yet, collect interrupt information before filtering out peripherals
-            Object.values(parsedConfiguration.peripheralOptions).forEach((options) => {
-                options.interrupt?.forEach((interrupt) => {
-                    parsedInterruptTable.interrupts[interrupt.value] = { name: interrupt.name, value: interrupt.value, description: interrupt.description };
+                // Ignored peripherals not applied yet, collect interrupt information before filtering out peripherals
+                Object.values(parsedConfiguration.peripheralOptions).forEach((options) => {
+                    options.interrupt?.forEach((interrupt) => {
+                        parsedInterruptTable.interrupts[interrupt.value] = { name: interrupt.name, value: interrupt.value, description: interrupt.description };
+                    });
                 });
-            });
+            }
 
             const poptions = Array.from(Object.values(parsedConfiguration.peripheralOptions)).filter(p => !manifest.IgnorePeripherals.includes(ignoredPeripherals, p.name));
             parsedPeripherals = poptions.map((options) => new PeripheralNode(gapThreshold, options, this));
@@ -213,7 +206,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             this.loaded = true;
             await this.setSession(this.session);
             if (this.svdUri) {
-                const cachedSvd = await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration, this.interruptTable);
+                const cachedSvd = await PeripheralTreeForSession.addToCache(this.svdUri, this.peripheralsConfiguration, this.interruptTable);
                 this.api.updateLoadedSVDInfo(this.svdUri, cachedSvd ? { interruptTable: cachedSvd.interruptTable } : undefined);
             }
         } catch (e) {
@@ -280,7 +273,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
         this.refresh();
 
         if (this.svdUri) {
-            const cachedSvd = await PeripheralTreeForSession.addToCache(this.svdUri, this.peripherals, this.peripheralsConfiguration, this.interruptTable);
+            const cachedSvd = await PeripheralTreeForSession.addToCache(this.svdUri, this.peripheralsConfiguration, this.interruptTable);
             this.api.updateLoadedSVDInfo(this.svdUri, cachedSvd ? { interruptTable: cachedSvd.interruptTable } : undefined);
         }
     }
