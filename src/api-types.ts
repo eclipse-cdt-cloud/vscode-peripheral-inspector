@@ -1,3 +1,10 @@
+/*********************************************************************
+ * Copyright (c) 2023 Renesas Electronics Corporation and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License as outlined in the LICENSE File
+ *********************************************************************/
+
 // Peripheral Inspector API
 export interface IPeripheralInspectorAPI {
     registerSVDFile: (expression: RegExp | string, path: string) => void;
