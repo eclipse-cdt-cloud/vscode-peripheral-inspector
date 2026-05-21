@@ -438,5 +438,6 @@
   "extensionKind": [
     "workspace",
     "ui"
-  ]
+  ],
+  "build:api": "tsc -p tsconfig.api.json"
 }

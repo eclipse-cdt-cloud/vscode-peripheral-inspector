@@ -2,7 +2,7 @@
     "name": "@eclipse-cdt-cloud/vscode-peripheral-inspector",
     "version": "0.0.0",
     "description": "API for the eclipse-cdt.peripheral-inspector VS Code extension",
-    "types": "peripheral-inspector.d.ts",
+    "types": "api-types.d.ts",
     "publishConfig": {
         "registry": "https://npm.pkg.github.com"
     },

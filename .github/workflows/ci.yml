@@ -30,7 +30,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{github.token}}
         run: |
-          cp src/api-types.ts api/peripheral-inspector.d.ts
           yarn install --ignore-scripts
           yarn build
           yarn package
@@ -93,7 +92,12 @@ jobs:
         run: yarn --cwd api version --no-git-tag-version --new-version=$VERSION
         env:
           VERSION: ${{ needs.determine-version.outputs.version }}
-      - run: yarn publish
+      - name: Build API Types
+        run: |
+          yarn install --ignore-scripts
+          yarn build:api
+      - name: Publish API Types
+        run: yarn publish
         working-directory: api
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
