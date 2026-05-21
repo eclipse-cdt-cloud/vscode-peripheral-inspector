@@ -27,8 +27,8 @@ jobs:
            always-auth: true
       - name: Build
         env:
-          GITHUB_TOKEN: ${{github.token}}
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          - GITHUB_TOKEN: ${{github.token}}
+          - NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           yarn install --ignore-scripts
           yarn build
