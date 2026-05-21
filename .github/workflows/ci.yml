@@ -22,13 +22,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-        registry-url: https://npm.pkg.github.com/
-           scope: '@eclipse-cdt-cloud'
-           always-auth: true
+          registry-url: https://npm.pkg.github.com/
+          scope: '@eclipse-cdt-cloud'
+          always-auth: true
       - name: Build
         env:
-          - GITHUB_TOKEN: ${{github.token}}
-          - NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{github.token}}
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           yarn install --ignore-scripts
           yarn build
