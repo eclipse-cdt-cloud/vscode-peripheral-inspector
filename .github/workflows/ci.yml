@@ -22,13 +22,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - name: Setup .npmrc
-        run: |
-          echo "@eclipse-cdt-cloud:registry=https://npm.pkg.github.com/" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{secrets.GITHUB_TOKEN}}" >> .npmrc
+        registry-url: https://npm.pkg.github.com/
+           scope: '@eclipse-cdt-cloud'
+           always-auth: true
       - name: Build
         env:
           GITHUB_TOKEN: ${{github.token}}
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           yarn install --ignore-scripts
           yarn build

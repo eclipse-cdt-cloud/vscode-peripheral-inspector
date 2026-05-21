@@ -35,7 +35,8 @@
     "watch": "webpack -w",
     "lint": "eslint . --ext .ts,.tsx",
     "package": "vsce package --yarn",
-    "serve": "serve --cors -p 9000"
+    "serve": "serve --cors -p 9000",
+    "build:api": "tsc -p tsconfig.api.json"
   },
   "dependencies": {
     "@eclipse-cdt-cloud/vscode-ui-components": "^0.1.0",
@@ -438,6 +439,5 @@
   "extensionKind": [
     "workspace",
     "ui"
-  ],
-  "build:api": "tsc -p tsconfig.api.json"
+  ]
 }
