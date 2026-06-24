@@ -90,6 +90,29 @@
         }
       ]
     },
+    "debuggers": [
+      {
+        "type": "*",
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "definitionPath": {
+                "description": "File that defines the contents of the 'PERIPHERALS' window of the 'eclipse-cdt.peripheral-inspector' extension. Can be a path or a combination of CMSIS pack ID, device name, and processor name. See the extension README for details.",
+                "type": "string"
+              }
+            }
+          },
+          "attach": {
+            "properties": {
+              "definitionPath": {
+                "description": "File that defines the contents of the 'PERIPHERALS' window of the 'eclipse-cdt.peripheral-inspector' extension. Can be a path or a combination of CMSIS pack ID, device name, and processor name. See the extension README for details.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    ],
     "commands": [
       {
         "command": "peripheral-inspector.svd.updateNode",
