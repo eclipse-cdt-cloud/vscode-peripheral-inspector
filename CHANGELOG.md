@@ -1,5 +1,22 @@
 # Change Log
 
+## [v1.9.1] - 2026-06-24
+
+### New Features
+
+- Add loading icon while view refreshes. ([#65](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/65), [Omar Elkhouly](https://github.com/omarArm))
+- Publish Extension API to GitHub NPM registry. ([#95](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/pull/95), [Omar Elkhouly](https://github.com/omarArm))
+
+### Bug Fixes
+
+- Duplicate field names cause incorrect field rendering. ([#73](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/73), [Thorsten de Buhr](https://github.com/thorstendb-ARM/))
+- Peripheral's view expand action behaves incorrectly after debug session rerun. ([#103](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/103), [yenanhbc](https://github.com/yenanhbc))
+- Property definitionPath is not allowed in "type":"gdbtarget" (CDT GDB Debug Adapter). ([#108](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/108), [Jens Reinecke](https://github.com/jreineckearm))
+
+### Other Changes
+
+- chore: Dependency updates
+
 ## [v1.9.0] - 2026-03-25
 
 ### New Features
