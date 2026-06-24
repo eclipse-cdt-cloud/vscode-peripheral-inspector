@@ -22,12 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-          scope: '@eclipse-cdt-cloud'
-          always-auth: true
       - name: Build
         env:
           GITHUB_TOKEN: ${{github.token}}
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           yarn install --ignore-scripts
           yarn build
