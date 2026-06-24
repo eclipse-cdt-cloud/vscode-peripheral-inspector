@@ -39,7 +39,7 @@
     "build:api": "tsc -p tsconfig.api.json"
   },
   "dependencies": {
-    "@eclipse-cdt-cloud/vscode-ui-components": "^0.1.0",
+    "@eclipse-cdt-cloud/vscode-ui-components": "^0.2.0",
     "@vscode/codicons": "0.0.45",
     "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
