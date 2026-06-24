@@ -76,8 +76,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.62.0",
     "url": "^0.11.4",
-    "webpack": "^5.105.4",
-    "webpack-cli": "^7.0.0"
+    "webpack": "^5.107.2",
+    "webpack-cli": "^7.0.3"
   },
   "contributes": {
     "views": {
