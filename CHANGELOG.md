@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.9.2] - 2026-06-24
+
+- Fixes publish of Extension API to GitHub NPM registry.  
+- **IMPORTANT**: Extension v1.9.1 did not get published.  
+  See previous release section for features first published with this v1.9.2 release.
+
 ## [v1.9.1] - 2026-06-24
 
 ### New Features
