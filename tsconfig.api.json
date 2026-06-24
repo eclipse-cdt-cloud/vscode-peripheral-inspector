@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "declarationMap": false,
+        "outDir": "api",
+        "rootDir": "src",
+        "stripInternal": true
+    },
+    "include": [
+        "src/api-types.ts"
+    ]
+}

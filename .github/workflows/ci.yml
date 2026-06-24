@@ -50,9 +50,58 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*/*.vsix
+  
+  determine-version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-extension-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      - name: Determine Extension Version
+        id: get-extension-version
+        run: |
+          VERSION=$(npm pkg get version | sed 's/"//g')
+          echo "Current version: $VERSION"
+          echo version=$VERSION >> $GITHUB_OUTPUT
+
+  publish-api-types:
+    name: Publish Extension API
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    needs:
+      - determine-version
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          registry-url: 'https://npm.pkg.github.com'
+          always-auth: true
+      - name: Set package version to match extension
+        run: yarn --cwd api version --no-git-tag-version --new-version=$VERSION
+        env:
+          VERSION: ${{ needs.determine-version.outputs.version }}
+      - name: Build API Types
+        run: |
+          yarn install --ignore-scripts
+          yarn build:api
+      - name: Publish API Types
+        run: yarn publish
+        working-directory: api
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-open-vsx-registry:
-    needs: build
+    needs: 
+      - build
+      - publish-api-types
     name: Open VSX
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
@@ -69,7 +118,9 @@ jobs:
           npx ovsx publish -i artifacts/*/*.vsix -p ${{secrets.OPEN_VSX_TOKEN}}
 
   publish-vscode-marketplace:
-    needs: build
+    needs: 
+      - build
+      - publish-api-types
     name: VS Code Marketplace
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
