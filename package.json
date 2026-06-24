@@ -64,7 +64,7 @@
     "@vscode/vsce": "^3.9.2",
     "buffer": "^6.0.3",
     "css-loader": "^6.9.0",
-    "eslint": "^10.0.3",
+    "eslint": "^10.5.0",
     "events": "^3.3.0",
     "globals": "^17.4.0",
     "path-browserify": "1.0.1",
