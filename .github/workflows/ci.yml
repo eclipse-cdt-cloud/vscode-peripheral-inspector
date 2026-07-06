@@ -54,11 +54,32 @@ jobs:
           echo "Current version: $VERSION"
           echo version=$VERSION >> $GITHUB_OUTPUT
 
-  build-api-types:
+  build-api-types-proxy:
     name: Test Build Extension API
     runs-on: ubuntu-latest
     needs:
       - determine-version
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      - name: Set package version to match extension
+        run: |
+          echo "Patch version: $VERSION"
+          yarn --cwd api version --no-git-tag-version --new-version=$VERSION
+        env:
+          VERSION: ${{ needs.determine-version.outputs.version }}
+      - name: Build API Types
+        run: |
+          yarn install --ignore-scripts
+          yarn build:api
+
+  build-api-types:
+    name: Test Build Extension API
+    runs-on: ubuntu-latest
+    needs:
+      - build-api-types-proxy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
