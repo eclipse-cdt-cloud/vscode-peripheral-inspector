@@ -79,6 +79,7 @@ jobs:
     name: Test Build Extension API
     runs-on: ubuntu-latest
     needs:
+      - determine-version
       - build-api-types-proxy
     steps:
       - uses: actions/checkout@v4
