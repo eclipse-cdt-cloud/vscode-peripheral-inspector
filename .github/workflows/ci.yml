@@ -14,6 +14,8 @@ on:
 jobs:
   build:
     name: Build
+    needs:
+      - build-api-types
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,13 +65,20 @@ jobs:
         with:
           node-version: 22.x
       - name: Set package version to match extension
-        run: yarn --cwd api version --no-git-tag-version --new-version=$VERSION
+        run: |
+          echo "Patch version: $VERSION"
+          yarn --cwd api version --no-git-tag-version --new-version=$VERSION
         env:
           VERSION: ${{ needs.determine-version.outputs.version }}
       - name: Build API Types
         run: |
           yarn install --ignore-scripts
           yarn build:api
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-types-package
+          path: ./api/*
+          retention-days: 1
 
   release:
     needs:
