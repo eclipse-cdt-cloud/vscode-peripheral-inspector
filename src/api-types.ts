@@ -5,6 +5,8 @@
  * terms of the MIT License as outlined in the LICENSE File
  *********************************************************************/
 
+import type { DebugSession } from 'vscode';
+
 // Peripheral Inspector API
 export interface IPeripheralInspectorAPI {
     registerSVDFile: (expression: RegExp | string, path: string) => void;
@@ -19,6 +21,14 @@ export interface IPeripheralInspectorAPI {
      * @returns The interrupt table for the SVD file, or undefined if the file was not loaded.
      */
     getInterruptTable?: (svdPath: string) => InterruptTable | undefined;
+    /**
+     * (re)initialize the Peripheral view for an active debug session.
+     * Use when definitionPath was empty at session start.
+     *
+     * @param session The active VS Code debug session.
+     * @param svdPath Absolute path to the SVD/SFRX definition file.
+     */
+    loadPeripheralsForSession?: (session: DebugSession, svdPath: string) => Promise<void>;
 }
 
 export interface IPeripheralsProvider {

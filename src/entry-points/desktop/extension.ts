@@ -26,6 +26,7 @@ export const activate = async (context: vscode.ExtensionContext): Promise<IPerip
     const resolver = new SvdResolver(api, config);
 
     const peripheralDataTracker = new PeripheralDataTracker(tracker, resolver, api, config, context);
+    api.setSessionLoader(peripheralDataTracker);
     const dataProvider = new PeripheralTreeDataProvider(peripheralDataTracker, context);
     const webView = new PeripheralsTreeTableWebView(dataProvider, context);
     const commands = new PeripheralCommands(peripheralDataTracker, config, webView);

@@ -24,12 +24,31 @@ interface LoadedSVDInfo {
     interruptTable?: InterruptTable;
 }
 
+export interface IPeripheralSessionLoader {
+    loadPeripheralsForSession(session: vscode.DebugSession, svdPath: string): Promise<void>;
+}
+
 export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
     private SVDDirectory: SVDInfo[] = [];
     private PeripheralProviders: Record<string, IPeripheralsProvider> = {};
     private LoadedSVDInfos: Record<string, LoadedSVDInfo> = {};
+    private sessionLoader?: IPeripheralSessionLoader;
 
     /** IPeripheralInspectorAPI implementation */
+
+    public setSessionLoader(loader: IPeripheralSessionLoader): void {
+        this.sessionLoader = loader;
+    }
+
+    public async loadPeripheralsForSession(
+        session: vscode.DebugSession,
+        svdPath: string,
+    ): Promise<void> {
+        if (!this.sessionLoader) {
+            throw new Error('Peripheral Inspector session loader is not initialized');
+        }
+        return this.sessionLoader.loadPeripheralsForSession(session, svdPath);
+    }
 
     public registerSVDFile(expression: RegExp | string, path: string): void {
         if (typeof expression === 'string') {

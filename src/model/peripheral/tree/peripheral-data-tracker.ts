@@ -298,6 +298,22 @@ export class PeripheralDataTracker {
         this.onDidChangeEvent.fire(changes);
     }
 
+    /**
+     * Lazily (re)initialize peripherals for a session with an explicit definition path.
+     * Replaces any existing tree for the session so deferred callers are idempotent.
+     */
+    public async loadPeripheralsForSession(session: vscode.DebugSession, svdPath: string): Promise<void> {
+        if (!svdPath?.trim()) {
+            throw new Error('Peripheral definition path is required');
+        }
+
+        if (this.sessionPeripherals.get(session.id)) {
+            this.onDebugSessionTerminated(session);
+        }
+
+        await this.createSessionPeripherals(session, svdPath);
+    }
+
     protected async onDebugSessionStarted(session: vscode.DebugSession): Promise<void> {
         const wsFolderPath = session.workspaceFolder ? session.workspaceFolder.uri : vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri;
         const svdPath = await this.resolver.resolve(session, wsFolderPath);
@@ -312,6 +328,10 @@ export class PeripheralDataTracker {
             return;
         }
 
+        await this.createSessionPeripherals(session, svdPath);
+    }
+
+    protected async createSessionPeripherals(session: vscode.DebugSession, svdPath: string): Promise<void> {
         let expanded = this.oldState.get(session.name);
         if (expanded === undefined) {
             expanded = this.sessionPeripherals.size === 0 ? true : false;
