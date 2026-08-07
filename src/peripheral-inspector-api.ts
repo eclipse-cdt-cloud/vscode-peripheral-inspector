@@ -24,12 +24,18 @@ interface LoadedSVDInfo {
     interruptTable?: InterruptTable;
 }
 
+export interface IPeripheralSessionLoader {
+    /**
+     * @param svdPath Absolute path to the SVD definition file.
+     */
+    loadPeripheralsForSession(session: vscode.DebugSession, svdPath: string): Promise<void>;
+}
+
 export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
     private SVDDirectory: SVDInfo[] = [];
     private PeripheralProviders: Record<string, IPeripheralsProvider> = {};
     private LoadedSVDInfos: Record<string, LoadedSVDInfo> = {};
-
-    /** IPeripheralInspectorAPI implementation */
+    private sessionLoader?: IPeripheralSessionLoader;
 
     public registerSVDFile(expression: RegExp | string, path: string): void {
         if (typeof expression === 'string') {
@@ -76,6 +82,24 @@ export class PeripheralInspectorAPI implements IPeripheralInspectorAPI {
     }
 
     /** Locally used methods */
+
+    /** IPeripheralInspectorAPI implementation */
+    public setSessionLoader(loader: IPeripheralSessionLoader): void {
+        this.sessionLoader = loader;
+    }
+
+    /**
+     * @param svdPath Absolute path to the SVD definition file.
+     */
+    public async loadPeripheralsForSession(
+        session: vscode.DebugSession,
+        svdPath: string,
+    ): Promise<void> {
+        if (!this.sessionLoader) {
+            throw new Error('Peripheral Inspector session loader is not initialized');
+        }
+        return this.sessionLoader.loadPeripheralsForSession(session, svdPath);
+    }
 
     public getPeripheralsProvider(svdPath: string): IPeripheralsProvider | undefined {
         const ext = Object.keys(this.PeripheralProviders).filter((extension) => svdPath.endsWith(`.${extension}`))[0];
