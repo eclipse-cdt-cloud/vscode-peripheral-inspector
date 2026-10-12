@@ -39,6 +39,9 @@ export enum DebugSessionStatus {
 }
 
 export class DebugTracker {
+    /** The tracker of the latest debug adapter started for each session. */
+    private sessionTrackers = new Map<string, object>();
+
     public constructor(private debugType = '*') {
     }
 
@@ -82,9 +85,21 @@ export class DebugTracker {
         } else {
             // Use vscode debug tracker
             const createDebugAdapterTracker = (session: vscode.DebugSession): vscode.DebugAdapterTracker => {
+                const tracker = {};
                 return {
-                    onWillStartSession: () => this.handleOnWillStartSession(session),
-                    onWillStopSession: () => this.handleOnWillStopSession(session),
+                    onWillStartSession: () => {
+                        this.sessionTrackers.set(session.id, tracker);
+                        this.handleOnWillStartSession(session);
+                    },
+                    onWillStopSession: () => {
+                        // On a restart, the old debug adapter of the session can be stopped
+                        // after the new one has started, so only the latest one ends the session
+                        if (this.sessionTrackers.get(session.id) !== tracker) {
+                            return;
+                        }
+                        this.sessionTrackers.delete(session.id);
+                        this.handleOnWillStopSession(session);
+                    },
                     onDidSendMessage: message => {
                         if (message.type === 'event' && message.event === 'stopped') {
                             this.handleOnDidStopDebug(session.id);

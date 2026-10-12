@@ -323,9 +323,8 @@ export class PeripheralDataTracker {
         }
 
         if (this.sessionPeripherals.get(session.id)) {
-            this.fireOnDidChange();
-            vscode.debug.activeDebugConsole.appendLine(`Internal Error: Session ${session.name} id=${session.id} already in the tree view?`);
-            return;
+            // A restarted session, its previous debug adapter not stopped yet
+            this.onDebugSessionTerminated(session);
         }
 
         await this.createSessionPeripherals(session, svdPath);
