@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.10.0] - 2026-10-14
+
+- Add API to re-initialize peripheral view with deferred SVD path ([#130](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/130), [hoa.tran-thai](https://github.com/hoathaitran3209))
+
+
 ## [v1.9.2] - 2026-06-24
 
 - Fixes publish of Extension API to GitHub NPM registry.  
