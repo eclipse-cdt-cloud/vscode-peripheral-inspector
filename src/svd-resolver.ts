@@ -12,6 +12,7 @@ import { PeripheralInspectorAPI } from './peripheral-inspector-api';
 import { parsePackString, pdscFromPack, fileFromPack, Pack } from './cmsis-pack/pack-utils';
 import { PDSC, Device, DeviceVariant, getDevices, getSvdPath, getProcessors } from './cmsis-pack/pdsc';
 import { readFromUrl } from './utils';
+import { hasUriScheme } from './fileUtils';
 import { PeripheralConfigurationProvider } from './model/peripheral/tree/peripheral-configuration-provider';
 
 export class SvdResolver {
@@ -32,7 +33,7 @@ export class SvdResolver {
 
                 if (pack) {
                     svdPath = await this.loadFromPack(pack, deviceName, processorName);
-                } else if (vscode.env.uiKind === vscode.UIKind.Desktop && !svdPath.startsWith('http')) {
+                } else if (vscode.env.uiKind === vscode.UIKind.Desktop && !svdPath.startsWith('http') && !hasUriScheme(svdPath)) {
                     // On desktop, ensure full path
                     if (!isAbsolute(svdPath) && wsFolderPath) {
                         svdPath = normalize(join(wsFolderPath.fsPath, svdPath));
