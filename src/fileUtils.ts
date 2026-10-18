@@ -15,11 +15,16 @@ export async function getFilePath(): Promise<vscode.Uri | undefined> {
     return fileUri;
 }
 
-// At least two characters before the colon, so a Windows drive ("C:\...") is not taken as a scheme
-const URI_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]+:/;
-
 /** Whether the path is a URI such as "vscode-vfs://..." rather than a file system path. */
-export const hasUriScheme = (path: string): boolean => URI_SCHEME.test(path);
+export const hasUriScheme = (path: string): boolean => {
+    try {
+        // Strict, so a path without a scheme throws instead of getting "file". A one-letter
+        // scheme is a Windows drive ("C:\..."), not a URI.
+        return vscode.Uri.parse(path, true).scheme.length > 1;
+    } catch {
+        return false;
+    }
+};
 
 export const pathToUri = (path: string): vscode.Uri => {
     // A URI is kept as it is, so definition files can be read from any file system provider
