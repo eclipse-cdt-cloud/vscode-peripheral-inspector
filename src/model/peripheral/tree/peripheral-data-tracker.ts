@@ -42,6 +42,8 @@ export class PeripheralDataTracker {
     protected sessionPeripherals = new Map<string, PeripheralTreeForSession>();
     protected selectedNode?: PeripheralBaseNode;
     protected oldState = new Map<string, boolean>();
+    /** The latest start of each session; an older start still resolving its definition file is dropped. */
+    protected sessionStarts = new Map<string, object>();
 
     getSessionPeripherals(): Map<string, PeripheralTreeForSession> {
         return this.sessionPeripherals;
@@ -49,7 +51,11 @@ export class PeripheralDataTracker {
 
     constructor(tracker: DebugTracker, protected resolver: SvdResolver, protected api: PeripheralInspectorAPI, protected config: PeripheralConfigurationProvider, protected context: vscode.ExtensionContext) {
         tracker.onWillStartSession(session => this.onDebugSessionStarted(session));
-        tracker.onWillStopSession(session => this.onDebugSessionTerminated(session));
+        tracker.onWillStopSession(session => {
+            // A start still resolving its definition file must not show a view for an ended session
+            this.sessionStarts.delete(typeof session === 'string' ? session : session.id);
+            this.onDebugSessionTerminated(session);
+        });
         tracker.onDidStopDebug(session => this.onDebugStopped(session));
         tracker.onDidContinueDebug(session => this.onDebugContinued(session));
         this.init();
@@ -307,6 +313,8 @@ export class PeripheralDataTracker {
             throw new Error('Peripheral definition path is required');
         }
 
+        // Supersedes a start of the session that is still resolving its definition file
+        this.sessionStarts.set(session.id, {});
         if (this.sessionPeripherals.get(session.id)) {
             this.onDebugSessionTerminated(session);
         }
@@ -315,8 +323,15 @@ export class PeripheralDataTracker {
     }
 
     protected async onDebugSessionStarted(session: vscode.DebugSession): Promise<void> {
+        const start = {};
+        this.sessionStarts.set(session.id, start);
         const wsFolderPath = session.workspaceFolder ? session.workspaceFolder.uri : vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri;
         const svdPath = await this.resolver.resolve(session, wsFolderPath);
+
+        // Resolving can take long (a pack download or picker): a restart or stop meanwhile supersedes this start
+        if (this.sessionStarts.get(session.id) !== start) {
+            return;
+        }
 
         if (!svdPath) {
             return;
