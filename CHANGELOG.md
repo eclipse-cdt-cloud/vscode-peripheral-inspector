@@ -1,13 +1,23 @@
 # Change Log
 
+## [v1.11.0] - 2026-10-20
+
+### New Features
+
+- Support URIs as definitionPath ([#148](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/148), [Huy Nguyen](https://github.com/huygiatunguyen))
+
+### Bug Fixes
+
+- Reload a cached SVD file when it changes ([#149](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/pull/149), [Huy Nguyen](https://github.com/huygiatunguyen))
+- Keep the Peripherals view when a session restarts ([#151](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/pull/151), [Huy Nguyen](https://github.com/huygiatunguyen))
+
 ## [v1.10.0] - 2026-10-14
 
 - Add API to re-initialize peripheral view with deferred SVD path ([#130](https://github.com/eclipse-cdt-cloud/vscode-peripheral-inspector/issues/130), [hoa.tran-thai](https://github.com/hoathaitran3209))
 
-
 ## [v1.9.2] - 2026-06-24
 
-- Fixes publish of Extension API to GitHub NPM registry.  
+- Fixes publish of Extension API to GitHub NPM registry.
 - **IMPORTANT**: Extension v1.9.1 did not get published.  
   See previous release section for features first published with this v1.9.2 release.
 
