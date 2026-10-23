@@ -126,7 +126,7 @@ export class PeripheralCommands {
 
     private async peripheralsForceRefresh(node?: PeripheralBaseNode): Promise<void> {
         if (node) {
-            const peripheral = node.getPeripheral();
+            const peripheral = this.dataTracker.getPeripheralNode(node) ?? node.getPeripheral();
             const changes: PeripheralBaseNode[] = [];
             if (peripheral) {
                 await peripheral.updateData({ changes });

@@ -82,7 +82,7 @@ export class PeripheralDataTracker {
         this.selectedNode = node;
         const children = await node?.getChildren();
         if (node && children && children.length > 0) {
-            this.toggleNode(node);
+            await this.toggleNode(node);
         } else {
             this.onDidSelectionChangeEvent.fire({ data: node });
         }
@@ -219,18 +219,36 @@ export class PeripheralDataTracker {
         emit = true): Promise<void> {
         node.expanded = true;
 
+        const peripheral = this.getPeripheralNode(node);
+
+        if (emit) {
+            this.onDidExpandEvent.fire({ data: peripheral ?? node });
+        }
 
         if (!(node instanceof PeripheralTreeForSession) && !(node instanceof PeripheralRegisterNode)) {
             // If we are at a register level, parent already expanded, no update/refresh needed
-            const peripheral = node.getPeripheral();
-            if (peripheral) {
-                await peripheral.updateData();
+            try {
+                if (peripheral) {
+                    await peripheral.updateData();
+                    if (emit) {
+                        this.onDidExpandEvent.fire({ data: peripheral });
+                    }
+                }
+            } catch {
+                throw new Error(`Failed to update peripheral data for ${peripheral?.name}`);
             }
         }
+    }
 
-        if (emit) {
-            this.onDidExpandEvent.fire({ data: node });
+    public getPeripheralNode(node: PeripheralBaseNode): PeripheralNode | undefined {
+        let parent: PeripheralBaseNode | undefined = node;
+        while (parent) {
+            if (parent instanceof PeripheralNode) {
+                return parent;
+            }
+            parent = parent.getParent() as PeripheralBaseNode | undefined;
         }
+        return undefined;
     }
 
     public collapseNode(
@@ -250,13 +268,13 @@ export class PeripheralDataTracker {
         this.fireOnDidChange();
     }
 
-    public toggleNode(
+    public async toggleNode(
         node: PeripheralBaseNode,
-        emit = true): void {
+        emit = true): Promise<void> {
         if (node.expanded) {
             this.collapseNode(node, emit);
         } else {
-            this.expandNode(node, emit);
+            await this.expandNode(node, emit);
         }
     }
 

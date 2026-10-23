@@ -62,9 +62,9 @@ export class PeripheralTreeDataProvider implements CDTTreeDataProvider<Periphera
                 const node = this.getNodeByItemId(event.data.itemId);
                 vscode.commands.executeCommand(event.data.commandId, node, event.data.value);
             }),
-            webview.onDidToggleNode((event) => {
+            webview.onDidToggleNode(async (event) => {
                 const node = this.getNodeByItemId(event.data);
-                this.dataTracker.toggleNode(node, true);
+                await this.dataTracker.toggleNode(node, true);
             }),
             webview.onDidSearchChange((event) => {
                 const text = event.data?.text ?? '';
