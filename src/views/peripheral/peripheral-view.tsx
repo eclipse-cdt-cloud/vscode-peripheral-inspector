@@ -129,10 +129,10 @@ export class CDTTreeView extends React.Component<unknown, State> {
 
         this.setState(prev => {
             const context: CDTTreeConverterContext<PeripheralTreeNodeDTOs> = {
-                expandedKeys: prev.viewModel.expandedKeys,
-                pinnedKeys: prev.viewModel.pinnedKeys,
-                assignedItems: prev.viewModel.references,
-                assignedResources: prev.viewModel.resources
+                expandedKeys: [...prev.viewModel.expandedKeys],
+                pinnedKeys: [...prev.viewModel.pinnedKeys],
+                assignedItems: { ...prev.viewModel.references },
+                assignedResources: { ...prev.viewModel.resources }
             };
             const converter = new PeripheralTreeConverter();
 
@@ -151,15 +151,50 @@ export class CDTTreeView extends React.Component<unknown, State> {
 
             });
 
-            convertedItems.forEach(item => {
-                // Replace the old item with the new one
-                const childrenToUpdate = item.parent ? item.parent.children ?? [] : prev.viewModel.items;
-                const index = childrenToUpdate.findIndex(c => c.id === item.id);
+            const replaceChild = (
+                siblings: CDTTreeItem<PeripheralTreeNodeDTOs>[] | undefined,
+                updated: CDTTreeItem<PeripheralTreeNodeDTOs>
+            ): CDTTreeItem<PeripheralTreeNodeDTOs>[] => {
+                const next = [...(siblings ?? [])];
+                const index = next.findIndex(child => child.id === updated.id);
                 if (index >= 0) {
-                    childrenToUpdate[index] = item;
+                    next[index] = updated;
                 } else {
-                    childrenToUpdate.push(item);
+                    next.push(updated);
                 }
+                return next;
+            };
+
+            const previousItems = prev.viewModel.references;
+            let nextItems = prev.viewModel.items;
+
+            convertedItems.forEach(item => {
+                const previous = previousItems[item.id];
+                if ((!item.children || item.children.length === 0) && previous?.children?.length) {
+                    item.children = previous.children;
+                }
+
+                const ancestors: CDTTreeItem<PeripheralTreeNodeDTOs>[] = [];
+                let ancestor = item.parent as CDTTreeItem<PeripheralTreeNodeDTOs> | undefined;
+                while (ancestor && ancestor !== prev.viewModel.root) {
+                    ancestors.push(ancestor);
+                    ancestor = ancestor.parent as CDTTreeItem<PeripheralTreeNodeDTOs> | undefined;
+                }
+
+                let current = item;
+                for (const parent of ancestors) {
+                    const nextParent: CDTTreeItem<PeripheralTreeNodeDTOs> = {
+                        ...parent,
+                        children: replaceChild(parent.children, current)
+                    };
+                    current.parent = nextParent;
+                    context.assignedItems[nextParent.id] = nextParent;
+                    current = nextParent;
+                }
+
+                nextItems = replaceChild(nextItems, current);
+                current.parent = prev.viewModel.root as CDTTreeItem<PeripheralTreeNodeDTOs>;
+                context.assignedItems[current.id] = current;
             });
 
             return {
@@ -168,8 +203,8 @@ export class CDTTreeView extends React.Component<unknown, State> {
                     pinnedKeys: context.pinnedKeys,
                     references: context.assignedItems,
                     resources: context.assignedResources,
-                    items: prev.viewModel.items,
-                    root: prev.viewModel.root
+                    items: nextItems,
+                    root: { ...prev.viewModel.root, children: nextItems }
                 },
             };
         });
