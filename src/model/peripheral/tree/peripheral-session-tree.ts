@@ -119,7 +119,7 @@ export class PeripheralTreeForSession extends PeripheralBaseNode {
             const cached = PeripheralTreeForSession.svdCache[uri.toString()];
             if (cached) {
                 const stat = await vscode.workspace.fs.stat(uri);
-                if (stat && (stat.mtime === stat.mtime)) {
+                if (stat && (stat.mtime === cached.mtime)) {
                     return cached;
                 }
                 delete PeripheralTreeForSession.svdCache[uri.toString()];
