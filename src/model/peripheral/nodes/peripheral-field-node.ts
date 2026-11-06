@@ -10,7 +10,7 @@ import { AddrRange, BitRange } from '../../../addrranges';
 import { AccessType, EnumerationMap, FieldOptions, ReadActionType } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
-import { PERIPHERAL_ID_SEP, PeripheralFieldNodeDTO } from '../../../common/peripheral-dto';
+import { PeripheralFieldNodeDTO } from '../../../common/peripheral-dto';
 import { parseInteger } from '../../../utils';
 import { PeripheralBaseNode, UpdateDataContext } from './base-node';
 import { PeripheralRegisterNode } from './peripheral-register-node';
@@ -31,12 +31,6 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
     private previousValue?: number;
     private currentValue?: number;
 
-    /**
-     * Unique ID segment for this field, combining name with bit position to
-     * disambiguate fields that share the same name within a register.
-     */
-    public readonly idSegment: string;
-
     constructor(public parent: PeripheralRegisterNode, protected options: FieldOptions) {
         super(parent);
 
@@ -44,7 +38,6 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         this.description = options.description;
         this.offset = options.offset;
         this.width = options.width;
-        this.idSegment = `${this.name}[${this.offset}:${this.width}]`;
         this.readAction = options.readAction;
 
         if (!options.accessType) {
@@ -97,6 +90,11 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         }
     }
 
+    /** Base id segment before duplicate suffixes: the same name at the same bits shares this. */
+    public baseIdSegment(): string {
+        return `${this.name}[${this.offset}:${this.width}]`;
+    }
+
     public getChildren(): PeripheralBaseNode[] | Promise<PeripheralBaseNode[]> {
         return [];
     }
@@ -145,13 +143,9 @@ export class PeripheralFieldNode extends PeripheralBaseNode {
         return true;
     }
 
-    public getId(): string {
-        return `${this.parent.getId()}${PERIPHERAL_ID_SEP}${this.idSegment}`;
-    }
-
     public saveState(path: string): NodeSetting[] {
         if (this.format !== NumberFormat.Auto) {
-            return [{ node: `${path}.${this.idSegment}`, format: this.format }];
+            return [{ node: `${path}.${this.getIdSegment()}`, format: this.format }];
         } else {
             return [];
         }

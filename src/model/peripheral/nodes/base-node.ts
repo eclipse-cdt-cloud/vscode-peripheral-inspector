@@ -53,11 +53,26 @@ export interface UpdateDataContext {
     changes?: PeripheralBaseNode[];
 }
 
+/** Separates the base segment from the ordinal of siblings that share it. Must not be PERIPHERAL_ID_SEP. */
+const DUPLICATE_NAME_SEP = '#';
+
+export function compareByOffset(a: { offset: number }, b: { offset: number }): number {
+    return a.offset - b.offset;
+}
+
 export abstract class PeripheralBaseNode extends BaseTreeNode {
     public format: NumberFormat;
     public pinned: boolean;
     public name?: string;
     public session?: DebugSession;
+
+    /**
+     * Segment of this node in its id and path.
+     * A unique base stays as-is (`name`, or `name[offset:width]` for a field).
+     * Among siblings that share a base, the lowest offset keeps the base and the rest become `base#2`, `base#3`, ...
+     * Ties keep SVD order. A generated suffix never takes a base that another sibling actually has (`FOO#2`).
+     */
+    public idSegment?: string;
 
     constructor(parent?: PeripheralBaseNode) {
         super(parent);
@@ -69,9 +84,35 @@ export abstract class PeripheralBaseNode extends BaseTreeNode {
         return false;
     }
 
+    protected reassignChildIdSegments<T extends PeripheralBaseNode>(
+        children: readonly T[],
+        baseOf: (child: T) => string = (child) => child.name ?? '',
+    ): void {
+        const bases = children.map((child) => baseOf(child));
+        const reserved = new Set(bases);
+        const claimed = new Set<string>();
+        for (let i = 0; i < children.length; i++) {
+            const base = bases[i];
+            let segment = base;
+            for (let n = 2; claimed.has(segment) || (segment !== base && reserved.has(segment)); n++) {
+                segment = `${base}${DUPLICATE_NAME_SEP}${n}`;
+            }
+            claimed.add(segment);
+            children[i].idSegment = segment;
+        }
+    }
+
+    protected findChildBySegment<T extends PeripheralBaseNode>(children: T[], segment: string): T | undefined {
+        return children.find((c) => c.getIdSegment() === segment);
+    }
+
+    public getIdSegment(): string | undefined {
+        return this.idSegment ?? this.name;
+    }
+
     public getId(): string {
         if (this.parent) {
-            return `${this.parent.getId()}${PERIPHERAL_ID_SEP}${this.name}`;
+            return `${this.parent.getId()}${PERIPHERAL_ID_SEP}${this.getIdSegment()}`;
         }
 
         return this.name ?? this.session?.id ?? 'unknown';

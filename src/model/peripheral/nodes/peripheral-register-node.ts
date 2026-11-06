@@ -13,7 +13,7 @@ import { NumberFormat } from '../../../common/format';
 import { PeripheralRegisterNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
 import { createMask, extractBits, hexFormat, parseInteger } from '../../../utils';
-import { ClusterOrRegisterBaseNode, PeripheralBaseNode, UpdateDataContext } from './base-node';
+import { ClusterOrRegisterBaseNode, compareByOffset, PeripheralBaseNode, UpdateDataContext } from './base-node';
 import { PeripheralClusterNode } from './peripheral-cluster-node';
 import { PeripheralFieldNode } from './peripheral-field-node';
 import { PeripheralNode } from './peripheral-node';
@@ -88,12 +88,14 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
 
     public setChildren(children: PeripheralFieldNode[]): void {
         this.children = children.slice(0, children.length);
-        this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
+        this.children.sort(compareByOffset);
+        this.reassignChildIdSegments(this.children, (child) => child.baseIdSegment());
     }
 
     public addChild(child: PeripheralFieldNode): void {
         this.children.push(child);
-        this.children.sort((f1, f2) => f1.offset > f2.offset ? 1 : -1);
+        this.children.sort(compareByOffset);
+        this.reassignChildIdSegments(this.children, (child) => child.baseIdSegment());
     }
 
     public async performUpdate(value?: string): Promise<boolean> {
@@ -130,26 +132,28 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
     public async updateData(context?: UpdateDataContext): Promise<boolean> {
         const bc = this.size / 8;
         const bytes = this.parent.getBytes(this.offset, bc);
-        const buffer = Buffer.from(bytes);
-        this.previousValue = this.currentValue;
+        if (bytes.length >= bc) {
+            const buffer = Buffer.from(bytes);
+            this.previousValue = this.currentValue;
 
-        switch (bc) {
-            case 1:
-                this.currentValue = buffer.readUInt8(0);
-                break;
-            case 2:
-                this.currentValue = buffer.readUInt16LE(0);
-                break;
-            case 4:
-                this.currentValue = buffer.readUInt32LE(0);
-                break;
-            default:
-                vscode.debug.activeDebugConsole.appendLine(`Register ${this.name} has invalid size: ${this.size}. Should be 8, 16 or 32.`);
-                break;
-        }
+            switch (bc) {
+                case 1:
+                    this.currentValue = buffer.readUInt8(0);
+                    break;
+                case 2:
+                    this.currentValue = buffer.readUInt16LE(0);
+                    break;
+                case 4:
+                    this.currentValue = buffer.readUInt32LE(0);
+                    break;
+                default:
+                    vscode.debug.activeDebugConsole.appendLine(`Register ${this.name} has invalid size: ${this.size}. Should be 8, 16 or 32.`);
+                    break;
+            }
 
-        if (this.previousValue !== this.currentValue) {
-            context?.changes?.push(this);
+            if (this.previousValue !== this.currentValue) {
+                context?.changes?.push(this);
+            }
         }
 
         await Promise.all(this.children.map(child => child.updateData(context)));
@@ -160,11 +164,11 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         const results: NodeSetting[] = [];
 
         if (this.format !== NumberFormat.Auto || this.expanded) {
-            results.push({ node: `${path}.${this.name}`, expanded: this.expanded, format: this.format });
+            results.push({ node: `${path}.${this.getIdSegment()}`, expanded: this.expanded, format: this.format });
         }
 
         this.children.forEach((c) => {
-            results.push(...c.saveState(`${path}.${this.name}`));
+            results.push(...c.saveState(`${path}.${this.getIdSegment()}`));
         });
 
         return results;
@@ -174,7 +178,7 @@ export class PeripheralRegisterNode extends ClusterOrRegisterBaseNode {
         if (path.length === 0) {
             return this;
         } else if (path.length === 1) {
-            const child = this.children.find((c) => c.idSegment === path[0])
+            const child = this.children.find((c) => c.getIdSegment() === path[0])
                 ?? this.children.find((c) => c.name === path[0]);
             return child;
         } else {

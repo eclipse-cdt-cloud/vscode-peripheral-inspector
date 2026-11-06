@@ -10,7 +10,7 @@ import { AccessType, ClusterOptions, EnumerationMap } from '../../../api-types';
 import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralClusterNodeDTO } from '../../../common/peripheral-dto';
-import { ClusterOrRegisterBaseNode, PeripheralBaseNode } from './base-node';
+import { ClusterOrRegisterBaseNode, compareByOffset, PeripheralBaseNode } from './base-node';
 import { PeripheralNode } from './peripheral-node';
 import { PeripheralRegisterNode as PeripheralRegisterNode } from './peripheral-register-node';
 
@@ -56,12 +56,14 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
 
     public setChildren(children: PeripheralRegisterOrClusterNode[]): void {
         this.children = children.slice(0, children.length);
-        this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
+        this.children.sort(compareByOffset);
+        this.reassignChildIdSegments(this.children);
     }
 
     public addChild(child: PeripheralRegisterOrClusterNode): void {
         this.children.push(child);
-        this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
+        this.children.sort(compareByOffset);
+        this.reassignChildIdSegments(this.children);
     }
 
     public getBytes(offset: number, size: number): Uint8Array {
@@ -93,11 +95,11 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         const results: NodeSetting[] = [];
 
         if (this.format !== NumberFormat.Auto || this.expanded) {
-            results.push({ node: `${path}.${this.name}`, expanded: this.expanded, format: this.format });
+            results.push({ node: `${path}.${this.getIdSegment()}`, expanded: this.expanded, format: this.format });
         }
 
         this.children.forEach((c) => {
-            results.push(...c.saveState(`${path}.${this.name}`));
+            results.push(...c.saveState(`${path}.${this.getIdSegment()}`));
         });
 
         return results;
@@ -107,7 +109,7 @@ export class PeripheralClusterNode extends ClusterOrRegisterBaseNode {
         if (path.length === 0) {
             return this;
         } else {
-            const child = this.children.find((c) => c.name === path[0]);
+            const child = this.findChildBySegment(this.children, path[0]);
             if (child) {
                 return child.findByPath(path.slice(1));
             } else {

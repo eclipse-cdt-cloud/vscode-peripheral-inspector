@@ -12,7 +12,7 @@ import { NodeSetting } from '../../../common';
 import { NumberFormat } from '../../../common/format';
 import { PeripheralNodeDTO } from '../../../common/peripheral-dto';
 import { MemUtils } from '../../../memreadutils';
-import { PeripheralBaseNode, UpdateDataContext } from './base-node';
+import { compareByOffset, PeripheralBaseNode, UpdateDataContext } from './base-node';
 import { PeripheralClusterNode, PeripheralRegisterOrClusterNode } from './peripheral-cluster-node';
 import { PeripheralRegisterNode } from './peripheral-register-node';
 import type { PeripheralTreeForSession } from '../tree/peripheral-session-tree';
@@ -67,20 +67,31 @@ export class PeripheralNode extends PeripheralBaseNode {
 
     public setChildren(children: Array<PeripheralRegisterNode | PeripheralClusterNode>): void {
         this.children = children;
-        this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
+        this.children.sort(compareByOffset);
+        this.reassignChildIdSegments(this.children);
     }
 
     public addChild(child: PeripheralRegisterOrClusterNode): void {
         this.children.push(child);
-        this.children.sort((c1, c2) => c1.offset > c2.offset ? 1 : -1);
+        this.children.sort(compareByOffset);
+        this.reassignChildIdSegments(this.children);
     }
 
     public getBytes(offset: number, size: number): Uint8Array {
-        try {
-            return new Uint8Array(this.currentValue.slice(offset, offset + size));
-        } catch {
+        const end = offset + size;
+        if (offset < 0 || size < 0 || end > this.currentValue.length) {
             return new Uint8Array(0);
         }
+        const out = new Uint8Array(size);
+        for (let i = 0; i < size; i++) {
+            const byte = this.currentValue[offset + i];
+            // Unread slots stay empty. Uint8Array would turn those holes into 0 and look like a real read.
+            if (byte === undefined) {
+                return new Uint8Array(0);
+            }
+            out[i] = byte;
+        }
+        return out;
     }
 
     public getAddress(offset: number): number {
@@ -141,8 +152,14 @@ export class PeripheralNode extends PeripheralBaseNode {
     protected readMemory(): Promise<Error[]> | [] {
         this.previousValue = this.currentValue;
 
-        if (!this.currentValue) {
-            this.currentValue = new Array<number>(this.totalLength);
+        // currentValue starts as []. An empty array is truthy, so a length check is required.
+        if (this.currentValue.length !== this.totalLength) {
+            const next = new Array<number>(this.totalLength);
+            const copyLength = Math.min(this.currentValue.length, this.totalLength);
+            for (let i = 0; i < copyLength; i++) {
+                next[i] = this.currentValue[i];
+            }
+            this.currentValue = next;
         }
 
         if (this.session) {
@@ -214,7 +231,7 @@ export class PeripheralNode extends PeripheralBaseNode {
         if (path.length === 0) {
             return this;
         } else {
-            const child = this.children.find((c) => c.name === path[0]);
+            const child = this.findChildBySegment(this.children, path[0]);
             if (child) {
                 return child.findByPath(path.slice(1));
             } else {
